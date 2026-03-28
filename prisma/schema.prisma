@@ -1,0 +1,534 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PARENT
+  ADMIN
+}
+
+enum AdminRole {
+  DIRECTOR
+  ADMISSIONS
+  BILLING
+  READ_ONLY
+}
+
+enum EnrollmentStatus {
+  PENDING
+  APPROVED
+  WAITLISTED
+  DENIED
+  REQUEST_INFO
+}
+
+enum ProgramType {
+  INFANT
+  TODDLER
+  PRESCHOOL
+  PRE_K
+}
+
+enum BillingCadence {
+  MONTHLY
+  BIWEEKLY
+  WEEKLY
+}
+
+enum ContractStatus {
+  ACTIVE
+  PAUSED
+  CANCELED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  PAST_DUE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+enum CommunicationChannel {
+  EMAIL
+  IN_APP
+  SYSTEM
+}
+
+enum CommunicationType {
+  GENERAL
+  ENROLLMENT
+  BILLING
+}
+
+enum CommunicationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+enum FamilyCrmStage {
+  LEAD
+  INTAKE_INCOMPLETE
+  ADMISSIONS_REVIEW
+  APPROVED_AWAITING_SPOT
+  ACTIVE_FAMILY
+  AT_RISK_BILLING
+}
+
+enum FamilyCrmTaskStatus {
+  OPEN
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum FamilyCrmTaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum OnboardingScope {
+  ADMIN_DASHBOARD
+  PARENT_DASHBOARD
+}
+
+enum OnboardingStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  guardianSsnLast4Encrypted String?
+  guardianSsnLast4Masked    String?
+  guardianIdentityCapturedAt DateTime?
+  guardianIdentityUpdatedAt DateTime?
+  role         UserRole   @default(PARENT)
+  adminRole    AdminRole?
+  isActive     Boolean    @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  children            Child[]
+  enrollments         EnrollmentApplication[]
+  contracts           ChildTuitionContract[]
+  invoices            Invoice[]
+  payments            PaymentTransaction[]
+  stripeCustomer      StripeCustomer?
+  communicationEvents         CommunicationEvent[] @relation("ParentCommunicationEvents")
+  authoredCommunicationEvents CommunicationEvent[] @relation("AdminAuthoredCommunicationEvents")
+  onboardingProgress  UserOnboardingProgress[]
+  auditLogs           AuditLog[]
+  crmProfileParent    FamilyCrmProfile?            @relation("FamilyCrmProfileParent")
+  crmProfilesOwned    FamilyCrmProfile[]           @relation("FamilyCrmProfileOwner")
+  crmTasksOwned       FamilyCrmTask[]              @relation("FamilyCrmTaskOwner")
+  crmTasksCreated     FamilyCrmTask[]              @relation("FamilyCrmTaskCreator")
+  crmNotesCreated     FamilyCrmNote[]              @relation("FamilyCrmNoteCreator")
+  crmSavedViews       FamilyCrmSavedView[]         @relation("FamilyCrmSavedViewOwner")
+  crmTagsAssigned     FamilyCrmProfileTag[]        @relation("FamilyCrmTagAssignedBy")
+
+  @@index([role])
+  @@index([adminRole])
+}
+
+model Child {
+  id                    String   @id @default(cuid())
+  parentId              String
+  firstName             String
+  lastName              String
+  preferredName         String?
+  gender                String?
+  pronouns              String?
+  dateOfBirth           DateTime
+  gradeLevel            String?
+  schoolName            String?
+  favoriteActivities    String?
+  favoriteFoods         String?
+  favoriteToys          String?
+  comfortItems          String?
+  temperamentNotes      String?
+  learningStyle         String?
+  napSchedule           String?
+  languagePreferences   String?
+  pottyTrainingStatus   String?
+  childSsnLast4Encrypted String?
+  childSsnLast4Masked    String?
+  childIdentityUpdatedAt DateTime?
+  allergies             String?
+  medicalNotes          String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  photoStorageKey       String?
+  photoMimeType         String?
+  photoSizeBytes        Int?
+  photoUploadedAt       DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  parent      User                    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  enrollments EnrollmentApplication[]
+  contracts   ChildTuitionContract[]
+  invoices    Invoice[]
+  crmTasks    FamilyCrmTask[]
+
+  @@index([parentId])
+}
+
+model EnrollmentApplication {
+  id                 String           @id @default(cuid())
+  parentId           String
+  childId            String
+  intakeBatchId      String?
+  status             EnrollmentStatus @default(PENDING)
+  programType        ProgramType
+  startDate          DateTime?
+  notes              String?
+  reviewNotes        String?
+  decisionReason     String?
+  reviewedById       String?
+  reviewedAt         DateTime?
+  approvedAt         DateTime?
+  selectedCadence    BillingCadence?
+  requiredIntakeComplete Boolean      @default(false)
+  intakeMissingFields    String[]     @default([])
+  spotHoldExpiresAt  DateTime?
+  spotSecuredAt      DateTime?
+  stripeCheckoutRef  String?
+  communicationSentAt DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  parent User  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  child  Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+  crmTasks FamilyCrmTask[]
+
+  @@index([parentId])
+  @@index([intakeBatchId])
+  @@index([parentId, intakeBatchId])
+  @@index([childId])
+  @@index([status])
+  @@index([spotHoldExpiresAt])
+}
+
+model TuitionPlan {
+  id                    String   @id @default(cuid())
+  name                  String
+  programType           ProgramType?
+  monthlyAmountCents    Int
+  registrationFeeCents  Int
+  allowMonthly          Boolean  @default(true)
+  allowBiweekly         Boolean  @default(false)
+  allowWeekly           Boolean  @default(false)
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  contracts ChildTuitionContract[]
+
+  @@index([isActive])
+}
+
+model ChildTuitionContract {
+  id                    String         @id @default(cuid())
+  parentId              String
+  childId               String
+  tuitionPlanId         String
+  billingCadence        BillingCadence @default(MONTHLY)
+  recurringAmountCents  Int
+  invoiceDay            Int            @default(1)
+  startDate             DateTime
+  nextChargeDate        DateTime?
+  status                ContractStatus @default(ACTIVE)
+  autoPayEnabled        Boolean        @default(true)
+  graceDays             Int            @default(3)
+  lateFeeCents          Int            @default(2500)
+  stripeSubscriptionId  String?        @unique
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  parent     User       @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  child      Child      @relation(fields: [childId], references: [id], onDelete: Cascade)
+  tuitionPlan TuitionPlan @relation(fields: [tuitionPlanId], references: [id], onDelete: Restrict)
+  invoices   Invoice[]
+
+  @@index([parentId])
+  @@index([childId])
+  @@index([status])
+}
+
+model Invoice {
+  id              String       @id @default(cuid())
+  contractId      String
+  parentId        String
+  childId         String?
+  invoiceNumber   String       @unique
+  status          InvoiceStatus @default(OPEN)
+  issueDate       DateTime
+  dueDate         DateTime
+  totalCents      Int
+  amountDueCents  Int
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  contract  ChildTuitionContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  parent    User                 @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  child     Child?               @relation(fields: [childId], references: [id], onDelete: SetNull)
+  lineItems InvoiceLineItem[]
+  payments  PaymentTransaction[]
+  crmTasks  FamilyCrmTask[]
+
+  @@index([parentId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model InvoiceLineItem {
+  id               String   @id @default(cuid())
+  invoiceId        String
+  description      String
+  quantity         Int      @default(1)
+  unitAmountCents  Int
+  totalAmountCents Int
+  createdAt        DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model PaymentTransaction {
+  id                    String       @id @default(cuid())
+  parentId              String
+  invoiceId             String
+  amountCents           Int
+  status                PaymentStatus
+  paymentMethod         String?
+  failureReason         String?
+  processedAt           DateTime?
+  stripePaymentIntentId String?      @unique
+  stripeChargeId        String?      @unique
+  createdAt             DateTime     @default(now())
+
+  parent  User    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([parentId])
+  @@index([invoiceId])
+  @@index([status])
+}
+
+model StripeCustomer {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  stripeCustomerId String   @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CommunicationEvent {
+  id         String              @id @default(cuid())
+  parentId   String
+  createdByAdminId String?
+  childId    String?
+  enrollmentId String?
+  invoiceId  String?
+  type       CommunicationType
+  channel    CommunicationChannel
+  status     CommunicationStatus @default(SENT)
+  subject    String?
+  message    String?
+  createdAt  DateTime            @default(now())
+
+  parent         User  @relation("ParentCommunicationEvents", fields: [parentId], references: [id], onDelete: Cascade)
+  createdByAdmin User? @relation("AdminAuthoredCommunicationEvents", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([parentId])
+  @@index([createdByAdminId])
+  @@index([type])
+}
+
+model UserOnboardingProgress {
+  id             String           @id @default(cuid())
+  userId         String
+  scope          OnboardingScope
+  version        Int              @default(1)
+  status         OnboardingStatus @default(NOT_STARTED)
+  currentStepKey String?
+  currentRoute   String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  skippedAt      DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scope])
+  @@index([scope, status])
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType, targetId])
+}
+
+model CenterBillingPolicy {
+  id                    String   @id @default(cuid())
+  key                   String   @unique @default("PRIMARY")
+  graceDays             Int      @default(3)
+  lateFeeCents          Int      @default(2500)
+  pauseAfterDaysPastDue Int      @default(14)
+  reminderOffsets       Int[]    @default([7, 3, 0])
+  holdHours             Int      @default(24)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model FamilyCrmProfile {
+  id                        String         @id @default(cuid())
+  parentId                  String         @unique
+  stage                     FamilyCrmStage @default(LEAD)
+  suggestedStage            FamilyCrmStage?
+  isStageManuallyOverridden Boolean        @default(false)
+  ownerAdminId              String?
+  nextFollowUpAt            DateTime?
+  lastContactedAt           DateTime?
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+
+  parent     User                @relation("FamilyCrmProfileParent", fields: [parentId], references: [id], onDelete: Cascade)
+  ownerAdmin User?               @relation("FamilyCrmProfileOwner", fields: [ownerAdminId], references: [id], onDelete: SetNull)
+  tasks      FamilyCrmTask[]
+  notes      FamilyCrmNote[]
+  tags       FamilyCrmProfileTag[]
+
+  @@index([stage])
+  @@index([ownerAdminId])
+  @@index([nextFollowUpAt])
+}
+
+model FamilyCrmTask {
+  id               String                @id @default(cuid())
+  profileId        String
+  title            String
+  description      String?
+  status           FamilyCrmTaskStatus   @default(OPEN)
+  priority         FamilyCrmTaskPriority @default(MEDIUM)
+  dueAt            DateTime?
+  ownerAdminId     String?
+  createdByAdminId String
+  childId          String?
+  enrollmentId     String?
+  invoiceId        String?
+  completedAt      DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  profile        FamilyCrmProfile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  ownerAdmin     User?                  @relation("FamilyCrmTaskOwner", fields: [ownerAdminId], references: [id], onDelete: SetNull)
+  createdByAdmin User                   @relation("FamilyCrmTaskCreator", fields: [createdByAdminId], references: [id], onDelete: Restrict)
+  child          Child?                 @relation(fields: [childId], references: [id], onDelete: SetNull)
+  enrollment     EnrollmentApplication? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  invoice        Invoice?               @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([profileId, status])
+  @@index([ownerAdminId, dueAt])
+  @@index([dueAt, status])
+}
+
+model FamilyCrmNote {
+  id               String   @id @default(cuid())
+  profileId        String
+  createdByAdminId String
+  body             String
+  isPinned         Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  profile        FamilyCrmProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdByAdmin User             @relation("FamilyCrmNoteCreator", fields: [createdByAdminId], references: [id], onDelete: Restrict)
+
+  @@index([profileId, createdAt])
+}
+
+model FamilyCrmTag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("#8AA99A")
+  isSystem  Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profiles FamilyCrmProfileTag[]
+}
+
+model FamilyCrmProfileTag {
+  id                String   @id @default(cuid())
+  profileId         String
+  tagId             String
+  assignedByAdminId String?
+  createdAt         DateTime @default(now())
+
+  profile         FamilyCrmProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  tag             FamilyCrmTag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  assignedByAdmin User?            @relation("FamilyCrmTagAssignedBy", fields: [assignedByAdminId], references: [id], onDelete: SetNull)
+
+  @@unique([profileId, tagId])
+  @@index([tagId])
+}
+
+model FamilyCrmSavedView {
+  id         String   @id @default(cuid())
+  adminUserId String
+  name       String
+  isDefault  Boolean  @default(false)
+  filtersJson Json
+  columnsJson Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  adminUser User @relation("FamilyCrmSavedViewOwner", fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId, isDefault])
+}
