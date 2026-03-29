@@ -16,7 +16,7 @@ interface FieldBase {
 }
 
 const baseField =
-  'w-full rounded-field border border-primary-100/85 bg-white/96 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 shadow-sm transition-all duration-180 ease-fluid focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-100/85 disabled:cursor-not-allowed disabled:bg-ink-100';
+  'w-full rounded-field border bg-white px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 shadow-sm transition-all duration-180 ease-fluid focus:bg-white focus:ring-2 disabled:cursor-not-allowed disabled:bg-ink-100';
 
 function labelId(id: string) {
   return `${id}-desc`;
@@ -56,6 +56,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-describedby={helpText || error ? labelId(fieldId) : undefined}
           className={cn(
             baseField,
+            'border-line focus:border-primary-400 focus:ring-primary-100/90',
             startAdornment && 'pl-10',
             endAdornment && 'pr-10',
             error && 'border-rose-300 focus:border-rose-400 focus:ring-rose-100',
@@ -106,7 +107,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         rows={rows}
         aria-invalid={Boolean(error)}
         aria-describedby={helpText || error ? labelId(fieldId) : undefined}
-        className={cn(baseField, 'resize-y', error && 'border-rose-300 focus:border-rose-400 focus:ring-rose-100')}
+        className={cn(baseField, 'resize-y border-line focus:border-primary-400 focus:ring-primary-100/90', error && 'border-rose-300 focus:border-rose-400 focus:ring-rose-100')}
         {...props}
       />
       {error ? (
@@ -146,7 +147,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         required={required}
         aria-invalid={Boolean(error)}
         aria-describedby={helpText || error ? labelId(fieldId) : undefined}
-        className={cn(baseField, 'pr-8', error && 'border-rose-300 focus:border-rose-400 focus:ring-rose-100')}
+        className={cn(
+          baseField,
+          'border-line pr-8 focus:border-primary-400 focus:ring-primary-100/90',
+          error && 'border-rose-300 focus:border-rose-400 focus:ring-rose-100',
+        )}
         {...props}
       >
         {children}

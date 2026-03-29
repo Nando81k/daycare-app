@@ -81,7 +81,7 @@ const config: Config = {
         'glass-xs': '6px',
       },
       fontFamily: {
-        sans: ['var(--font-sans)', 'Source Sans 3', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['var(--font-display)', 'Sora', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       transitionTimingFunction: {

@@ -10,9 +10,9 @@ export function Section({ children, className, tone = 'default' }: SectionProps)
   return (
     <section
       className={cn(
-        'py-12 md:py-14',
-        tone === 'soft' && 'bg-[#f2f8ff]',
-        tone === 'contrast' && 'bg-primary-900 text-white',
+        'py-14 md:py-16',
+        tone === 'soft' && 'bg-[#f8f3eb]',
+        tone === 'contrast' && 'bg-ink-900 text-white',
         className,
       )}
     >

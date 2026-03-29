@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap');
-
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,24 +7,24 @@
 :root {
   color-scheme: light;
   --font-display: 'Sora';
-  --font-sans: 'Source Sans 3';
-  --color-ink-900: #081423;
-  --color-ink-700: #18344d;
-  --color-ink-500: #365f87;
-  --color-bg-main: #ecf5ff;
-  --color-bg-soft: #ddefff;
+  --font-sans: 'Manrope';
+  --color-ink-900: #0f1726;
+  --color-ink-700: #2e3c4f;
+  --color-ink-500: #5a6b80;
+  --color-bg-main: #f2f5f8;
+  --color-bg-soft: #e7ecf3;
   --color-surface: #ffffff;
-  --color-border: #adc8e8;
-  --color-primary-strong: #0f3f86;
-  --color-primary-electric: #2378eb;
-  --color-accent-mint: #18be98;
-  --color-accent-cyan: #26b6f4;
-  --color-success: #08946f;
-  --color-warning: #d78309;
-  --color-error: #cc2f52;
-  --radius-12: 12px;
-  --radius-14: 14px;
-  --radius-16: 16px;
+  --color-border: #ccd6e3;
+  --color-primary-strong: #0f4fc9;
+  --color-primary-electric: #1067e8;
+  --color-accent-mint: #16848b;
+  --color-accent-cyan: #1f7dae;
+  --color-success: #237a54;
+  --color-warning: #b07a2e;
+  --color-error: #bc3f5b;
+  --radius-12: 8px;
+  --radius-14: 10px;
+  --radius-16: 12px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -46,20 +46,20 @@
 
 @layer base {
   * {
-    @apply border-line;
+    @apply border-border outline-ring/50;
   }
 
   html {
-    @apply bg-bg;
+    @apply bg-bg font-sans;
     scroll-behavior: smooth;
     overflow-x: hidden;
   }
 
   body {
-    @apply min-h-screen bg-bg text-ink-900 font-sans antialiased;
-    background-color: #ecf5ff;
+    @apply min-h-screen font-sans antialiased bg-background text-foreground;
+    background-color: #f2f5f8;
     overflow-x: hidden;
-    line-height: 1.55;
+    line-height: 1.56;
   }
 
   main,
@@ -72,28 +72,28 @@
   h3,
   h4 {
     @apply font-display text-ink-900 tracking-tight;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.016em;
     font-weight: 600;
   }
 
   h1 {
-    @apply text-3xl md:text-[2.65rem];
-    line-height: 1.14;
+    @apply text-[2.1rem] md:text-[3.05rem];
+    line-height: 1.08;
   }
 
   h2 {
-    @apply text-2xl md:text-[2.2rem];
-    line-height: 1.2;
+    @apply text-[1.82rem] md:text-[2.52rem];
+    line-height: 1.15;
   }
 
   h3 {
-    @apply text-xl md:text-[1.7rem];
-    line-height: 1.24;
+    @apply text-[1.34rem] md:text-[1.9rem];
+    line-height: 1.18;
   }
 
   p {
     @apply text-ink-600;
-    line-height: 1.7;
+    line-height: 1.72;
   }
 
   a {
@@ -107,19 +107,94 @@
   *:focus-visible {
     @apply outline-none ring-2 ring-teal-400 ring-offset-2 ring-offset-bg;
   }
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--font-sans);
+  }
+  :root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+  }
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+  }
 }
 
 @layer components {
   .glass-surface {
-    @apply rounded-panel border border-primary-100 bg-white shadow-soft transition-[transform,box-shadow,border-color,background-color] duration-240 ease-fluid;
+    @apply rounded-panel border bg-white shadow-soft transition-[transform,box-shadow,border-color,background-color] duration-240 ease-fluid;
+    border-color: rgba(92, 84, 71, 0.16);
   }
 
   .glass-soft {
-    @apply rounded-panel border border-primary-100 bg-[#f4f9ff] shadow-soft transition-[transform,box-shadow,border-color,background-color] duration-240 ease-fluid;
+    @apply rounded-panel border shadow-soft transition-[transform,box-shadow,border-color,background-color] duration-240 ease-fluid;
+    border-color: rgba(92, 84, 71, 0.14);
+    background: #f8f3eb;
   }
 
   .glass-strong {
-    @apply rounded-panel border border-primary-200 bg-white shadow-float transition-[transform,box-shadow,border-color,background-color] duration-240 ease-fluid;
+    @apply rounded-panel border bg-white shadow-float transition-[transform,box-shadow,border-color,background-color] duration-240 ease-fluid;
+    border-color: rgba(92, 84, 71, 0.2);
   }
 
   .glass-shell {
@@ -127,25 +202,28 @@
   }
 
   .glass-table-shell {
-    @apply rounded-panel overflow-hidden border border-primary-100 bg-white shadow-soft;
+    @apply rounded-panel overflow-hidden border bg-white shadow-soft;
+    border-color: rgba(92, 84, 71, 0.16);
   }
 
   .glass-table-head {
-    @apply sticky top-0 z-10 border-b border-primary-100 bg-white text-xs font-semibold uppercase tracking-wider text-ink-500;
+    @apply sticky top-0 z-10 border-b bg-white text-xs font-semibold uppercase tracking-wider text-ink-500;
+    border-color: rgba(92, 84, 71, 0.16);
   }
 
   .surface {
-    @apply rounded-panel border border-line bg-white shadow-soft;
+    @apply rounded-panel border bg-white shadow-soft;
+    border-color: rgba(92, 84, 71, 0.14);
   }
 
   .kicker {
     @apply text-[11px] font-semibold uppercase text-primary-700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
   }
 
   .page-wrap {
     @apply mx-auto w-full px-4 sm:px-6 xl:px-8;
-    max-width: 1320px;
+    max-width: 1380px;
   }
 
   .product-stage {
@@ -157,17 +235,20 @@
   }
 
   .product-card {
-    @apply rounded-[1rem] border border-primary-100 bg-white p-4 shadow-[0_20px_38px_-30px_rgba(8,42,88,0.28)] sm:p-5;
+    @apply rounded-[1.12rem] border bg-white p-5 shadow-[0_24px_52px_-42px_rgba(30,37,47,0.38)] sm:p-6;
+    border-color: rgba(92, 84, 71, 0.15);
     animation: widget-enter 360ms var(--ease-premium) both;
   }
 
   .product-card-strong {
-    @apply overflow-hidden rounded-[1.1rem] border border-primary-200 bg-primary-900 p-5 text-white shadow-[0_30px_64px_-36px_rgba(6,31,73,0.55)];
+    @apply overflow-hidden rounded-[1.12rem] border p-6 text-white shadow-[0_34px_72px_-38px_rgba(20,28,42,0.64)];
+    border-color: rgba(255, 255, 255, 0.18);
+    background: linear-gradient(156deg, #202a37 0%, #30415a 48%, #3d546f 100%);
   }
 
   .product-eyebrow {
     @apply text-[11px] font-semibold uppercase text-primary-700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
   }
 
   .product-heading {
@@ -179,22 +260,23 @@
   }
 
   .product-chip {
-    @apply inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700;
+    @apply inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 text-xs font-semibold text-ink-700;
+    border-color: rgba(92, 84, 71, 0.2);
   }
 
   .public-site {
     @apply relative;
-    background: #ffffff;
+    background: #f9f5ef;
   }
 
   .public-site .page-wrap {
     max-width: none;
-    padding-left: clamp(1rem, 3.4vw, 3.4rem);
-    padding-right: clamp(1rem, 3.4vw, 3.4rem);
+    padding-left: clamp(1rem, 2.8vw, 2.75rem);
+    padding-right: clamp(1rem, 2.8vw, 2.75rem);
   }
 
   .public-site section {
-    border-top: 1px solid rgba(8, 56, 108, 0.12);
+    border-top: 1px solid rgba(92, 84, 71, 0.12);
   }
 
   .public-site .product-stage {
@@ -206,129 +288,326 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background-image: linear-gradient(180deg, rgba(18, 53, 95, 0.03), transparent 52%);
+    background-image: linear-gradient(180deg, rgba(72, 83, 104, 0.05), transparent 56%);
   }
 
   .public-site .kicker,
   .public-site .product-eyebrow {
     @apply font-semibold text-primary-700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
   }
 
   .public-site .glass-shell {
-    border-color: rgba(8, 56, 108, 0.12);
+    border-color: rgba(92, 84, 71, 0.14);
     background: #ffffff;
-    box-shadow: 0 14px 30px -24px rgba(8, 42, 88, 0.2);
+    box-shadow: 0 24px 52px -40px rgba(38, 44, 54, 0.35);
   }
 
   .public-site .glass-soft {
-    border-color: rgba(8, 56, 108, 0.1);
-    background: #f2f7fc;
-    box-shadow: 0 10px 24px -22px rgba(8, 42, 88, 0.18);
+    border-color: rgba(92, 84, 71, 0.13);
+    background: #f8f3eb;
+    box-shadow: 0 20px 42px -34px rgba(38, 44, 54, 0.28);
   }
 
   .public-site .product-card {
-    border-color: rgba(8, 56, 108, 0.1);
+    border-color: rgba(92, 84, 71, 0.14);
     background: #ffffff;
-    border-radius: 0.3rem;
+    border-radius: 1.1rem;
   }
 
   .public-site .product-card-strong {
-    border-color: rgba(255, 255, 255, 0.2);
-    background: linear-gradient(160deg, #08386c 0%, #0a4f95 100%);
-    box-shadow: 0 28px 66px -38px rgba(6, 30, 72, 0.56);
-    border-radius: 0.4rem;
+    border-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(156deg, #202a37 0%, #30415a 48%, #3d546f 100%);
+    box-shadow: 0 34px 74px -42px rgba(18, 25, 38, 0.62);
+    border-radius: 1.1rem;
   }
 
   .public-site .product-chip {
-    border-color: rgba(8, 56, 108, 0.18);
+    border-color: rgba(92, 84, 71, 0.18);
     background-color: #fff;
-    border-radius: 0.35rem;
+    border-radius: 999px;
   }
 
   .public-image-frame,
   .public-site .public-image-frame {
-    @apply relative overflow-hidden rounded-[0.22rem] border border-white/75;
-    box-shadow: 0 22px 44px -34px rgba(8, 42, 88, 0.36);
+    @apply relative overflow-hidden rounded-[1rem] border border-white/70;
+    box-shadow: 0 26px 56px -40px rgba(28, 36, 50, 0.44);
   }
 
   .public-image-overlay,
   .public-site .public-image-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(4, 24, 53, 0.04) 0%, rgba(4, 24, 53, 0.36) 100%);
+    background: linear-gradient(180deg, rgba(22, 31, 44, 0.06) 0%, rgba(22, 31, 44, 0.34) 100%);
     pointer-events: none;
   }
 
   .public-header {
-    @apply sticky top-0 z-40 border-b border-primary-100/80;
-    background-color: rgba(255, 255, 255, 0.94);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 18px 40px -34px rgba(8, 42, 88, 0.34);
+    @apply sticky top-0 z-40 border-b;
+    border-color: rgba(92, 84, 71, 0.16);
+    background-color: rgba(250, 247, 242, 0.94);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 18px 46px -40px rgba(24, 30, 40, 0.4);
   }
 
   .public-header-top {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-    background: linear-gradient(115deg, #05284d 0%, #0a3f75 100%);
-    color: rgba(235, 245, 255, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(112deg, #202a37 0%, #33445f 100%);
+    color: rgba(246, 249, 255, 0.95);
   }
 
   .public-header-brand {
-    @apply inline-flex items-center rounded-[0.2rem] px-1 py-0.5 transition duration-180 ease-fluid;
+    @apply inline-flex items-center rounded-[0.7rem] px-1 py-0.5 transition duration-180 ease-fluid;
   }
 
   .public-header-brand:hover {
-    background: rgba(8, 56, 108, 0.06);
+    background: rgba(59, 77, 108, 0.08);
   }
 
   .public-header-nav-shell {
-    @apply items-center gap-1 rounded-[0.22rem] border border-primary-100/80 bg-[#f8fbff] p-1;
-    box-shadow: 0 16px 34px -30px rgba(8, 42, 88, 0.26);
+    @apply items-center gap-1 rounded-full border px-1 py-1;
+    border-color: rgba(92, 84, 71, 0.15);
+    background: #ffffff;
+    box-shadow: 0 16px 36px -32px rgba(24, 30, 40, 0.34);
   }
 
   .public-header-nav-link {
-    @apply inline-flex h-9 items-center border border-transparent px-3 text-[0.96rem] font-semibold transition duration-180 ease-fluid;
-    border-radius: 0.18rem;
-    color: #1f3550;
+    @apply inline-flex h-9 items-center border border-transparent px-3.5 text-[0.94rem] font-semibold transition duration-180 ease-fluid;
+    border-radius: 999px;
+    color: #354355;
     background-color: transparent;
   }
 
   .public-header-nav-link:hover {
-    border-color: rgba(8, 56, 108, 0.16);
-    color: #0f3258;
-    background-color: #eef5fc;
+    border-color: rgba(92, 84, 71, 0.16);
+    color: #1e252f;
+    background-color: #f5ede2;
   }
 
   .public-header-nav-link-active {
-    border-color: rgba(8, 56, 108, 0.24);
-    color: #073362;
-    background-color: #dcebf8;
-    box-shadow: 0 14px 28px -26px rgba(8, 42, 88, 0.42);
+    border-color: rgba(67, 95, 133, 0.28);
+    color: #2d4b74;
+    background-color: #edf2f8;
+    box-shadow: 0 12px 28px -26px rgba(28, 36, 50, 0.42);
   }
 
   .public-header-account {
-    @apply inline-flex h-9 items-center gap-2 rounded-[0.2rem] border border-primary-100 bg-[#f8fbff] px-3 text-sm font-semibold text-ink-700;
+    @apply inline-flex h-9 items-center gap-2 rounded-full border px-3 text-sm font-semibold text-ink-700;
+    border-color: rgba(92, 84, 71, 0.16);
+    background: #f5eee5;
   }
 
   .public-header-mobile {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(246, 251, 255, 0.98) 100%);
+    background: linear-gradient(180deg, rgba(250, 247, 242, 0.98) 0%, rgba(244, 236, 226, 0.96) 100%);
   }
 
   .public-header-nav-link-mobile {
-    @apply h-11 w-full justify-between rounded-[0.2rem] border border-primary-100/75 px-4 text-base;
+    @apply h-11 w-full justify-between rounded-[0.8rem] border px-4 text-base;
+    border-color: rgba(92, 84, 71, 0.14);
     background: #ffffff;
   }
 
   .public-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.28);
-    background: linear-gradient(180deg, #04182f 0%, #07294d 54%, #093a70 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(180deg, #1f2732 0%, #2d3b4f 56%, #3b4c63 100%);
     color: #fff;
   }
 
   .public-mobile-cta {
-    background: linear-gradient(120deg, #0e4ca7 0%, #0f5ebe 100%);
-    box-shadow: 0 20px 44px -30px rgba(7, 35, 81, 0.52);
+    background: linear-gradient(120deg, #2b4468 0%, #4a678f 100%);
+    box-shadow: 0 22px 44px -28px rgba(22, 30, 44, 0.56);
+  }
+
+  .public-section-heading {
+    @apply max-w-3xl space-y-3;
+  }
+
+  .public-section-title {
+    @apply max-w-[24ch];
+  }
+
+  .public-section-copy {
+    @apply max-w-[66ch] text-base leading-relaxed text-ink-600 md:text-lg;
+  }
+
+  .public-pill {
+    @apply inline-flex items-center rounded-full border bg-white px-3.5 py-1.5 text-xs font-semibold text-ink-700;
+    border-color: rgba(92, 84, 71, 0.2);
+  }
+
+  .public-quote-card {
+    @apply product-card border-l-4 border-l-primary-400;
+  }
+
+  .public-form-shell {
+    @apply rounded-[1.2rem] border bg-white p-5 shadow-[0_24px_52px_-40px_rgba(28,36,50,0.35)] sm:p-6;
+    border-color: rgba(92, 84, 71, 0.16);
+  }
+
+  .tech-site {
+    background:
+      linear-gradient(180deg, rgba(229, 236, 246, 0.65), transparent 18%),
+      linear-gradient(90deg, rgba(194, 206, 221, 0.18) 1px, transparent 1px),
+      linear-gradient(rgba(194, 206, 221, 0.18) 1px, transparent 1px),
+      #f2f5f8;
+    background-size:
+      auto,
+      52px 52px,
+      52px 52px,
+      auto;
+    color: #0f1726;
+  }
+
+  .tech-wrap {
+    @apply mx-auto w-full px-4 sm:px-6 xl:px-8;
+    max-width: 1480px;
+  }
+
+  .tech-section {
+    @apply relative overflow-hidden py-14 md:py-20;
+    border-top: 1px solid rgba(172, 184, 203, 0.48);
+  }
+
+  .tech-kicker {
+    @apply text-[0.68rem] font-semibold uppercase;
+    letter-spacing: 0.18em;
+    color: #1357d1;
+  }
+
+  .tech-title {
+    @apply mt-3 max-w-[20ch] font-display text-[clamp(2rem,4.6vw,4rem)] leading-[1.04] text-[#0f1726];
+  }
+
+  .tech-subtitle {
+    @apply mt-3 text-[clamp(1.4rem,2.2vw,2.2rem)] leading-[1.1] text-[#0f1726];
+    letter-spacing: -0.02em;
+  }
+
+  .tech-copy {
+    @apply mt-4 max-w-[66ch] text-base leading-relaxed text-[#314357] md:text-lg;
+  }
+
+  .tech-shell {
+    border: 1px solid rgba(170, 183, 202, 0.56);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 30px 70px -52px rgba(17, 27, 42, 0.65);
+  }
+
+  .tech-shell-dark {
+    border: 1px solid rgba(170, 194, 238, 0.34);
+    border-radius: 10px;
+    background:
+      linear-gradient(156deg, rgba(12, 21, 36, 0.94) 0%, rgba(17, 32, 58, 0.95) 52%, rgba(21, 45, 75, 0.93) 100%);
+    box-shadow: 0 32px 72px -50px rgba(6, 12, 21, 0.88);
+  }
+
+  .tech-card {
+    @apply relative border bg-white p-5 transition-[transform,border-color,box-shadow,background-color] duration-300 ease-fluid md:p-6;
+    border-color: rgba(167, 181, 201, 0.64);
+    border-radius: 8px;
+    box-shadow: 0 24px 56px -44px rgba(16, 24, 37, 0.55);
+  }
+
+  .tech-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(16, 92, 215, 0.56);
+    box-shadow: 0 30px 62px -42px rgba(12, 34, 66, 0.55);
+  }
+
+  .tech-card-dark {
+    border-radius: 8px;
+    border: 1px solid rgba(170, 194, 238, 0.3);
+    background: rgba(15, 29, 52, 0.66);
+    box-shadow: 0 26px 56px -44px rgba(2, 8, 18, 0.72);
+  }
+
+  .tech-chip {
+    @apply inline-flex items-center gap-2 border px-3 py-1.5 text-xs font-semibold uppercase;
+    border-radius: 999px;
+    letter-spacing: 0.08em;
+    border-color: rgba(167, 181, 201, 0.66);
+    color: #22354c;
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  .tech-chip-dark {
+    border-color: rgba(179, 202, 239, 0.36);
+    color: #d4e4ff;
+    background: rgba(16, 33, 59, 0.62);
+  }
+
+  .tech-image-shell {
+    @apply relative overflow-hidden border;
+    border-radius: 8px;
+    border-color: rgba(170, 183, 202, 0.58);
+    box-shadow: 0 30px 70px -50px rgba(12, 22, 36, 0.62);
+  }
+
+  .tech-image-overlay {
+    @apply pointer-events-none absolute inset-0;
+    background:
+      linear-gradient(180deg, rgba(10, 18, 31, 0.02) 0%, rgba(10, 18, 31, 0.42) 100%);
+  }
+
+  .tech-divider-label {
+    @apply text-xs font-semibold uppercase text-[#355b8d];
+    letter-spacing: 0.16em;
+  }
+
+  .tech-link {
+    @apply inline-flex items-center gap-1.5 text-sm font-semibold text-[#0f4fc9] transition-colors duration-180;
+  }
+
+  .tech-link:hover {
+    color: #0b3d9e;
+  }
+
+  .tech-data-grid {
+    @apply grid gap-3 sm:grid-cols-2;
+  }
+
+  .tech-stat {
+    @apply border px-3 py-3;
+    border-radius: 8px;
+    border-color: rgba(168, 181, 202, 0.6);
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  .tech-stat-label {
+    @apply text-[0.66rem] font-semibold uppercase text-[#3f5677];
+    letter-spacing: 0.14em;
+  }
+
+  .tech-stat-value {
+    @apply mt-1 text-xl font-semibold text-[#0f1726];
+  }
+
+  .tech-auth-surface {
+    background:
+      linear-gradient(180deg, rgba(232, 239, 248, 0.76), rgba(242, 245, 248, 0.88)),
+      linear-gradient(90deg, rgba(181, 194, 212, 0.18) 1px, transparent 1px),
+      linear-gradient(rgba(181, 194, 212, 0.18) 1px, transparent 1px),
+      #eef2f7;
+    background-size:
+      auto,
+      44px 44px,
+      44px 44px,
+      auto;
+  }
+
+  .tech-auth-panel {
+    border-radius: 10px;
+    border: 1px solid rgba(161, 175, 195, 0.62);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 32px 70px -54px rgba(11, 20, 34, 0.56);
+  }
+
+  .tech-auth-feature {
+    border-radius: 8px;
+    border: 1px solid rgba(176, 201, 239, 0.3);
+    background: rgba(16, 30, 53, 0.54);
   }
 
   .shell {
@@ -354,9 +633,17 @@
     background-color: #e8f6f1;
   }
 
+  .shell-admin {
+    @apply h-auto min-h-screen overflow-visible;
+  }
+
   .shell-layout {
     @apply grid h-full min-h-0 items-start gap-2 p-2;
     grid-template-columns: 16rem minmax(0, 1fr);
+  }
+
+  .shell-admin .shell-layout {
+    @apply h-auto min-h-screen;
   }
 
   .shell-layout-collapsed {
@@ -375,6 +662,10 @@
     backdrop-filter: blur(8px);
   }
 
+  .shell-admin .shell-main-column {
+    @apply h-auto min-h-[calc(100dvh-1rem)] overflow-visible;
+  }
+
   .shell-topbar {
     @apply sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-primary-100/90 bg-white/90 px-3 py-2.5;
     backdrop-filter: blur(8px);
@@ -382,6 +673,10 @@
 
   .shell-canvas {
     @apply flex-1 overflow-y-auto overscroll-none px-2 py-2.5 md:px-3 md:py-3 lg:px-4 lg:py-4;
+  }
+
+  .shell-admin .shell-canvas {
+    @apply overflow-visible overscroll-auto;
   }
 
   .shell-content-wrap {
@@ -634,12 +929,20 @@
     backdrop-filter: none;
   }
 
+  .shell-admin .shell-main-column {
+    @apply h-auto min-h-screen;
+  }
+
   .shell-topbar {
     @apply rounded-none border-b border-white/80 px-3 py-3;
   }
 
   .shell-canvas {
     @apply px-3 py-4;
+  }
+
+  .shell-admin .shell-canvas {
+    @apply overflow-visible;
   }
 }
 

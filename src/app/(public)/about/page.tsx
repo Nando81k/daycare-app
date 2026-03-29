@@ -1,58 +1,62 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { CheckCircle2, HeartHandshake, ShieldCheck, Sparkles, Wallet } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, Sparkles, Users2 } from 'lucide-react';
 import { BRAND } from '@/lib/branding';
-import { Button, Card, Section } from '@/components/ui';
-import { CinematicReveal, CinematicStagger } from '@/components/animations';
+import { HOME_STAFF } from '@/lib/public-content';
+import { Button, Section } from '@/components/ui';
+import { CinematicReveal, CinematicStagger, HoverLift } from '@/components/animations';
 import { resolveCustomerMediaSlot } from '@/lib/public-media';
+
+const HERO = resolveCustomerMediaSlot('aboutHero');
+const SUPPORT = resolveCustomerMediaSlot('homeSupportDetail');
 
 const PRINCIPLES = [
   {
-    title: 'Warm, structured care',
-    description: 'Age-appropriate routines balance social development, learning, rest, and play.',
-    icon: HeartHandshake,
-  },
-  {
-    title: 'Safety-first operations',
-    description: 'Documented wellness checks, controlled transitions, and family communication protocols.',
+    title: 'Operational consistency',
+    copy: 'Families receive predictable processes from first inquiry to first-day transition.',
     icon: ShieldCheck,
   },
   {
-    title: 'Predictable billing',
-    description: 'Parents always know what is due now, what is due next, and what actions are required.',
-    icon: Wallet,
+    title: 'Warm educator leadership',
+    copy: 'Children are supported through structured routines that still feel human and responsive.',
+    icon: Users2,
+  },
+  {
+    title: 'Transparent communication',
+    copy: 'Admissions, onboarding, and daily expectations are communicated with clear ownership.',
+    icon: Sparkles,
   },
 ] as const;
-
-const HERO = resolveCustomerMediaSlot('aboutHero');
 
 export default function AboutPage() {
   return (
     <>
-      <Section className="product-stage pb-10 pt-10 md:pt-12">
-        <div className="page-wrap grid gap-5 lg:grid-cols-[1.02fr_0.98fr]">
+      <Section className="tech-section !border-none bg-[#f3f6fa] pb-12 pt-10 md:pt-14">
+        <div className="tech-wrap grid gap-6 lg:grid-cols-[1.04fr_0.96fr] lg:items-end">
           <CinematicReveal>
-            <Card className="glass-shell">
-              <p className="product-eyebrow">About {BRAND.shortName}</p>
-              <h1 className="mt-2 max-w-[17ch]">Professional childcare with clear standards and clear communication.</h1>
-              <p className="mt-3 text-base text-ink-600">
-                We design each family touchpoint to be simple, respectful, and consistent from enrollment through daily
-                classroom life.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2.5">
-                <Link href="/register">
-                  <Button>Start Enrollment</Button>
-                </Link>
-                <Link href="/programs">
-                  <Button variant="outline">View Programs</Button>
-                </Link>
-              </div>
-            </Card>
+            <p className="tech-kicker">About {BRAND.shortName}</p>
+            <h1 className="mt-3 max-w-[15ch]">A high-trust childcare environment designed around execution quality.</h1>
+            <p className="tech-copy max-w-[62ch]">
+              Our approach combines educator excellence, operational discipline, and parent communication standards so families
+              experience reliable support at every stage.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href="/register">
+                <Button size="lg" className="rounded-[7px] px-8">
+                  Start Enrollment
+                </Button>
+              </Link>
+              <Link href="/contact">
+                <Button size="lg" variant="outline" className="rounded-[7px] px-8">
+                  Contact Admissions
+                </Button>
+              </Link>
+            </div>
           </CinematicReveal>
 
           <CinematicReveal delay={0.08}>
-            <Card className="glass-shell p-2.5">
-              <div className="public-image-frame aspect-[4/3]">
+            <div className="tech-shell p-3">
+              <div className="tech-image-shell aspect-[16/11] min-h-[22rem]">
                 <Image
                   src={HERO.media.src}
                   alt={HERO.media.alt}
@@ -61,71 +65,105 @@ export default function AboutPage() {
                   style={{ objectPosition: HERO.media.focalPoint }}
                   sizes={HERO.sizes}
                 />
-                <div className="public-image-overlay" />
+                <div className="tech-image-overlay" />
               </div>
-              <p className="mt-3 text-sm text-ink-600">{HERO.caption}</p>
-            </Card>
+            </div>
           </CinematicReveal>
         </div>
       </Section>
 
-      <Section className="border-y border-primary-100/70 bg-white/80 py-12">
-        <div className="page-wrap">
+      <Section className="tech-section bg-white">
+        <div className="tech-wrap">
           <CinematicReveal>
-            <p className="kicker">Our Principles</p>
-            <h2 className="mt-2">How we build trust with families.</h2>
+            <p className="tech-kicker">Operating Principles</p>
+            <h2 className="tech-subtitle max-w-[24ch]">How we turn care standards into daily practice.</h2>
           </CinematicReveal>
 
-          <CinematicStagger className="mt-5 grid gap-3 md:grid-cols-3">
+          <CinematicStagger className="mt-8 grid gap-4 md:grid-cols-3" y={24}>
             {PRINCIPLES.map((item) => {
               const Icon = item.icon;
               return (
-                <Card key={item.title} className="glass-soft" data-stagger-item>
-                  <p className="inline-flex items-center gap-2 text-base font-semibold text-ink-900">
-                    <Icon className="h-4 w-4 text-primary-700" />
+                <HoverLift key={item.title} as="article" className="tech-card h-full" data-stagger-item>
+                  <p className="inline-flex items-center gap-2 text-base font-semibold text-[#0f1726]">
+                    <Icon className="h-4 w-4 text-[#0f4fc9]" />
                     {item.title}
                   </p>
-                  <p className="mt-2 text-sm text-ink-600">{item.description}</p>
-                </Card>
+                  <p className="mt-2 text-base leading-relaxed text-[#33485f]">{item.copy}</p>
+                </HoverLift>
               );
             })}
           </CinematicStagger>
         </div>
       </Section>
 
-      <Section className="py-12">
-        <div className="page-wrap grid gap-4 lg:grid-cols-2">
+      <Section className="tech-section bg-[#f0f4fa]">
+        <div className="tech-wrap grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <CinematicReveal>
-            <Card title="Your first 30 days" subtitle="What onboarding looks like" className="glass-shell">
-              <ul className="space-y-2 text-sm text-ink-700">
-                <li className="inline-flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary-700" />
-                  Parent account setup and child profile completion.
-                </li>
-                <li className="inline-flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary-700" />
-                  Admissions review with clear status updates.
-                </li>
-                <li className="inline-flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary-700" />
-                  Placement confirmation and pre-start guidance.
-                </li>
-              </ul>
-            </Card>
+            <div className="tech-shell p-3">
+              <div className="tech-image-shell aspect-[4/5] min-h-[24rem]">
+                <Image
+                  src={SUPPORT.media.src}
+                  alt={SUPPORT.media.alt}
+                  fill
+                  className="object-cover"
+                  style={{ objectPosition: SUPPORT.media.focalPoint }}
+                  sizes={SUPPORT.sizes}
+                />
+                <div className="tech-image-overlay" />
+              </div>
+            </div>
           </CinematicReveal>
 
-          <CinematicReveal delay={0.08}>
-            <Card className="glass-shell" title="Communication and support" subtitle="How we keep families in sync">
-              <ul className="space-y-2 text-sm text-ink-700">
-                <li>1. Transparent updates for enrollment and billing milestones.</li>
-                <li>2. Responsive admissions and family support channels.</li>
-                <li>3. Clear policy communication without ambiguity.</li>
+          <div>
+            <CinematicReveal>
+              <p className="tech-kicker">Educator Quality</p>
+              <h2 className="tech-subtitle max-w-[24ch]">A team focused on child development and dependable family support.</h2>
+            </CinematicReveal>
+
+            <CinematicStagger className="mt-7 grid gap-4" y={22}>
+              {HOME_STAFF.map((staff) => (
+                <HoverLift key={staff.name} as="article" className="tech-card h-full" data-stagger-item>
+                  <p className="text-lg font-semibold text-[#0f1726]">{staff.name}</p>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#1f5ab2]">{staff.role}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-[#33485f]">{staff.bio}</p>
+                </HoverLift>
+              ))}
+            </CinematicStagger>
+          </div>
+        </div>
+      </Section>
+
+      <Section className="tech-section bg-[linear-gradient(162deg,#0f1c32_0%,#142f56_56%,#1a4174_100%)] text-white">
+        <div className="tech-wrap">
+          <CinematicReveal>
+            <div className="tech-shell-dark p-6 md:p-8">
+              <p className="tech-kicker text-[#a8c8ff]">First Month Roadmap</p>
+              <h2 className="mt-3 max-w-[21ch] text-white">Structured onboarding with clear milestones for families.</h2>
+              <ul className="mt-5 grid gap-2.5 text-base leading-relaxed text-[#d3e4ff]">
+                <li className="inline-flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4" />
+                  Parent account setup and child information completion.
+                </li>
+                <li className="inline-flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4" />
+                  Admissions validation of records and start readiness.
+                </li>
+                <li className="inline-flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4" />
+                  Placement confirmation and day-one preparation guidance.
+                </li>
               </ul>
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-800">
-                <Sparkles className="h-3.5 w-3.5" />
-                Family-first by design
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link href="/register">
+                  <Button size="lg" variant="secondary" className="rounded-[7px] px-9">
+                    Start Enrollment
+                  </Button>
+                </Link>
+                <Link href="/contact" className="tech-link text-[#d6e6ff] hover:text-white">
+                  Contact Admissions
+                </Link>
               </div>
-            </Card>
+            </div>
           </CinematicReveal>
         </div>
       </Section>

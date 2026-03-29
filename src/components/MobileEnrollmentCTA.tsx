@@ -11,7 +11,8 @@ export function MobileEnrollmentCTA() {
           variant: 'primary',
           fullWidth: true,
           size: 'lg',
-          className: 'public-mobile-cta pointer-events-auto rounded-full border border-white/28 text-white shadow-float',
+          className:
+            'public-mobile-cta pointer-events-auto rounded-[7px] border border-[#8eb0e2]/80 text-base font-semibold uppercase tracking-[0.12em] text-white shadow-float',
         })}
       >
         Start Enrollment

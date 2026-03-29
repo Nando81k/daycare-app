@@ -16,14 +16,23 @@ export function BrandLockup({ className, compact, showTagline = true, tone = 'de
       <div>
         <p
           className={cn(
-            'font-display font-semibold',
+            'font-display font-semibold tracking-tight',
             tone === 'inverse' ? 'text-white' : 'text-ink-900',
             compact ? 'text-sm' : 'text-lg'
           )}
         >
           {BRAND.name}
         </p>
-        {showTagline ? <p className={cn('text-xs', tone === 'inverse' ? 'text-ink-200' : 'text-ink-500')}>{BRAND.tagline}</p> : null}
+        {showTagline ? (
+          <p
+            className={cn(
+              'text-[0.68rem] font-semibold uppercase tracking-[0.16em]',
+              tone === 'inverse' ? 'text-[#bfd0ef]' : 'text-[#486180]',
+            )}
+          >
+            {BRAND.tagline}
+          </p>
+        ) : null}
       </div>
     </div>
   );

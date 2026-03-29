@@ -297,7 +297,7 @@ export function AppShell({
     'flex items-center gap-3 rounded-[12px] border border-white/25 px-3 py-2.5 text-sm font-semibold text-white/90 transition-colors duration-180 ease-fluid hover:border-primary-300/70 hover:bg-primary-600 hover:text-white';
 
   return (
-    <div className="shell">
+    <div className={cn('shell', shellScope === 'admin' && 'shell-admin')}>
       <div className={cn('shell-layout', collapsed && 'shell-layout-collapsed', revampEnabled && 'bg-transparent')}>
         <aside
           className={cn(

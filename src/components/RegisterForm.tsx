@@ -82,8 +82,11 @@ export function RegisterForm() {
   return (
     <form onSubmit={submit} className="space-y-4">
       {error ? (
-        <div className="rounded-field border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 shadow-sm">
-          <p className="inline-flex items-center gap-2"><AlertCircle className="h-4 w-4" />{error}</p>
+        <div className="rounded-[8px] border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm text-rose-700 shadow-sm">
+          <p className="inline-flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            {error}
+          </p>
           {details.length ? (
             <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
               {details.map((detail) => (
@@ -94,14 +97,34 @@ export function RegisterForm() {
         </div>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="First name" value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} required />
-        <Input label="Last name" value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} required />
+        <Input
+          label="First name"
+          placeholder="First name"
+          value={form.firstName}
+          onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+          required
+        />
+        <Input
+          label="Last name"
+          placeholder="Last name"
+          value={form.lastName}
+          onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
+          required
+        />
       </div>
-      <Input label="Email" type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} required />
+      <Input
+        label="Email"
+        type="email"
+        placeholder="you@example.com"
+        value={form.email}
+        onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+        required
+      />
       <div className="space-y-3">
         <Input
           label="Password"
           type="password"
+          placeholder="Create a secure password"
           value={form.password}
           onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
           required
@@ -134,11 +157,12 @@ export function RegisterForm() {
       <Input
         label="Confirm password"
         type="password"
+        placeholder="Re-enter password"
         value={form.confirmPassword}
         onChange={(e) => setForm((f) => ({ ...f, confirmPassword: e.target.value }))}
         required
       />
-      <Button type="submit" fullWidth isLoading={isLoading} loadingText="Creating account">
+      <Button type="submit" fullWidth className="rounded-[7px]" isLoading={isLoading} loadingText="Creating account">
         Create Account
       </Button>
     </form>

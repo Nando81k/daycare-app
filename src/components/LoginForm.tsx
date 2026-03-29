@@ -40,13 +40,37 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {error ? (
-        <div className="rounded-field border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 shadow-sm">
-          <p className="inline-flex items-center gap-2"><AlertCircle className="h-4 w-4" />{error}</p>
+        <div className="rounded-[8px] border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm text-rose-700 shadow-sm">
+          <p className="inline-flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            {error}
+          </p>
         </div>
       ) : null}
-      <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-      <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-      <Button type="submit" fullWidth isLoading={isLoading} loadingText="Signing in" rightIcon={<ArrowRight className="h-4 w-4" />}>
+      <Input
+        label="Email"
+        type="email"
+        placeholder="you@example.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
+      <Input
+        label="Password"
+        type="password"
+        placeholder="Enter your password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+      <Button
+        type="submit"
+        fullWidth
+        className="rounded-[7px]"
+        isLoading={isLoading}
+        loadingText="Signing in"
+        rightIcon={<ArrowRight className="h-4 w-4" />}
+      >
         Sign In
       </Button>
     </form>

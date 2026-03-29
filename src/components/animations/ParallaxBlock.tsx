@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
 
 interface ParallaxBlockProps {
   children: React.ReactNode;
@@ -9,7 +9,7 @@ interface ParallaxBlockProps {
   distance?: number;
 }
 
-export function ParallaxBlock({ children, className, distance = 48 }: ParallaxBlockProps) {
+export function ParallaxBlock({ children, className, distance = 72 }: ParallaxBlockProps) {
   const reduceMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -25,7 +25,7 @@ export function ParallaxBlock({ children, className, distance = 48 }: ParallaxBl
       ref={ref}
       className={className}
       style={reduceMotion ? undefined : { y }}
-      transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
+      transition={{ duration: 0.52, ease: [0.2, 0.8, 0.2, 1] }}
     >
       {children}
     </motion.div>

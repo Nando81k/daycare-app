@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'motion/react';
 import { cn } from '@/lib/utils';
 
 type HoverLiftElement = 'div' | 'article' | 'section';
@@ -19,17 +19,17 @@ export function HoverLift({
   className,
   as = 'div',
   lift = 8,
-  scale = 1.01,
+  scale = 1.012,
   ...rest
 }: HoverLiftProps) {
   const reduceMotion = useReducedMotion();
 
-  const shared = {
+    const shared = {
     className: cn(className, !reduceMotion && 'will-change-transform'),
     whileHover: reduceMotion ? undefined : { y: -lift, scale },
-    whileTap: reduceMotion ? undefined : { scale: 0.997 },
+    whileTap: reduceMotion ? undefined : { scale: 0.994 },
     transition: {
-      duration: reduceMotion ? 0.12 : 0.28,
+      duration: reduceMotion ? 0.14 : 0.3,
       ease: [0.2, 0.8, 0.2, 1] as [number, number, number, number],
     },
     ...rest,
