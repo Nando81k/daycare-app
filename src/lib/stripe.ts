@@ -1,16 +1,16 @@
-import Stripe from 'stripe';
+import "server-only"
 
-let cached: Stripe | null = null;
+import Stripe from "stripe"
 
-export function getStripeServer() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return null;
-  if (cached) return cached;
+import { getRequiredEnv } from "@/lib/env"
 
-  cached = new Stripe(key, {
-    apiVersion: '2026-01-28.clover',
-    typescript: true,
-  });
+let stripeClient: Stripe | null = null
 
-  return cached;
+export function getStripe() {
+  if (stripeClient) {
+    return stripeClient
+  }
+
+  stripeClient = new Stripe(getRequiredEnv("STRIPE_SECRET_KEY"))
+  return stripeClient
 }

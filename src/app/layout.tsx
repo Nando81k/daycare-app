@@ -1,33 +1,27 @@
-import type { Metadata } from 'next';
-import { Manrope, Sora, Geist } from 'next/font/google';
-import { SessionProviderWrapper } from '@/components/SessionProviderWrapper';
-import { MotionProvider } from '@/components/animations';
-import { BRAND } from '@/lib/branding';
-import './globals.css';
-import { cn } from "@/lib/utils";
+import type { Metadata } from "next"
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const sora = Sora({
-  subsets: ['latin'],
-  variable: '--font-display',
-  display: 'swap',
-});
+import { TooltipProvider } from "@/components/ui/tooltip"
+import "./globals.css"
 
 export const metadata: Metadata = {
-  title: `${BRAND.name} | Childcare + Parent Portal`,
+  title: {
+    default: "Abassadors Care",
+    template: "%s | Abassadors Care",
+  },
   description:
-    'Ambassadors Care delivers modern childcare operations with admissions, family records, and transparent parent billing.',
-};
+    "Warm, premium daycare website and portal experience for families and administrators.",
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={cn(sora.variable, "font-sans", geist.variable)}>
-      <body className="bg-bg text-ink-900">
-        <SessionProviderWrapper>
-          <MotionProvider>{children}</MotionProvider>
-        </SessionProviderWrapper>
+    <html lang="en">
+      <body className="min-h-svh bg-background font-sans text-foreground antialiased">
+        <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>
-  );
+  )
 }
