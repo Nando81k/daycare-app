@@ -1,15 +1,27 @@
 import type { Metadata } from "next"
 
-import { TooltipProvider } from "@/components/ui/tooltip"
+import { brandConfig } from "@/config/brand"
 import "./globals.css"
 
 export const metadata: Metadata = {
+  metadataBase: new URL(brandConfig.siteUrl),
   title: {
-    default: "Abassadors Care",
-    template: "%s | Abassadors Care",
+    default: brandConfig.name,
+    template: `%s | ${brandConfig.name}`,
   },
-  description:
-    "Warm, premium daycare website and portal experience for families and administrators.",
+  description: brandConfig.description,
+  openGraph: {
+    title: brandConfig.name,
+    description: brandConfig.description,
+    siteName: brandConfig.name,
+    type: "website",
+    url: brandConfig.siteUrl,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: brandConfig.name,
+    description: brandConfig.description,
+  },
 }
 
 export default function RootLayout({
@@ -19,8 +31,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-svh bg-background font-sans text-foreground antialiased">
-        <TooltipProvider>{children}</TooltipProvider>
+      <body className="min-h-screen bg-background font-sans text-foreground antialiased">
+        {children}
       </body>
     </html>
   )

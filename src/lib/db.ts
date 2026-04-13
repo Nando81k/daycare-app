@@ -1,26 +1,21 @@
 import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
-import { Pool } from "pg"
 
-const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient
-  pgPool?: Pool
+import { appEnv } from "@/lib/env"
+
+declare global {
+  var __prisma__: PrismaClient | undefined
 }
 
-const connectionString =
-  process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/daycare"
+const adapter = new PrismaPg(appEnv.databaseUrl)
 
-const pgPool = globalForPrisma.pgPool ?? new Pool({ connectionString })
-const adapter = new PrismaPg(pgPool)
-
-export const db =
-  globalForPrisma.prisma ??
+export const prisma =
+  globalThis.__prisma__ ??
   new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
   })
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = db
-  globalForPrisma.pgPool = pgPool
+  globalThis.__prisma__ = prisma
 }

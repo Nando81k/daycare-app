@@ -1,64 +1,42 @@
-import { NextResponse } from "next/server"
+import { createFamilySetupIntent } from "@/lib/billing"
+import { getCurrentUser } from "@/lib/auth"
+import { prisma } from "@/lib/db"
 
-import { auth } from "@/auth"
-import { db } from "@/lib/db"
-import { getStripe } from "@/lib/stripe"
+export async function POST(request: Request) {
+  const user = await getCurrentUser()
 
-async function ensureCustomerForHousehold(householdId: string) {
-  const household = await db.household.findUnique({
-    where: { id: householdId },
-  })
-
-  if (!household) {
-    throw new Error("Household not found.")
+  if (!user || user.role !== "PARENT") {
+    return Response.json({ error: "Unauthorized." }, { status: 401 })
   }
 
-  if (household.stripeCustomerId) {
-    return household.stripeCustomerId
+  const body = (await request.json()) as {
+    familyId?: string
   }
 
-  const stripe = getStripe()
-  const customer = await stripe.customers.create({
-    name: household.name,
-    email: household.billingEmail ?? undefined,
-    phone: household.phone ?? undefined,
-    metadata: {
-      householdId,
+  const profile = await prisma.parentProfile.findUnique({
+    where: {
+      userId: user.id,
+    },
+    select: {
+      familyId: true,
     },
   })
 
-  await db.household.update({
-    where: { id: householdId },
-    data: {
-      stripeCustomerId: customer.id,
-    },
-  })
-
-  return customer.id
-}
-
-export async function POST() {
-  const session = await auth()
-
-  if (!session?.user?.id || session.user.role !== "PARENT" || !session.user.householdId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!profile || body.familyId !== profile.familyId) {
+    return Response.json({ error: "Family billing profile not found." }, { status: 404 })
   }
 
-  const stripe = getStripe()
-  const customerId = await ensureCustomerForHousehold(session.user.householdId)
-
-  const setupIntent = await stripe.setupIntents.create({
-    customer: customerId,
-    payment_method_types: ["card"],
-    usage: "off_session",
-    metadata: {
-      householdId: session.user.householdId,
-      userId: session.user.id,
-    },
-  })
-
-  return NextResponse.json({
-    clientSecret: setupIntent.client_secret,
-    customerId,
-  })
+  try {
+    const setupIntent = await createFamilySetupIntent(profile.familyId)
+    return Response.json(setupIntent)
+  } catch (error) {
+    return Response.json(
+      {
+        error: error instanceof Error ? error.message : "Could not create setup intent.",
+      },
+      {
+        status: 400,
+      }
+    )
+  }
 }

@@ -1,37 +1,30 @@
-import { Badge } from "@/components/ui/badge"
+import type { PageIntroProps } from "@/types/app"
 
-export function PageIntro({
-  eyebrow,
-  title,
-  description,
-  badge,
-}: {
-  eyebrow: string
-  title: string
-  description: string
-  badge?: string
-}) {
+import { cn } from "@/lib/utils"
+
+export function PageIntro({ eyebrow, title, description, actions, align = "start" }: PageIntroProps) {
   return (
-    <section className="mx-auto max-w-7xl px-4 pb-10 pt-12 sm:px-6 lg:px-8 lg:pb-14 lg:pt-16">
-      <div className="soft-panel-strong relative overflow-hidden px-6 py-8 sm:px-8 sm:py-10">
-        <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-          {eyebrow}
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <h1 className="max-w-3xl font-heading text-4xl tracking-tight text-balance text-foreground sm:text-5xl">
-            {title}
-          </h1>
-          {badge && (
-            <Badge variant="secondary" className="rounded-full px-3 py-1">
-              {badge}
-            </Badge>
-          )}
+    <section
+      className={cn(
+        "surface-panel-strong section-grid relative flex flex-col gap-6 overflow-hidden px-6 py-8 md:px-8 md:py-10",
+        align === "center" && "items-center text-center"
+      )}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,rgba(118,158,154,0.2),transparent_70%)]" />
+      <div className={cn("relative max-w-3xl space-y-4", align === "center" && "items-center text-center")}>
+        {eyebrow ? <p className="editorial-kicker">{eyebrow}</p> : null}
+        <div className="space-y-3">
+          <h1 className="text-balance text-4xl leading-tight text-foreground md:text-[3.7rem]">{title}</h1>
+          <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-[1.08rem]">
+            {description}
+          </p>
         </div>
-        <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-          {description}
-        </p>
       </div>
+      {actions ? (
+        <div className={cn("relative flex flex-wrap items-center gap-3", align === "center" && "justify-center")}>
+          {actions}
+        </div>
+      ) : null}
     </section>
   )
 }

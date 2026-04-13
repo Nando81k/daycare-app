@@ -11,437 +11,536 @@ enum UserRole {
   ADMIN
 }
 
-enum ApplicationStatus {
-  SUBMITTED
-  UNDER_REVIEW
+enum EnrollmentLeadType {
+  TOUR
+  WAITLIST
+  CONTACT
+}
+
+enum EnrollmentLeadStage {
+  TOUR_REQUESTED
+  CONTACTED
   TOUR_SCHEDULED
+  APPLICATION_SENT
   ACCEPTED
-  WAITLISTED
-  DECLINED
-  WITHDRAWN
+  DENIED
 }
 
-enum DocumentType {
-  IMMUNIZATION_RECORD
-  HEALTH_FORM
-  EMERGENCY_CONTACT
-  PHOTO_RELEASE
-  OTHER
+enum EnrollmentLeadPriority {
+  HIGH
+  MEDIUM
+  NORMAL
+  LOW
 }
 
-enum DocumentStatus {
-  UPLOADED
-  VERIFIED
-  REJECTED
+enum WaitlistStatus {
+  REVIEW
+  TOUR_PENDING
+  OFFER_READY
+  LONG_RANGE
 }
 
-enum EnrollmentStatus {
-  PENDING
-  ACTIVE
-  ENDED
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  SCHEDULED
 }
 
 enum InvoiceStatus {
-  DRAFT
-  OPEN
-  PROCESSING
   PAID
-  PARTIALLY_PAID
-  VOID
-  UNCOLLECTIBLE
+  DUE
+  DRAFT
 }
 
 enum PaymentStatus {
-  PENDING
-  SUCCEEDED
+  PAID
+  PROCESSING
   FAILED
-  CANCELED
-  REFUNDED
 }
 
-enum PaymentMethodType {
-  CARD
-}
-
-enum InviteStatus {
-  PENDING
-  ACCEPTED
+enum DocumentStatus {
+  REQUIRED
+  SUBMITTED
+  APPROVED
   EXPIRED
-  REVOKED
+}
+
+enum AnnouncementStatus {
+  SCHEDULED
+  DRAFT
+  PUBLISHED
+}
+
+enum EventCategory {
+  CLASSROOM
+  FAMILY
+  CLOSURE
+  BILLING
+}
+
+enum MessageThreadStatus {
+  ACTIVE
+  RESPONSE_NEEDED
+  CLOSED
+}
+
+enum MessageAuthorRole {
+  STAFF
+  PARENT
+  DIRECTOR
+}
+
+enum StaffStatus {
+  SCHEDULED
+  COVERAGE_NEEDED
+  OUT
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  role          UserRole  @default(PARENT)
-  householdId   String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  household         Household?                   @relation("PrimaryHousehold", fields: [householdId], references: [id], onDelete: SetNull)
-  accounts          Account[]
-  sessions          Session[]
-  memberships       HouseholdMember[]
-  applications      EnrollmentApplication[]      @relation("ApplicationParent")
-  uploadedDocuments EnrollmentDocument[]         @relation("DocumentUploader")
-  applicationEvents EnrollmentApplicationEvent[] @relation("ApplicationActor")
-  createdInvoices   Invoice[]                    @relation("InvoiceCreator")
-  paymentMethods    PaymentMethod[]              @relation("PaymentMethodCreator")
-  payments          Payment[]                    @relation("PaymentActor")
-  invitesSent       AdminInvite[]                @relation("InviteSender")
-  auditLogs         AuditLog[]                   @relation("AuditActor")
-
-  @@index([householdId])
-  @@index([role])
+  id                       String               @id @default(cuid())
+  email                    String               @unique
+  passwordHash             String
+  name                     String
+  role                     UserRole
+  mustSetPassword          Boolean              @default(false)
+  passwordChangedAt        DateTime?
+  lastSignedInAt           DateTime?
+  parentProfile            ParentProfile?
+  staffProfile             StaffProfile?
+  sessions                 Session[]
+  messages                 Message[]
+  auditLogs                AuditLog[]
+  receivedInvites          AccountInviteToken[] @relation("InviteRecipient")
+  issuedInvites            AccountInviteToken[] @relation("InviteIssuer")
+  passwordResetTokens      PasswordResetToken[]
+  uploadedDailyReportPhotos DailyReportPhoto[]  @relation("DailyReportPhotoUploader")
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
 }
 
-model Household {
-  id               String   @id @default(cuid())
-  name             String
-  billingEmail     String?
-  phone            String?
-  stripeCustomerId String?  @unique
-  autopayEnabled   Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  primaryUsers  User[]                 @relation("PrimaryHousehold")
-  members       HouseholdMember[]
-  children      Child[]
-  applications  EnrollmentApplication[]
-  enrollments   Enrollment[]
-  invoices      Invoice[]
-  paymentMethods PaymentMethod[]
-  payments      Payment[]
+model Session {
+  id             String   @id @default(cuid())
+  tokenHash      String   @unique
+  userId         String
+  expiresAt      DateTime
+  lastAccessedAt DateTime @default(now())
+  userAgent      String?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model HouseholdMember {
-  id           String   @id @default(cuid())
-  householdId  String
-  userId       String
-  relationship String
-  isPrimary    Boolean  @default(false)
-  createdAt    DateTime @default(now())
+model Family {
+  id              String               @id @default(cuid())
+  familyName      String
+  enrollmentStage String
+  parents         ParentProfile[]
+  children        Child[]
+  invoices        Invoice[]
+  payments        Payment[]
+  documents       Document[]
+  messageThreads  MessageThread[]
+  leads           EnrollmentLead[]
+  billingProfile  FamilyBillingProfile?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+}
 
-  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+model ParentProfile {
+  id                      String        @id @default(cuid())
+  userId                  String        @unique
+  familyId                String
+  phone                   String
+  billingContact          String
+  pickupPolicy            String
+  notificationPreferences Json
+  user                    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family                  Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  children                ParentChild[]
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+}
 
-  @@unique([householdId, userId])
-  @@index([userId])
+model ParentChild {
+  parentProfileId String
+  childId         String
+  relationship    String
+  parentProfile   ParentProfile @relation(fields: [parentProfileId], references: [id], onDelete: Cascade)
+  child           Child         @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@id([parentProfileId, childId])
+}
+
+model Classroom {
+  id              String         @id @default(cuid())
+  slug            String         @unique
+  name            String         @unique
+  ageGroup        String
+  capacity        Int
+  leadTeacherName String
+  ratioLabel      String
+  nextEvent       String
+  note            String
+  children        Child[]
+  staffProfiles   StaffProfile[]
+  calendarEvents  CalendarEvent[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
 
 model Child {
-  id               String   @id @default(cuid())
-  householdId      String
-  firstName        String
-  lastName         String
-  birthDate        DateTime
-  startDate        DateTime?
-  allergies        String?
-  medicalNotes     String?
-  emergencyNotes   String?
-  authorizedPickup Json?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  enrollments Enrollment[]
-
-  @@index([householdId])
+  id                String             @id @default(cuid())
+  slug              String             @unique
+  familyId          String
+  classroomId       String
+  firstName         String
+  lastName          String
+  ageLabel          String
+  birthday          DateTime
+  teacherLabel      String
+  summary           String
+  allergies         Json
+  medicalNotes      Json
+  comfortNotes      Json
+  family            Family             @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  classroom         Classroom          @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  emergencyContacts EmergencyContact[]
+  authorizedPickups AuthorizedPickup[]
+  attendanceRecords AttendanceRecord[]
+  dailyReports      DailyReport[]
+  documents         Document[]
+  parentLinks       ParentChild[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 }
 
-model TuitionPlan {
-  id              String   @id @default(cuid())
-  slug            String   @unique
-  name            String
-  description     String?
-  weeklyRateCents Int
-  monthlyRateCents Int
-  depositWeeks    Int      @default(2)
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  enrollments    Enrollment[]
-  invoiceLineItems InvoiceLineItem[]
+model EmergencyContact {
+  id           String @id @default(cuid())
+  childId      String
+  name         String
+  relationship String
+  phone        String
+  priority     String
+  child        Child  @relation(fields: [childId], references: [id], onDelete: Cascade)
 }
 
-model EnrollmentApplication {
-  id                    String            @id @default(cuid())
-  parentUserId          String
-  householdId           String
-  status                ApplicationStatus @default(SUBMITTED)
-  primaryContactName    String
-  primaryContactEmail   String
-  primaryContactPhone   String
-  secondaryContactName  String?
-  secondaryContactPhone String?
-  childFirstName        String
-  childLastName         String
-  childBirthDate        DateTime
-  desiredProgramSlug    String
-  desiredStartDate      DateTime
-  careSchedule          String?
-  tourPreference        String?
-  allergies             String?
-  medicalNotes          String?
-  emergencyContacts     Json
-  consentPolicies       Boolean
-  consentPhoto          Boolean
-  additionalNotes       String?
-  reviewNote            String?
-  submittedAt           DateTime          @default(now())
-  reviewedAt            DateTime?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-
-  parentUser User                         @relation("ApplicationParent", fields: [parentUserId], references: [id], onDelete: Cascade)
-  household  Household                    @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  documents  EnrollmentDocument[]
-  events     EnrollmentApplicationEvent[]
-  enrollment Enrollment?                  @relation("EnrollmentSource")
-  invoices   Invoice[]
-
-  @@index([parentUserId])
-  @@index([householdId, status])
-  @@index([submittedAt])
+model AuthorizedPickup {
+  id           String  @id @default(cuid())
+  childId      String
+  name         String
+  relationship String
+  phone        String
+  note         String?
+  child        Child   @relation(fields: [childId], references: [id], onDelete: Cascade)
 }
 
-model EnrollmentDocument {
-  id               String         @id @default(cuid())
-  applicationId    String
-  uploadedByUserId String
-  blobUrl          String
-  blobPath         String
-  fileName         String
-  mimeType         String
-  sizeBytes        Int
-  type             DocumentType   @default(OTHER)
-  status           DocumentStatus @default(UPLOADED)
-  uploadedAt       DateTime       @default(now())
-  reviewedAt       DateTime?
-  createdAt        DateTime       @default(now())
+model DailyReport {
+  id          String             @id @default(cuid())
+  childId     String
+  date        DateTime
+  arrivalMood String
+  summary     String
+  meals       Json
+  rest        Json
+  activities  Json
+  staffNotes  Json
+  child       Child              @relation(fields: [childId], references: [id], onDelete: Cascade)
+  photoAssets DailyReportPhoto[]
 
-  application EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  uploadedBy  User                  @relation("DocumentUploader", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
-
-  @@index([applicationId])
-  @@index([uploadedByUserId])
+  @@unique([childId, date])
 }
 
-model EnrollmentApplicationEvent {
-  id            String            @id @default(cuid())
-  applicationId String
-  actorUserId   String?
-  status        ApplicationStatus?
-  title         String
-  detail        String?
-  createdAt     DateTime          @default(now())
-
-  application EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  actorUser   User?                 @relation("ApplicationActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-
-  @@index([applicationId, createdAt])
-  @@index([actorUserId])
+model DailyReportPhoto {
+  id              String      @id @default(cuid())
+  dailyReportId   String
+  title           String
+  caption         String?
+  fileName        String
+  blobPathname    String
+  blobUrl         String
+  blobDownloadUrl String
+  contentType     String
+  sizeBytes       Int
+  uploadedByUserId String?
+  dailyReport     DailyReport @relation(fields: [dailyReportId], references: [id], onDelete: Cascade)
+  uploadedByUser  User?       @relation("DailyReportPhotoUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
-model Enrollment {
-  id                   String           @id @default(cuid())
-  householdId          String
-  childId              String
-  tuitionPlanId        String
-  sourceApplicationId  String?          @unique
-  status               EnrollmentStatus @default(PENDING)
-  startDate            DateTime
-  endDate              DateTime?
-  weeklyRateCents      Int
-  monthlyRateCents     Int
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
+model AttendanceRecord {
+  id         String           @id @default(cuid())
+  childId    String
+  date       DateTime
+  status     AttendanceStatus
+  checkInAt  DateTime?
+  checkOutAt DateTime?
+  note       String
+  child      Child            @relation(fields: [childId], references: [id], onDelete: Cascade)
 
-  household         Household              @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  child             Child                  @relation(fields: [childId], references: [id], onDelete: Cascade)
-  tuitionPlan       TuitionPlan            @relation(fields: [tuitionPlanId], references: [id], onDelete: Restrict)
-  sourceApplication EnrollmentApplication? @relation("EnrollmentSource", fields: [sourceApplicationId], references: [id], onDelete: SetNull)
-  invoiceLineItems  InvoiceLineItem[]
+  @@unique([childId, date])
+}
 
-  @@index([householdId])
-  @@index([status])
-  @@index([startDate])
+model MessageThread {
+  id             String              @id @default(cuid())
+  familyId       String
+  subject        String
+  classroomLabel String
+  status         MessageThreadStatus
+  participants   Json
+  lastMessageAt  DateTime
+  family         Family              @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  messages       Message[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+}
+
+model Message {
+  id           String            @id @default(cuid())
+  threadId     String
+  authorUserId String?
+  senderName   String
+  role         MessageAuthorRole
+  body         String
+  sentAt       DateTime          @default(now())
+  thread       MessageThread     @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorUser   User?             @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
 }
 
 model Invoice {
   id                    String        @id @default(cuid())
-  householdId           String
-  createdByUserId       String?
-  sourceApplicationId   String?
-  invoiceNumber         String        @unique
-  status                InvoiceStatus @default(OPEN)
-  issueDate             DateTime
+  familyId              String
+  label                 String
+  description           String?
+  amountCents           Int
   dueDate               DateTime
-  periodStart           DateTime
-  periodEnd             DateTime
-  subtotalCents         Int
-  taxCents              Int           @default(0)
-  totalCents            Int
-  paidCents             Int           @default(0)
-  currency              String        @default("usd")
-  isDeposit             Boolean       @default(false)
-  stripeInvoiceId       String?
-  stripePaymentIntentId String?
+  paidAt                DateTime?
+  status                InvoiceStatus
+  stripePaymentIntentId String?       @unique
+  family                Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  payments              Payment[]
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
-
-  household         Household              @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  createdBy         User?                  @relation("InvoiceCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  sourceApplication EnrollmentApplication? @relation(fields: [sourceApplicationId], references: [id], onDelete: SetNull)
-  lineItems         InvoiceLineItem[]
-  payments          Payment[]
-
-  @@unique([householdId, periodStart, periodEnd, isDeposit])
-  @@index([householdId, status])
-  @@index([sourceApplicationId])
-}
-
-model InvoiceLineItem {
-  id               String    @id @default(cuid())
-  invoiceId        String
-  enrollmentId     String?
-  tuitionPlanId    String?
-  description      String
-  quantity         Int       @default(1)
-  unitAmountCents  Int
-  totalCents       Int
-  serviceStartDate DateTime?
-  serviceEndDate   DateTime?
-  createdAt        DateTime  @default(now())
-
-  invoice     Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  enrollment  Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
-  tuitionPlan TuitionPlan? @relation(fields: [tuitionPlanId], references: [id], onDelete: SetNull)
-
-  @@index([invoiceId])
-  @@index([enrollmentId])
-}
-
-model PaymentMethod {
-  id                    String            @id @default(cuid())
-  householdId           String
-  createdByUserId       String?
-  stripePaymentMethodId String            @unique
-  brand                 String?
-  last4                 String?
-  expMonth              Int?
-  expYear               Int?
-  type                  PaymentMethodType @default(CARD)
-  isDefault             Boolean           @default(false)
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-
-  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  createdBy User?     @relation("PaymentMethodCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  payments  Payment[]
-
-  @@index([householdId, isDefault])
 }
 
 model Payment {
   id                    String        @id @default(cuid())
-  invoiceId             String
-  householdId           String
-  paymentMethodId       String?
-  createdByUserId       String?
+  familyId              String
+  invoiceId             String?
+  label                 String
   amountCents           Int
-  currency              String        @default("usd")
-  status                PaymentStatus @default(PENDING)
-  stripePaymentIntentId String?
-  stripeChargeId        String?
+  method                String
+  status                PaymentStatus
+  paidAt                DateTime
+  processedAt           DateTime?
+  stripePaymentIntentId String?       @unique
+  stripePaymentMethodId String?
+  receiptUrl            String?
   failureReason         String?
-  paidAt                DateTime?
+  family                Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  invoice               Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-
-  invoice       Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  household     Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
-  createdBy     User?          @relation("PaymentActor", fields: [createdByUserId], references: [id], onDelete: SetNull)
-
-  @@index([invoiceId, status])
-  @@index([householdId, createdAt])
-  @@index([stripePaymentIntentId])
 }
 
-model AdminInvite {
-  id              String      @id @default(cuid())
-  email           String
-  tokenHash       String      @unique
-  role            UserRole    @default(ADMIN)
-  status          InviteStatus @default(PENDING)
-  invitedByUserId String
-  expiresAt       DateTime
-  acceptedAt      DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+model FamilyBillingProfile {
+  id                        String   @id @default(cuid())
+  familyId                  String   @unique
+  stripeCustomerId          String?  @unique
+  defaultPaymentMethodId    String?
+  defaultPaymentMethodBrand String?
+  defaultPaymentMethodLast4 String?
+  defaultPaymentMethodLabel String?
+  autopayEnabled            Boolean  @default(false)
+  autopayUpdatedAt          DateTime?
+  lastPaymentError          String?
+  family                    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
 
-  invitedBy User @relation("InviteSender", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+model Document {
+  id              String         @id @default(cuid())
+  familyId        String
+  childId         String?
+  title           String
+  category        String
+  owner           String
+  status          DocumentStatus
+  dueDate         DateTime?
+  note            String
+  fileName        String?
+  blobPathname    String?
+  blobUrl         String?
+  blobDownloadUrl String?
+  contentType     String?
+  sizeBytes       Int?
+  submittedAt     DateTime?
+  approvedAt      DateTime?
+  reviewedByName  String?
+  family          Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  child           Child?         @relation(fields: [childId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
 
-  @@index([email, status])
+model EnrollmentLead {
+  id                String                 @id @default(cuid())
+  familyId          String?
+  parentName        String
+  familyName        String
+  email             String
+  phone             String
+  childName         String
+  childAgeLabel     String
+  requestedStart    String
+  programInterest   String
+  source            String
+  leadType          EnrollmentLeadType
+  stage             EnrollmentLeadStage
+  priority          EnrollmentLeadPriority
+  assignedTo        String
+  note              String
+  scheduleNeed      String?
+  waitlistStatus    WaitlistStatus?
+  preferredTourTime String?
+  referralSource    String?
+  family            Family?                @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model StaffProfile {
+  id            String      @id @default(cuid())
+  userId        String?     @unique
+  classroomId   String?
+  name          String
+  roleLabel     String
+  certification String
+  status        StaffStatus
+  note          String
+  user          User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  classroom     Classroom?  @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Announcement {
+  id            String             @id @default(cuid())
+  title         String
+  audience      String
+  publishStatus AnnouncementStatus
+  scheduledFor  DateTime?
+  publishedAt   DateTime?
+  summary       String
+  body          String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model CalendarEvent {
+  id          String        @id @default(cuid())
+  classroomId String?
+  title       String
+  date        DateTime
+  timeLabel   String
+  category    EventCategory
+  description String
+  classroom   Classroom?    @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model SchoolSetting {
+  id                 String   @id @default(cuid())
+  sectionKey         String
+  sectionTitle       String
+  sectionDescription String
+  label              String
+  value              String
+  note               String?
+  sortOrder          Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model AccountInviteToken {
+  id             String   @id @default(cuid())
+  tokenHash      String   @unique
+  userId         String
+  email          String
+  role           UserRole
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  issuedByUserId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation("InviteRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  issuedByUser   User?    @relation("InviteIssuer", fields: [issuedByUserId], references: [id], onDelete: SetNull)
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AuditLog {
   id          String   @id @default(cuid())
   actorUserId String?
   action      String
-  entityType  String
-  entityId    String
-  metadata    Json?
+  subjectType String
+  subjectId   String?
+  details     Json?
   createdAt   DateTime @default(now())
-
-  actorUser User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-
-  @@index([entityType, entityId])
-  @@index([action, createdAt])
+  actorUser   User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
 }
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
+/* ------------------------------------------------------------------ */
+/*  Programs, Schedules & Pricing                                      */
+/* ------------------------------------------------------------------ */
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@index([userId])
+model Program {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String        @unique
+  ageRange    String?
+  description String?
+  sortOrder   Int           @default(0)
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  rates       ProgramRate[]
 }
 
-model Session {
+model Schedule {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  name            String        @unique
+  daysDescription String?
+  sortOrder       Int           @default(0)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  rates           ProgramRate[]
+}
+
+model ProgramRate {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
+  programId    String
+  scheduleId   String
+  rateCents    Int
+  billingLabel String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  program      Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  schedule     Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
+  @@unique([programId, scheduleId])
 }

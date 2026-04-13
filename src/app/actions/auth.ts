@@ -1,216 +1,453 @@
 "use server"
 
-import { AuthError } from "next-auth"
+import type { UserRole } from "@prisma/client"
+import { redirect } from "next/navigation"
 
-import { signIn, signOut } from "@/auth"
-import { db } from "@/lib/db"
-import { hashPassword } from "@/lib/password"
-import { hashToken } from "@/lib/security"
 import {
-  inviteAcceptanceSchema,
-  signInSchema,
-  signUpSchema,
+  acceptInviteToken,
+  authenticateUser,
+  createAccountInviteToken,
+  createPasswordResetToken,
+  createSession,
+  getInviteTokenRecord,
+  getPasswordResetTokenRecord,
+  updateUserPassword,
+} from "@/lib/auth"
+import { getFieldErrors, getMutationState, getStringValue, type MutationActionState } from "@/lib/action-state"
+import { prisma } from "@/lib/db"
+import { buildAppUrl } from "@/lib/env"
+import { sendTransactionalEmail } from "@/lib/email"
+import { hashPassword } from "@/lib/password"
+import {
+  acceptInviteSchema,
+  issueInviteSchema,
+  loginSchema,
+  parentSignUpSchema,
+  requestPasswordResetSchema,
+  resetPasswordSchema,
 } from "@/lib/validators/auth"
 
-export type AuthActionState = {
-  error?: string
-  success?: string
+export type LoginActionState = {
+  error: string | null
 }
 
-function asString(value: FormDataEntryValue | null) {
-  return typeof value === "string" ? value : ""
+export type AuthMutationActionState = MutationActionState
+
+function getPortalRole(role: "parent" | "admin"): UserRole {
+  return role === "parent" ? "PARENT" : "ADMIN"
 }
 
-export async function signInWithCredentials(
-  _prevState: AuthActionState | undefined,
+function getPortalDestination(role: UserRole) {
+  return role === "PARENT" ? "/parent/billing" : "/admin"
+}
+
+export async function signInToPortal(
+  role: "parent" | "admin",
+  _previousState: LoginActionState,
   formData: FormData
-): Promise<AuthActionState | undefined> {
-  const parsed = signInSchema.safeParse({
-    email: asString(formData.get("email")),
-    password: asString(formData.get("password")),
+): Promise<LoginActionState> {
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
   })
 
   if (!parsed.success) {
-    return { error: "Please enter a valid email and password." }
-  }
-
-  try {
-    await signIn("credentials", {
-      email: parsed.data.email,
-      password: parsed.data.password,
-      redirectTo: "/post-login",
-    })
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { error: "Invalid credentials." }
+    return {
+      error: parsed.error.issues[0]?.message ?? "Enter a valid email and password.",
     }
-
-    throw error
   }
 
-  return undefined
+  const authenticationResult = await authenticateUser({
+    email: parsed.data.email,
+    password: parsed.data.password,
+    role: getPortalRole(role),
+  })
+
+  if (authenticationResult.status === "password-setup-required") {
+    return {
+      error: "This account still needs an invite or password reset before it can sign in.",
+    }
+  }
+
+  if (authenticationResult.status !== "success") {
+    return {
+      error: "The email, password, or portal role does not match an active account.",
+    }
+  }
+
+  await prisma.user.update({
+    where: {
+      id: authenticationResult.user.id,
+    },
+    data: {
+      lastSignedInAt: new Date(),
+    },
+  })
+
+  await createSession(authenticationResult.user.id)
+
+  await prisma.auditLog.create({
+    data: {
+      actorUserId: authenticationResult.user.id,
+      action: "auth.login",
+      subjectType: "session",
+      subjectId: authenticationResult.user.id,
+      details: {
+        portal: role,
+      },
+    },
+  })
+
+  redirect(getPortalDestination(authenticationResult.user.role))
 }
 
-export async function signUpParent(
-  _prevState: AuthActionState | undefined,
+function getDefaultParentNotificationPreferences() {
+  return [
+    {
+      id: "enrollment-updates",
+      label: "Enrollment updates",
+      description: "Receive updates when the center reviews or approves your enrollment.",
+      enabled: true,
+    },
+    {
+      id: "payment-reminders",
+      label: "Payment reminders",
+      description: "Receive reminders when an invoice is posted or due.",
+      enabled: true,
+    },
+  ]
+}
+
+export async function registerParentAccount(
+  _previousState: AuthMutationActionState,
   formData: FormData
-): Promise<AuthActionState | undefined> {
-  const parsed = signUpSchema.safeParse({
-    name: asString(formData.get("name")),
-    email: asString(formData.get("email")),
-    password: asString(formData.get("password")),
+): Promise<AuthMutationActionState> {
+  const parsed = parentSignUpSchema.safeParse({
+    parentName: getStringValue(formData, "parentName"),
+    familyName: getStringValue(formData, "familyName"),
+    email: getStringValue(formData, "email"),
+    phone: getStringValue(formData, "phone"),
+    password: getStringValue(formData, "password"),
+    confirmPassword: getStringValue(formData, "confirmPassword"),
   })
 
   if (!parsed.success) {
-    return { error: "Please check your name, email, and password requirements." }
+    return getMutationState({
+      error: "Check the highlighted account details and try again.",
+      fieldErrors: getFieldErrors(parsed.error),
+    })
   }
 
-  const existing = await db.user.findUnique({
-    where: { email: parsed.data.email },
-    select: { id: true },
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      email: parsed.data.email.trim().toLowerCase(),
+    },
+    select: {
+      id: true,
+    },
   })
 
-  if (existing) {
-    return { error: "An account with this email already exists." }
+  if (existingUser) {
+    return getMutationState({
+      error: "An account with that email already exists. Sign in instead.",
+      fieldErrors: {
+        email: "An account with that email already exists.",
+      },
+    })
   }
 
-  const passwordHash = await hashPassword(parsed.data.password)
-
-  await db.$transaction(async (tx) => {
-    const household = await tx.household.create({
+  const newUser = await prisma.$transaction(async (tx) => {
+    const family = await tx.family.create({
       data: {
-        name: `${parsed.data.name.split(" ")[0]} household`,
-        billingEmail: parsed.data.email,
+        familyName: parsed.data.familyName,
+        enrollmentStage: "Account created",
       },
     })
 
     const user = await tx.user.create({
       data: {
-        name: parsed.data.name,
-        email: parsed.data.email,
-        passwordHash,
+        email: parsed.data.email.trim().toLowerCase(),
+        passwordHash: hashPassword(parsed.data.password),
+        name: parsed.data.parentName,
         role: "PARENT",
-        householdId: household.id,
+      },
+      select: {
+        id: true,
       },
     })
 
-    await tx.householdMember.create({
+    await tx.parentProfile.create({
       data: {
-        householdId: household.id,
         userId: user.id,
-        relationship: "Parent",
-        isPrimary: true,
-      },
-    })
-  })
-
-  try {
-    await signIn("credentials", {
-      email: parsed.data.email,
-      password: parsed.data.password,
-      redirectTo: "/post-login",
-    })
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { error: "Signup succeeded, but sign in failed. Please log in manually." }
-    }
-
-    throw error
-  }
-
-  return undefined
-}
-
-export async function acceptAdminInvite(
-  _prevState: AuthActionState | undefined,
-  formData: FormData
-): Promise<AuthActionState | undefined> {
-  const parsed = inviteAcceptanceSchema.safeParse({
-    token: asString(formData.get("token")),
-    name: asString(formData.get("name")),
-    password: asString(formData.get("password")),
-  })
-
-  if (!parsed.success) {
-    return { error: "Please check invite details and password requirements." }
-  }
-
-  const tokenHash = hashToken(parsed.data.token)
-  const invite = await db.adminInvite.findUnique({
-    where: { tokenHash },
-  })
-
-  if (!invite || invite.status !== "PENDING" || invite.expiresAt < new Date()) {
-    return { error: "Invite is invalid or expired." }
-  }
-
-  const passwordHash = await hashPassword(parsed.data.password)
-
-  const user = await db.$transaction(async (tx) => {
-    const existing = await tx.user.findUnique({
-      where: { email: invite.email },
-    })
-
-    const userRecord = existing
-      ? await tx.user.update({
-          where: { id: existing.id },
-          data: {
-            name: parsed.data.name,
-            passwordHash,
-            role: "ADMIN",
-          },
-        })
-      : await tx.user.create({
-          data: {
-            email: invite.email,
-            name: parsed.data.name,
-            role: "ADMIN",
-            passwordHash,
-          },
-        })
-
-    await tx.adminInvite.update({
-      where: { id: invite.id },
-      data: {
-        status: "ACCEPTED",
-        acceptedAt: new Date(),
+        familyId: family.id,
+        phone: parsed.data.phone,
+        billingContact: parsed.data.parentName,
+        pickupPolicy:
+          "Pickup changes should be shared with the center as early as possible so the team can confirm the right adult at dismissal.",
+        notificationPreferences: getDefaultParentNotificationPreferences(),
       },
     })
 
     await tx.auditLog.create({
       data: {
-        actorUserId: userRecord.id,
-        action: "ADMIN_INVITE_ACCEPTED",
-        entityType: "AdminInvite",
-        entityId: invite.id,
-        metadata: {
-          email: invite.email,
+        actorUserId: user.id,
+        action: "auth.parent-signup",
+        subjectType: "User",
+        subjectId: user.id,
+        details: {
+          familyId: family.id,
+          familyName: parsed.data.familyName,
         },
       },
     })
 
-    return userRecord
+    return user
   })
 
-  try {
-    await signIn("credentials", {
-      email: user.email,
-      password: parsed.data.password,
-      redirectTo: "/post-login",
-    })
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { error: "Invite accepted, but login failed. Please sign in manually." }
-    }
+  await createSession(newUser.id)
 
-    throw error
-  }
-
-  return undefined
+  redirect("/parent/billing")
 }
 
-export async function signOutAction() {
-  await signOut({
-    redirectTo: "/login",
+export async function requestPasswordReset(
+  _previousState: AuthMutationActionState,
+  formData: FormData
+): Promise<AuthMutationActionState> {
+  const parsed = requestPasswordResetSchema.safeParse({
+    email: getStringValue(formData, "email"),
+  })
+
+  if (!parsed.success) {
+    return getMutationState({
+      error: "Check the highlighted email address and try again.",
+      fieldErrors: getFieldErrors(parsed.error),
+    })
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email: parsed.data.email.trim().toLowerCase(),
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+    },
+  })
+
+  if (user) {
+    const token = await createPasswordResetToken(user.id)
+    const resetUrl = buildAppUrl(`/reset-password/${token.rawToken}`)
+
+    await sendTransactionalEmail({
+      to: user.email,
+      subject: "Reset your Ambassadors Care portal password",
+      text: `Hi ${user.name},\n\nUse this secure link to reset your ${user.role === "PARENT" ? "parent" : "admin"} portal password:\n${resetUrl}\n\nThis link expires in 2 hours.`,
+      html: `<p>Hi ${user.name},</p><p>Use this secure link to reset your ${user.role === "PARENT" ? "parent" : "admin"} portal password:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>This link expires in 2 hours.</p>`,
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: user.id,
+        action: "auth.password-reset.requested",
+        subjectType: "User",
+        subjectId: user.id,
+        details: {
+          email: user.email,
+        },
+      },
+    })
+  }
+
+  return getMutationState({
+    success: true,
+    message: "If that email is active, a password reset link is on its way.",
+  })
+}
+
+export async function resetPassword(
+  _previousState: AuthMutationActionState,
+  formData: FormData
+): Promise<AuthMutationActionState> {
+  const parsed = resetPasswordSchema.safeParse({
+    token: getStringValue(formData, "token"),
+    password: getStringValue(formData, "password"),
+    confirmPassword: getStringValue(formData, "confirmPassword"),
+  })
+
+  if (!parsed.success) {
+    return getMutationState({
+      error: "Check the highlighted password fields and try again.",
+      fieldErrors: getFieldErrors(parsed.error),
+    })
+  }
+
+  const tokenRecord = await getPasswordResetTokenRecord(parsed.data.token)
+
+  if (!tokenRecord) {
+    return getMutationState({
+      error: "This reset link is invalid or has expired.",
+    })
+  }
+
+  await updateUserPassword({
+    userId: tokenRecord.user.id,
+    password: parsed.data.password,
+  })
+
+  await prisma.passwordResetToken.updateMany({
+    where: {
+      userId: tokenRecord.user.id,
+      usedAt: null,
+    },
+    data: {
+      usedAt: new Date(),
+    },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      actorUserId: tokenRecord.user.id,
+      action: "auth.password-reset.completed",
+      subjectType: "User",
+      subjectId: tokenRecord.user.id,
+      details: {
+        email: tokenRecord.user.email,
+      },
+    },
+  })
+
+  await createSession(tokenRecord.user.id)
+
+  redirect(getPortalDestination(tokenRecord.user.role))
+}
+
+export async function acceptPortalInvite(
+  _previousState: AuthMutationActionState,
+  formData: FormData
+): Promise<AuthMutationActionState> {
+  const parsed = acceptInviteSchema.safeParse({
+    token: getStringValue(formData, "token"),
+    password: getStringValue(formData, "password"),
+    confirmPassword: getStringValue(formData, "confirmPassword"),
+  })
+
+  if (!parsed.success) {
+    return getMutationState({
+      error: "Check the highlighted password fields and try again.",
+      fieldErrors: getFieldErrors(parsed.error),
+    })
+  }
+
+  const inviteRecord = await getInviteTokenRecord(parsed.data.token)
+
+  if (!inviteRecord) {
+    return getMutationState({
+      error: "This invitation is invalid or has expired.",
+    })
+  }
+
+  await updateUserPassword({
+    userId: inviteRecord.user.id,
+    password: parsed.data.password,
+  })
+
+  await acceptInviteToken(inviteRecord.id)
+
+  await prisma.auditLog.create({
+    data: {
+      actorUserId: inviteRecord.user.id,
+      action: "auth.invite.accepted",
+      subjectType: "User",
+      subjectId: inviteRecord.user.id,
+      details: {
+        email: inviteRecord.user.email,
+        role: inviteRecord.role,
+      },
+    },
+  })
+
+  await createSession(inviteRecord.user.id)
+
+  redirect(getPortalDestination(inviteRecord.user.role))
+}
+
+export async function issuePortalInvite(
+  issuedByUserId: string,
+  _previousState: AuthMutationActionState,
+  formData: FormData
+): Promise<AuthMutationActionState> {
+  const parsed = issueInviteSchema.safeParse({
+    email: getStringValue(formData, "email"),
+    role: getStringValue(formData, "role"),
+  })
+
+  if (!parsed.success) {
+    return getMutationState({
+      error: "Check the invite details and try again.",
+      fieldErrors: getFieldErrors(parsed.error),
+    })
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email: parsed.data.email.trim().toLowerCase(),
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+    },
+  })
+
+  if (!user || user.role !== parsed.data.role) {
+    return getMutationState({
+      error: "Only existing parent or admin accounts can be invited in this phase.",
+    })
+  }
+
+  const token = await createAccountInviteToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    issuedByUserId,
+  })
+
+  const inviteUrl = buildAppUrl(`/invite/${token.rawToken}`)
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      mustSetPassword: true,
+    },
+  })
+
+  await sendTransactionalEmail({
+    to: user.email,
+    subject: "Your Ambassadors Care portal invitation",
+    text: `Hi ${user.name},\n\nUse this secure link to finish setting up your ${user.role === "PARENT" ? "parent" : "admin"} portal access:\n${inviteUrl}\n\nThis link expires in 72 hours.`,
+    html: `<p>Hi ${user.name},</p><p>Use this secure link to finish setting up your ${user.role === "PARENT" ? "parent" : "admin"} portal access:</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>This link expires in 72 hours.</p>`,
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      actorUserId: issuedByUserId,
+      action: "auth.invite.issued",
+      subjectType: "User",
+      subjectId: user.id,
+      details: {
+        email: user.email,
+        role: user.role,
+      },
+    },
+  })
+
+  return getMutationState({
+    success: true,
+    message: "Invite sent.",
   })
 }
