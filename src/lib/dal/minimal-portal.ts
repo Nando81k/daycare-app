@@ -40,12 +40,6 @@ function getEnrollmentStatus(stage: string | null | undefined): {
         tone: "info",
         detail: "Your enrollment form has been submitted and is waiting for center review.",
       }
-    case "TOUR_SCHEDULED":
-      return {
-        label: "Under review",
-        tone: "info",
-        detail: "The center is actively reviewing the enrollment information.",
-      }
     case "CONTACTED":
       return {
         label: "Draft saved",
@@ -247,11 +241,8 @@ export async function getSimpleParentPortalData(): Promise<SimpleParentPortalPre
       billingProfile?.defaultPaymentMethodLabel ??
       paymentHistory[0]?.method ??
       "No payment method on file",
-    autopayStatus: billingProfile?.autopayEnabled ? "enabled" : "manual",
     note: isStripeConfigured()
-      ? billingProfile?.autopayEnabled
-        ? "Autopay is turned on for the saved payment method."
-        : "You can keep a card on file and pay manually whenever the center posts an invoice."
+      ? "You can keep a card on file and pay manually whenever the center posts an invoice."
       : "Online payment controls need Stripe keys before card collection can go live in this environment.",
     brand: billingProfile?.defaultPaymentMethodBrand ?? undefined,
     last4: billingProfile?.defaultPaymentMethodLast4 ?? undefined,

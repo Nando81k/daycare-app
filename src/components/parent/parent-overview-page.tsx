@@ -383,7 +383,7 @@ export function ParentOverviewPageView({
                 <DashboardInfoRow
                   label="Billing"
                   value={`${invoice.amount} · due ${invoice.dueDate}`}
-                  supporting={invoice.description ?? "Use the billing page for invoices, receipts, and autopay."}
+                  supporting={invoice.description ?? "Use the billing page for invoices and receipts."}
                   action={<DashboardActionButton href="/parent/billing" label="Open billing" />}
                 />
                 <DashboardInfoRow

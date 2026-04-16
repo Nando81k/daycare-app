@@ -280,8 +280,7 @@ export const parentPaymentMethod: ParentPaymentMethodPreview = {
   familyId: "family-harper",
   label: "Primary payment method",
   detail: "Visa ending in 4242",
-  autopayStatus: "manual",
-  note: "Autopay can be turned on once live billing tools are connected in a later phase.",
+  note: "Additional billing tools will be connected in a later phase.",
   stripeConfigured: false,
 }
 
@@ -526,7 +525,6 @@ export const parentDashboardPreview: ParentDashboardPreview = {
       statusTone: "warning",
       stats: [
         { label: "Current invoice", value: "$1,520" },
-        { label: "Autopay", value: "Manual" },
       ],
     },
     {
@@ -613,9 +611,9 @@ export const parentBillingPageContent = {
     pathname: "/parent/billing",
   } satisfies SiteMetadata,
   eyebrow: "Billing",
-  title: "Clear billing visibility without unnecessary stress.",
+  title: "Billing",
   description:
-    "Families should be able to see what is due, what has already been paid, and who to contact without navigating a dense financial dashboard.",
+    "See what is due, what has been paid, and who to contact if you need help.",
 }
 
 export const parentFormsPageContent = {

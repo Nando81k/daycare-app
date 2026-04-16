@@ -103,7 +103,7 @@ export function AdminSettingsPageView({
                 Billing policies here should match how due dates and reminders are described in the parent portal.
               </div>
               <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
-                Tour windows and communication expectations should align with the public website so admins are not reconciling conflicting copy later.
+                Communication expectations should align with the public website so admins are not reconciling conflicting copy later.
               </div>
               <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
                 Notification logic should stay legible because it affects both family trust and staff workload.

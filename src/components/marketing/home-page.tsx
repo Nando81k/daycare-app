@@ -1,26 +1,96 @@
 "use client"
+// Interactive FAQ section
+function FAQSection() {
+  const [openIdx, setOpenIdx] = React.useState<number | null>(null)
+  return (
+    <section id="faq" className="mx-auto max-w-4xl px-4 py-16">
+      <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 mb-8 text-center">Frequently Asked Questions</h2>
+      <div className="divide-y divide-slate-200 border rounded-2xl bg-white/80 shadow-sm">
+        {faqs.map((faq, idx) => {
+          const open = openIdx === idx
+          return (
+            <div key={faq.q} className="px-6 py-4">
+              <button
+                type="button"
+                aria-expanded={open}
+                aria-controls={`faq-panel-${idx}`}
+                className="flex w-full items-center justify-between gap-4 text-left text-lg font-medium text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+                onClick={() => setOpenIdx(open ? null : idx)}
+              >
+                <span>{faq.q}</span>
+                <span className={`transition-transform duration-200 ${open ? "rotate-90 text-sky-600" : "rotate-0 text-slate-400"}`}>▶</span>
+              </button>
+              <div
+                id={`faq-panel-${idx}`}
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? "max-h-40 opacity-100 mt-2" : "max-h-0 opacity-0"}`}
+                aria-hidden={!open}
+              >
+                <div className="text-sm sm:text-base text-slate-600 leading-7">
+                  {faq.a}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+// Modernized cards with hover only on Preschool Program when hovered
+export function ProgramCardsWithHover({ activeSlide, setActiveSlide }: { activeSlide: number; setActiveSlide: (index: number) => void }) {
+  // Icons for each program, in order
+  const icons = [
+    <MoonStar key="moon" className="h-7 w-7" />,
+    <CalendarDays key="calendar" className="h-7 w-7" />,
+    <Sun key="sun" className="h-7 w-7" />,
+    <ShieldCheck key="shield" className="h-7 w-7" />,
+  ]
+  // Map programSlides to cards (Affordable Tuition is not a slide, so only 3)
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full">
+      {programSlides.map((slide, idx) => (
+        <button
+          key={slide.title}
+          type="button"
+          onClick={() => setActiveSlide(idx)}
+          className="focus:outline-none"
+        >
+          <ProgramCard
+            icon={icons[idx]}
+            title={slide.title + (slide.title === "Preschool" ? " Program" : slide.title === "Pre-K" ? " Program" : slide.title === "Junior Kindergarten" ? "" : "")}
+            description={slide.copy}
+            highlight={activeSlide === idx}
+            className="w-full min-w-60 max-w-85 h-55 sm:h-60 mx-auto"
+          />
+        </button>
+      ))}
+    </div>
+  )
+}
 
-import Image from "next/image"
+// import Image from "next/image" (unused)
 import Link from "next/link"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useState } from "react"
 import {
-  ArrowRight,
   CalendarDays,
-  CheckCircle2,
-  HeartHandshake,
-  MapPin,
   MessageCircleHeart,
   MoonStar,
   ShieldCheck,
   Sparkles,
-  Star,
-  Sun,
+  Sun
 } from "lucide-react"
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+// Accordion imports removed (not used)
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+// import { Card, CardContent } from "@/components/ui/card" (unused)
 import { brandConfig } from "@/config/brand"
+import { Reveal } from "@/components/shared/reveal"
+// import { AnimateIn } from "@/components/shared/animate-in" (unused)
+// import { StaggerChildren } from "@/components/shared/stagger-children" (unused)
+import { Marquee } from "@/components/shared/marquee"
+import { CombinedStatsFeatures } from "@/components/marketing/CombinedStatsFeatures"
+import { ProgramCard } from "@/components/marketing/ProgramCard"
+import { ModernProgramSlideshow } from "@/components/marketing/ModernProgramSlideshow"
 
 const marqueeItems = [
   "Open House Discovery",
@@ -36,16 +106,22 @@ const marqueeItems = [
 const featureCards = [
   {
     icon: MessageCircleHeart,
+    imageSrc: "/marketing/hero-daycare-circle.jpg",
+    imageAlt: "Children doing a group activity",
     title: "Day care that feels like home",
     body: "Ambassadors Care gives children a warm, welcoming place to settle in, learn confidently, and feel genuinely cared for every day.",
   },
   {
     icon: ShieldCheck,
+    imageSrc: "/marketing/playroom-learning.jpg",
+    imageAlt: "Child smiling in daycare classroom",
     title: "Affordable tuition with invaluable learning",
     body: "Families get accessible tuition options while children benefit from structured learning, dependable care, and thoughtful daily support.",
   },
   {
     icon: Sparkles,
+    imageSrc: "/marketing/storytime-classroom.jpg",
+    imageAlt: "Teacher reading to children",
     title: "Programs by age for steady growth",
     body: "Preschool, Pre-K, and Junior Kindergarten are designed to meet children at the right stage and help them grow with confidence.",
   },
@@ -57,53 +133,38 @@ const programSlides = [
     subtitle: "A gentle start with care, routine, and early learning",
     copy: "The Preschool Program helps children ease into a classroom rhythm with guided play, warm support, and strong foundational habits.",
     stat: "Preschool Program",
+    imageSrc: "/marketing/hero-daycare-circle.jpg",
+    imageAlt: "Preschool children doing a group activity",
   },
   {
     title: "Pre-K",
     subtitle: "School-readiness with confidence and consistency",
     copy: "The Pre-K Program builds focus, early academic confidence, and classroom structure in a setting that still feels welcoming and calm.",
     stat: "Pre-K Program",
+    imageSrc: "/marketing/playroom-learning.jpg",
+    imageAlt: "Pre-K child smiling in daycare classroom",
   },
   {
     title: "Junior Kindergarten",
     subtitle: "A stronger bridge into the next stage of learning",
     copy: "Junior Kindergarten combines quality care and more guided learning to help children prepare well for their next academic step.",
     stat: "Junior Kindergarten",
+    imageSrc: "/marketing/storytime-classroom.jpg",
+    imageAlt: "Teacher reading to Junior Kindergarten children",
+  },
+  {
+    title: "Affordable Tuition",
+    subtitle: "Accessible tuition, quality care",
+    copy: "Families get accessible tuition options while children benefit from structured learning, dependable care, and thoughtful daily support.",
+    stat: "Affordable Tuition",
+    imageSrc: "/marketing/playroom-learning.jpg",
+    imageAlt: "Affordable tuition and quality care",
   },
 ]
 
-const galleryImages = [
-  {
-    src: "/marketing/hero-daycare-circle.jpg",
-    alt: "Children doing a group activity",
-  },
-  {
-    src: "/marketing/playroom-learning.jpg",
-    alt: "Child smiling in daycare classroom",
-  },
-  {
-    src: "/marketing/storytime-classroom.jpg",
-    alt: "Teacher reading to children",
-  },
-]
+// galleryImages removed (unused)
 
-const testimonialCards = [
-  {
-    name: "Pre-K parent",
-    quote:
-      "We wanted a school that felt like home and still took learning seriously. Ambassadors Care gave us both.",
-  },
-  {
-    name: "Junior Kindergarten family",
-    quote:
-      "The open house made the program easy to understand, and the affordable tuition helped us move forward with confidence.",
-  },
-  {
-    name: "Preschool parent",
-    quote:
-      "Our child settled in quickly because the environment felt warm, organized, and genuinely caring from the start.",
-  },
-]
+// testimonialCards removed (not used)
 
 const faqs = [
   {
@@ -126,7 +187,7 @@ const faqs = [
 
 export function HomePage() {
   const [activeSlide, setActiveSlide] = useState(0)
-  const [galleryIndex, setGalleryIndex] = useState(0)
+  // galleryIndex removed (not used)
 
   useEffect(() => {
     const slideTimer = window.setInterval(() => {
@@ -138,194 +199,157 @@ export function HomePage() {
 
   useEffect(() => {
     const galleryTimer = window.setInterval(() => {
-      setGalleryIndex((prev) => (prev + 1) % galleryImages.length)
+      // setGalleryIndex removed (unused)
     }, 4000)
 
     return () => window.clearInterval(galleryTimer)
   }, [])
 
-  const repeatedMarquee = useMemo(() => [...marqueeItems, ...marqueeItems], [])
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-teal-50 text-slate-900">
+    <main className="min-h-screen bg-linear-to-b from-sky-50 via-white to-teal-50 text-slate-900">
+
       <LandingNavbar />
       <HeroSection />
-      <MarqueeStrip repeatedMarquee={repeatedMarquee} />
 
-      <section className="mx-auto max-w-7xl px-6 py-20">
-        <div className="grid gap-6 lg:grid-cols-3">
-          {featureCards.map((feature) => {
-            const Icon = feature.icon
-
-            return (
-              <Card
-                key={feature.title}
-                className="rounded-3xl border-white/60 bg-white/80 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl"
-              >
-                <CardContent className="p-8">
-                  <div className="mb-5 inline-flex rounded-2xl bg-sky-100 p-3 text-sky-700">
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-xl font-semibold tracking-tight">{feature.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{feature.body}</p>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm">
-              <Sun className="h-4 w-4 text-amber-500" />
-              Affordable tuition, quality care, and programs by age
+      <section id="marquee" className="border-y border-sky-100 bg-white/80 py-4 backdrop-blur-xl scroll-mt-24">
+        <Marquee speed={35} pauseOnHover>
+          {marqueeItems.map((item) => (
+            <div key={item} className="flex items-center gap-4 whitespace-nowrap rounded-full border border-sky-100 bg-sky-50/70 px-4 py-2 text-sm text-slate-700 shadow-sm">
+              <Sparkles className="h-4 w-4 text-teal-600" />
+              {item}
             </div>
-            <h2 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-              Programs that help children feel at home while they learn
-            </h2>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              {brandConfig.name} serves families in Benin City with Preschool, Pre-K, and Junior Kindergarten
-              programs, affordable tuition, and a calm environment centered on quality care.
-            </p>
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <MiniInfoCard icon={MoonStar} title="Preschool Program" body="A gentle classroom start with care, routine, and early learning." />
-              <MiniInfoCard icon={CalendarDays} title="Pre-K Program" body="School-readiness support that helps children build confidence before their next step." />
-              <MiniInfoCard icon={Sun} title="Junior Kindergarten" body="More guided learning for children preparing for the next school stage." />
-              <MiniInfoCard icon={ShieldCheck} title="Affordable Tuition" body="Accessible tuition options that still deliver quality care and strong learning value." />
-            </div>
-          </div>
-
-          <ProgramSlideshow activeSlide={activeSlide} setActiveSlide={setActiveSlide} />
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 py-20">
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <GalleryShowcase galleryIndex={galleryIndex} setGalleryIndex={setGalleryIndex} />
-          <div className="space-y-6">
-            <Card className="rounded-3xl border-white/60 bg-white/80 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-              <CardContent className="p-8">
-                <h3 className="text-2xl font-semibold tracking-tight">Built to reassure parents at every touchpoint</h3>
-                <ul className="mt-6 space-y-4 text-slate-600">
-                  {[
-                    "Open house discovery for new families",
-                    "Preschool, Pre-K, and Junior Kindergarten options",
-                    "Affordable tuition with quality care",
-                    "Benin City location and enrollment guidance",
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3 text-sm leading-7">
-                      <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-teal-600" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-3xl border-white/60 bg-gradient-to-br from-sky-100/70 via-white to-teal-100/70 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-              <CardContent className="p-8">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm text-slate-700 shadow-sm">
-                  <HeartHandshake className="h-4 w-4 text-rose-500" />
-                  Open House Discovery
-                </div>
-                <h3 className="mt-5 text-2xl font-semibold tracking-tight">A first impression that feels welcoming and clear</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  The homepage now reflects {brandConfig.name} with the same tone as the flyer: quality care, affordable tuition,
-                  programs by age, and a clear next step for families ready to enroll.
-                </p>
-                <Button asChild className="mt-6 rounded-full bg-slate-900 px-6 text-white hover:bg-slate-800">
-                  <Link href="/signup/parent">Start Enrollment</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 py-20">
-        <div className="text-center">
-          <p className="text-sm font-medium uppercase tracking-[0.24em] text-sky-600">What parents say</p>
-          <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Care that feels connected and dependable</h2>
-        </div>
-
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {testimonialCards.map((item) => (
-            <Card
-              key={item.name}
-              className="rounded-3xl border-white/60 bg-white/80 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl"
-            >
-              <CardContent className="p-8">
-                <div className="mb-5 flex items-center gap-1 text-amber-500">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-current" />
-                  ))}
-                </div>
-                <p className="text-sm leading-7 text-slate-600">“{item.quote}”</p>
-                <p className="mt-6 text-sm font-semibold text-slate-900">{item.name}</p>
-              </CardContent>
-            </Card>
           ))}
+        </Marquee>
+      </section>
+
+      {/* AnimatedNumber stats row */}
+      <CombinedStatsFeatures
+        stats={[
+          { value: 2026, label: "Opened in" },
+          { value: 1, suffix: "st", label: "Year of operation" },
+          { value: 3, label: "Programs by age" },
+        ]}
+        features={featureCards}
+        className="mx-auto max-w-7xl px-6 py-20"
+      />
+
+      <section id="programs" className="w-full px-0 py-16 scroll-mt-24 bg-white/90">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          {/* Removed label for a cleaner look */}
+          <h2 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl text-center">
+            Programs that help children feel at home while they learn
+          </h2>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 mx-auto text-center">
+            {brandConfig.name} serves families in Benin City with Preschool, Pre-K, and Junior Kindergarten
+            programs, affordable tuition, and a calm environment centered on quality care.
+          </p>
+          <div className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
+            <ProgramCardsWithHover activeSlide={activeSlide} setActiveSlide={setActiveSlide} />
+            <div className="flex justify-center w-full">
+              <ModernProgramSlideshow
+                slides={programSlides}
+                activeSlide={activeSlide}
+                setActiveSlide={setActiveSlide}
+                className="w-full max-w-xl"
+              />
+            </div>
+          </div>
+
         </div>
       </section>
+
+
 
       <FAQSection />
 
-      <section className="mx-auto max-w-7xl px-6 pb-24">
-        <Card className="overflow-hidden rounded-[2rem] border-white/60 bg-gradient-to-r from-sky-100 via-white to-teal-100 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-          <CardContent className="grid gap-8 p-8 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-[0.24em] text-sky-600">Enrollment opens April 27, 2026</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-                Discover the right program and take the next step with Ambassadors Care
-              </h2>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-                Visit the center, compare Preschool, Pre-K, and Junior Kindergarten options, and move into enrollment with a team focused on quality care.
-              </p>
+      <section id="cta" className="mx-auto max-w-7xl px-6 pb-24 scroll-mt-24">
+        <Reveal>
+          <div className="relative flex flex-col gap-8 rounded-3xl bg-linear-to-r from-sky-50 via-white to-teal-50 px-8 py-12 shadow-none border border-sky-100/60">
+            <div className="absolute left-8 top-8 hidden md:block">
+              <Sun className="h-10 w-10 text-teal-300/80" aria-hidden="true" />
             </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-              <Button asChild className="rounded-full bg-slate-900 px-6 text-white hover:bg-slate-800">
-                <Link href="/tour">Book Open House</Link>
-              </Button>
-              <Button asChild variant="outline" className="rounded-full border-slate-300 bg-white px-6 text-slate-800 hover:bg-slate-50">
-                <Link href="/signup/parent">Start Enrollment</Link>
-              </Button>
+            <div className="flex flex-col gap-4 md:gap-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-600 mb-1">Enrollment opens April 27, 2026</p>
+                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 max-w-2xl">Discover the right program and take the next step with Ambassadors Care</h2>
+                <p className="mt-3 max-w-2xl text-lg leading-8 text-slate-700">Visit the center, compare Preschool, Pre-K, and Junior Kindergarten options, and move into enrollment with a team focused on quality care.</p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row md:items-center md:gap-4 mt-4 md:mt-0">
+                <Button asChild variant="outline" className="rounded-full border-slate-300 bg-white px-7 text-slate-800 hover:bg-slate-50 text-base font-semibold">
+                  <Link href="/waitlist">Join Our Waitlist</Link>
+                </Button>
+                <Button asChild className="rounded-full bg-slate-900 px-7 text-white hover:bg-slate-800 text-base font-semibold">
+                  <Link href="/signup/parent">Start Enrollment</Link>
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
       </section>
     </main>
   )
 }
 
 function LandingNavbar() {
+  // Mobile menu state
+  const [menuOpen, setMenuOpen] = React.useState(false)
   return (
-    <header className="fixed top-0 z-50 w-full px-4 py-4 sm:px-6">
-      <div className="mx-auto flex max-w-7xl items-center justify-between rounded-2xl border border-white/40 bg-white/70 px-5 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-teal-100 text-slate-800 shadow-inner">
+    <header className="fixed top-0 z-50 w-full px-2 sm:px-6 bg-white/60 backdrop-blur-xl shadow-[0_4px_24px_rgba(15,23,42,0.08)] border-b border-sky-100/60">
+      <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full px-2 sm:px-6 py-2 sm:py-3 gap-2">
+        {/* Logo pill */}
+        <div className="flex items-center gap-3 rounded-full bg-white/90 px-3 py-1 shadow-md border border-sky-100/70">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-sky-100 to-teal-100 text-slate-800 shadow-inner">
             <Sun className="h-5 w-5" />
           </div>
-          <div>
-            <p className="text-sm font-semibold tracking-tight text-slate-900">{brandConfig.name}</p>
-            <p className="text-xs text-slate-500">Open House & Enrollment</p>
+          <div className="flex flex-col leading-tight">
+            <span className="text-base font-bold tracking-tight text-slate-900">{brandConfig.shortName || brandConfig.name}</span>
+            <span className="text-[11px] text-sky-700 font-medium">Open House</span>
           </div>
         </div>
-
-        <Button asChild className="rounded-full bg-slate-900 px-5 text-white hover:bg-slate-800">
+        {/* Desktop nav */}
+        <nav className="hidden md:flex gap-3 sm:gap-6 items-center">
+          <a href="#marquee" className="text-base font-semibold text-slate-700 px-3 py-1.5 rounded-full transition-all duration-150 hover:text-white hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">Highlights</a>
+          <a href="#programs" className="text-base font-semibold text-slate-700 px-3 py-1.5 rounded-full transition-all duration-150 hover:text-white hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">Programs</a>
+          <a href="#faq" className="text-base font-semibold text-slate-700 px-3 py-1.5 rounded-full transition-all duration-150 hover:text-white hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">FAQ</a>
+          <a href="#cta" className="text-base font-semibold text-slate-700 px-3 py-1.5 rounded-full transition-all duration-150 hover:text-white hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">Enroll</a>
+        </nav>
+        {/* Mobile hamburger */}
+        <button
+          className="md:hidden flex items-center justify-center h-10 w-10 rounded-full hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+          aria-label="Open menu"
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          <span className="sr-only">Open menu</span>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-700"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+        </button>
+        {/* Sign in button */}
+        <Button asChild className="rounded-full bg-sky-700 px-6 text-white hover:bg-sky-800 text-base font-bold shadow-md ml-2">
           <Link href="/login/parent">Parent Sign In</Link>
         </Button>
       </div>
+      {/* Mobile menu dropdown */}
+      {menuOpen && (
+        <div className="md:hidden absolute left-0 right-0 top-full bg-white/95 shadow-lg border-b border-sky-100 animate-in fade-in slide-in-from-top-2 z-50">
+          <nav className="flex flex-col gap-1 py-3 px-6">
+            <a href="#marquee" className="text-base font-semibold text-slate-700 px-3 py-2 rounded-full hover:text-white hover:bg-sky-600 transition-all" onClick={() => setMenuOpen(false)}>Highlights</a>
+            <a href="#programs" className="text-base font-semibold text-slate-700 px-3 py-2 rounded-full hover:text-white hover:bg-sky-600 transition-all" onClick={() => setMenuOpen(false)}>Programs</a>
+            <a href="#faq" className="text-base font-semibold text-slate-700 px-3 py-2 rounded-full hover:text-white hover:bg-sky-600 transition-all" onClick={() => setMenuOpen(false)}>FAQ</a>
+            <a href="#cta" className="text-base font-semibold text-slate-700 px-3 py-2 rounded-full hover:text-white hover:bg-sky-600 transition-all" onClick={() => setMenuOpen(false)}>Enroll</a>
+            <Link href="/login/parent" className="mt-2">
+              <Button className="w-full rounded-full bg-sky-700 text-white hover:bg-sky-800 text-base font-bold shadow">Parent Sign In</Button>
+            </Link>
+          </nav>
+        </div>
+      )}
     </header>
   )
 }
 
 function HeroSection() {
   return (
-    <section className="relative min-h-[100svh] overflow-hidden">
+    <section id="hero" className="relative min-h-svh flex items-center justify-center overflow-hidden bg-slate-900">
+      {/* Background video or fallback image */}
       <video
         className="absolute inset-0 h-full w-full object-cover"
         autoPlay
@@ -333,241 +357,40 @@ function HeroSection() {
         loop
         playsInline
         preload="auto"
-        poster="https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=1600&q=80"
+        poster="/marketing/hero-daycare-circle.jpg"
       >
         <source src="https://cdn.coverr.co/videos/coverr-children-playing-in-a-playground-1561897799884?download=1080p" type="video/mp4" />
       </video>
-
-      <div className="absolute inset-0 bg-slate-950/45" />
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/35 via-slate-900/25 to-slate-950/55" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(125,211,252,0.18),transparent_22%),radial-gradient(circle_at_20%_80%,rgba(45,212,191,0.14),transparent_25%)]" />
+      {/* Soft overlays for readability */}
+      <div className="absolute inset-0 bg-slate-950/50" />
+      <div className="absolute inset-0 bg-linear-to-b from-slate-950/30 via-slate-900/20 to-slate-950/60" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.13),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(125,211,252,0.13),transparent_22%),radial-gradient(circle_at_20%_80%,rgba(45,212,191,0.10),transparent_25%)]" />
       <div className="absolute inset-0 backdrop-blur-[2px]" />
 
-      <div className="relative mx-auto flex min-h-[100svh] max-w-7xl items-center px-6 pb-16 pt-36">
-        <div className="max-w-4xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-white/90 backdrop-blur-md">
-            <MapPin className="h-4 w-4 text-sky-300" />
-            Open House Discovery • Benin City, Edo State
-          </div>
-
-          <h1 className="mt-6 max-w-4xl text-balance text-5xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl">
-            Day care that feels like home, with quality care and real learning
-          </h1>
-
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-white/85 sm:text-xl">
-            {brandConfig.name} welcomes families in Benin City with Preschool, Pre-K, and Junior Kindergarten programs,
-            affordable tuition options, and a clear path from open house discovery into enrollment.
-          </p>
-
-          <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-            <Button asChild className="rounded-full bg-white px-7 text-slate-900 hover:bg-slate-100">
-              <Link href="/tour">
-                Book Open House
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="rounded-full border-white/40 bg-white/10 px-7 text-white backdrop-blur-md hover:bg-white/15">
-              <Link href="/signup/parent">Start Enrollment</Link>
-            </Button>
-          </div>
-
-          <div className="mt-10 grid gap-3 sm:grid-cols-3">
-            <HeroChip icon={HeartHandshake} label="Quality care that feels like home" />
-            <HeroChip icon={ShieldCheck} label="Affordable tuition options" />
-            <HeroChip icon={CalendarDays} label="Preschool, Pre-K, and Junior Kindergarten" />
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function HeroChip({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label: string }) {
-  return (
-    <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-4 text-white backdrop-blur-md shadow-[0_12px_40px_rgba(15,23,42,0.12)]">
-      <div className="flex items-center gap-3">
-        <div className="rounded-xl bg-white/10 p-2 text-sky-200">
-          <Icon className="h-5 w-5" />
-        </div>
-        <span className="text-sm font-medium text-white/90">{label}</span>
-      </div>
-    </div>
-  )
-}
-
-function MarqueeStrip({ repeatedMarquee }: { repeatedMarquee: string[] }) {
-  return (
-    <section className="border-y border-sky-100 bg-white/80 py-4 backdrop-blur-xl">
-      <div className="overflow-hidden">
-        <div className="landing-marquee-track flex min-w-max gap-4">
-          {repeatedMarquee.map((item, index) => (
-            <div key={`${item}-${index}`} className="flex items-center gap-4 whitespace-nowrap rounded-full border border-sky-100 bg-sky-50/70 px-4 py-2 text-sm text-slate-700 shadow-sm">
-              <Sparkles className="h-4 w-4 text-teal-600" />
-              {item}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function ProgramSlideshow({ activeSlide, setActiveSlide }: { activeSlide: number; setActiveSlide: (index: number) => void }) {
-  const slide = programSlides[activeSlide]
-
-  return (
-    <Card className="overflow-hidden rounded-[2rem] border-white/60 bg-white/80 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-      <CardContent className="p-0">
-        <div className="bg-gradient-to-br from-sky-100 via-white to-teal-100 p-8">
-          <div className="inline-flex rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-700 shadow-sm">
-            Programs by Age
-          </div>
-          <h3 className="mt-5 text-3xl font-semibold tracking-tight">{slide.title}</h3>
-          <p className="mt-2 text-sm font-medium text-sky-700">{slide.subtitle}</p>
-          <p className="mt-4 text-sm leading-7 text-slate-600">{slide.copy}</p>
-          <div className="mt-6 inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm text-white">{slide.stat}</div>
-        </div>
-        <div className="flex items-center justify-between border-t border-slate-100 px-6 py-5">
-          <div className="flex gap-2">
-            {programSlides.map((item, index) => (
-              <button
-                key={item.title}
-                onClick={() => setActiveSlide(index)}
-                className={`h-2.5 rounded-full transition-all ${index === activeSlide ? "w-8 bg-slate-900" : "w-2.5 bg-slate-300"}`}
-                aria-label={`Show ${item.title} slide`}
-                type="button"
-              />
-            ))}
-          </div>
-          <p className="text-sm text-slate-500">Programs by age</p>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function GalleryShowcase({ galleryIndex, setGalleryIndex }: { galleryIndex: number; setGalleryIndex: (index: number) => void }) {
-  return (
-    <Card className="overflow-hidden rounded-[2rem] border-white/60 bg-white/80 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-      <CardContent className="p-0">
-        <div className="relative aspect-[16/11] overflow-hidden">
-          {galleryImages.map((image, index) => (
-            <Image
-              key={image.src}
-              src={image.src}
-              alt={image.alt}
-              fill
-              sizes="(max-width: 1024px) 100vw, 60vw"
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${index === galleryIndex ? "opacity-100" : "opacity-0"}`}
-            />
-          ))}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent" />
-          <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
-            <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white backdrop-blur-md">
-              <p className="text-sm font-medium">Open house at {brandConfig.shortName}</p>
-              <p className="mt-1 text-sm text-white/80">Warm classroom moments, joyful learning, and quality care for growing children.</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center justify-between px-6 py-5">
-          <p className="text-sm text-slate-500">Center glimpse</p>
-          <div className="flex gap-2">
-            {galleryImages.map((image, index) => (
-              <button
-                key={image.alt}
-                onClick={() => setGalleryIndex(index)}
-                className={`h-2.5 rounded-full transition-all ${index === galleryIndex ? "w-8 bg-slate-900" : "w-2.5 bg-slate-300"}`}
-                aria-label={`Show image ${index + 1}`}
-                type="button"
-              />
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function FAQSection() {
-  return (
-    <section className="mx-auto max-w-5xl px-6 py-20">
-      <div className="text-center">
-        <p className="text-sm font-medium uppercase tracking-[0.24em] text-sky-600">FAQ</p>
-        <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Questions parents usually ask first</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-slate-600">
-          A calm, easy-to-scan section that gives families quick answers about programs, tuition, location, and the next enrollment step.
+      <div className="relative z-10 mx-auto flex flex-col items-center justify-center min-h-svh max-w-3xl px-6 py-24 text-center">
+        <span className="inline-block mb-4 rounded-full bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-sky-700 shadow-sm border border-sky-100/70">
+          Open House & Enrollment
+        </span>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white drop-shadow-lg mb-4">
+          Ambassadors Care
+        </h1>
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-sky-100 mb-6">
+          Day care that feels like home, with quality care.
+        </h2>
+        <p className="max-w-xl mx-auto text-base sm:text-lg md:text-xl text-slate-100/90 mb-8">
+          Quality care, affordable tuition, and programs by age for families in Benin City. Discover a welcoming path to enrollment and a place where children thrive.
         </p>
-      </div>
-
-      <div className="mt-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <Card className="rounded-[2rem] border-white/60 bg-gradient-to-br from-sky-100/80 via-white to-teal-100/80 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-          <CardContent className="p-8 sm:p-10">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm text-slate-700 shadow-sm">
-              <ShieldCheck className="h-4 w-4 text-teal-600" />
-              Open House and Enrollment
-            </div>
-
-            <h3 className="mt-5 text-2xl font-semibold tracking-tight text-slate-900">Clear answers, less hesitation</h3>
-            <p className="mt-4 text-sm leading-7 text-slate-600">
-              This section helps families understand the Ambassadors Care offer before they visit, call, or begin enrollment.
-            </p>
-
-            <div className="mt-8 space-y-4">
-              {[
-                "Open house visits and enrollment timing",
-                "Affordable tuition options",
-                "Preschool, Pre-K, and Junior Kindergarten details",
-                "Benin City location and contact guidance",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="flex items-start gap-3 rounded-2xl border border-white/70 bg-white/80 px-4 py-4 shadow-sm"
-                >
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />
-                  <span className="text-sm leading-6 text-slate-700">{item}</span>
-                </div>
-              ))}
-            </div>
-
-            <Button asChild className="mt-8 rounded-full bg-slate-900 px-6 text-white hover:bg-slate-800">
-              <Link href="/tour">Book Open House</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-[2rem] border-white/60 bg-white/80 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-          <CardContent className="p-6 sm:p-8">
-            <Accordion type="single" collapsible className="w-full space-y-4">
-              {faqs.map((faq, idx) => (
-                <AccordionItem
-                  key={faq.q}
-                  value={`item-${idx}`}
-                  className="rounded-2xl border border-slate-200/80 bg-slate-50/70 px-5 data-[state=open]:bg-white"
-                >
-                  <AccordionTrigger className="py-5 text-left text-base font-semibold text-slate-900 hover:no-underline">
-                    {faq.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-5 pr-6 text-sm leading-7 text-slate-600">
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button asChild size="lg" className="rounded-full bg-sky-600 px-8 text-white hover:bg-sky-700 text-lg font-semibold shadow-lg">
+            <Link href="/signup/parent">Start Enrollment</Link>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="rounded-full border-white/80 bg-white/80 px-8 text-sky-900 hover:bg-slate-50 text-lg font-semibold shadow">
+            <Link href="/waitlist">Join Waitlist</Link>
+          </Button>
+        </div>
       </div>
     </section>
   )
 }
 
-function MiniInfoCard({ icon: Icon, title, body }: { icon: React.ComponentType<{ className?: string }>; title: string; body: string }) {
-  return (
-    <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.05)] backdrop-blur-xl">
-      <div className="mb-4 inline-flex rounded-2xl bg-teal-100 p-3 text-teal-700">
-        <Icon className="h-5 w-5" />
-      </div>
-      <h3 className="text-base font-semibold tracking-tight">{title}</h3>
-      <p className="mt-2 text-sm leading-7 text-slate-600">{body}</p>
-    </div>
-  )
-}
+

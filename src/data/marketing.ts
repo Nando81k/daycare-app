@@ -34,13 +34,6 @@ export const startTimeframeOptions = [
   "Planning for a future school year",
 ]
 
-export const tourTimingOptions = [
-  "Weekday morning",
-  "Weekday midday",
-  "Weekday late afternoon",
-  "Flexible",
-]
-
 export const scheduleNeedOptions = [
   "Full time",
   "3 days per week",
@@ -655,24 +648,6 @@ export const contactPageContent = {
     "Monday-Friday: 7:30 AM - 5:45 PM",
     "Enrollment and waitlist follow-up handled during school hours",
     "Responses sent within one business day for general inquiries",
-  ],
-}
-
-export const tourPageContent = {
-  metadata: {
-    title: "Schedule a Tour",
-    description:
-      "Book a daycare tour and share your timing, child age range, and program interests so the school can coordinate the right visit.",
-    pathname: "/tour",
-  } satisfies SiteMetadata,
-  eyebrow: "Schedule a tour",
-  title: "See the classrooms, ask practical questions, and get a clearer feel for daily life.",
-  description:
-    "Tours are designed to feel calm and useful. Tell us what stage your child is in, what timing you are considering, and what questions matter most to your family.",
-  expectations: [
-    "Most visits are coordinated as private or small-group tours.",
-    "We will follow up with next steps, likely availability, and which program best matches your child.",
-    "You do not need to have every answer before you book time with us.",
   ],
 }
 

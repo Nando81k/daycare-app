@@ -22,7 +22,6 @@ const initialState: AdminActionState = {
 
 const statusOptions = [
   { label: "Review", value: "REVIEW" },
-  { label: "Tour pending", value: "TOUR_PENDING" },
   { label: "Offer ready", value: "OFFER_READY" },
   { label: "Long range", value: "LONG_RANGE" },
 ]
@@ -37,8 +36,6 @@ function toStatusValue(value: WaitlistEntryPreview["status"]) {
   switch (value) {
     case "review":
       return "REVIEW"
-    case "tour-pending":
-      return "TOUR_PENDING"
     case "offer-ready":
       return "OFFER_READY"
     case "long-range":

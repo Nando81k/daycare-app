@@ -80,7 +80,7 @@ function validateStructuredLines(params: {
 
 export const updateEnrollmentLeadSchema = z.object({
   leadId: requiredString,
-  stage: z.enum(["TOUR_REQUESTED", "CONTACTED", "TOUR_SCHEDULED", "APPLICATION_SENT", "ACCEPTED", "DENIED"]),
+  stage: z.enum(["CONTACTED", "APPLICATION_SENT", "ACCEPTED", "DENIED"]),
   priority: z.enum(["HIGH", "MEDIUM", "NORMAL", "LOW"]),
   assignedTo: requiredString,
   note: requiredString,
@@ -88,7 +88,7 @@ export const updateEnrollmentLeadSchema = z.object({
 
 export const updateWaitlistEntrySchema = z.object({
   leadId: requiredString,
-  waitlistStatus: z.enum(["REVIEW", "TOUR_PENDING", "OFFER_READY", "LONG_RANGE"]),
+  waitlistStatus: z.enum(["REVIEW", "OFFER_READY", "LONG_RANGE"]),
   priority: z.enum(["HIGH", "MEDIUM", "LOW"]),
   assignedTo: requiredString,
   note: requiredString,

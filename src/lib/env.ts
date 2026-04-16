@@ -34,7 +34,6 @@ export const appEnv = {
   stripeSecretKey: readOptionalEnv("STRIPE_SECRET_KEY"),
   stripePublishableKey: readOptionalEnv("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"),
   stripeWebhookSecret: readOptionalEnv("STRIPE_WEBHOOK_SECRET"),
-  cronSecret: readOptionalEnv("CRON_SECRET") ?? (isProduction ? null : "local-cron-secret"),
 }
 
 export function buildAppUrl(pathname: string) {

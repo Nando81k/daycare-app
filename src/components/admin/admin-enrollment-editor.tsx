@@ -21,9 +21,7 @@ const initialState: AdminActionState = {
 }
 
 const stageOptions = [
-  { label: "Tour requested", value: "TOUR_REQUESTED" },
   { label: "Contacted", value: "CONTACTED" },
-  { label: "Tour scheduled", value: "TOUR_SCHEDULED" },
   { label: "Application sent", value: "APPLICATION_SENT" },
   { label: "Accepted", value: "ACCEPTED" },
   { label: "Denied", value: "DENIED" },
@@ -38,12 +36,8 @@ const priorityOptions = [
 
 function toStageValue(value: EnrollmentLeadPreview["stage"]) {
   switch (value) {
-    case "tour-requested":
-      return "TOUR_REQUESTED"
     case "contacted":
       return "CONTACTED"
-    case "tour-scheduled":
-      return "TOUR_SCHEDULED"
     case "application-sent":
       return "APPLICATION_SENT"
     case "accepted":

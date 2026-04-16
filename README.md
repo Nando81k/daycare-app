@@ -1,5 +1,13 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Branch Strategy
+
+- `main`: current default branch and shared source of truth
+- `dev`: integration branch for active development
+- `production`: release branch for live deployments
+
+`dev` and `production` should be created from the current committed `main` HEAD, then protected in GitHub so production deployments only come from reviewed changes.
+
 ## Getting Started
 
 First, run the development server:
@@ -17,6 +25,36 @@ bun dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+## Stripe Production Checklist
+
+Before enabling live billing, configure all of the following in your production environment:
+
+- `STRIPE_SECRET_KEY`
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `NEXT_PUBLIC_APP_URL`
+
+Production webhook endpoint:
+
+```text
+https://<your-production-domain>/api/stripe/webhook
+```
+
+Subscribe the webhook to these events:
+
+- `setup_intent.succeeded`
+- `payment_intent.succeeded`
+- `payment_intent.processing`
+- `payment_intent.payment_failed`
+
+Recommended go-live verification:
+
+1. Save a card from the parent billing page.
+2. Pay a due invoice from `/parent/billing/pay/[invoiceId]`.
+3. Confirm the webhook updates the local payment record and invoice status.
+4. Confirm the saved payment record includes the Stripe receipt URL.
+5. Confirm production env vars use live Stripe keys, not test keys.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

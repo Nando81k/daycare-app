@@ -3,7 +3,6 @@ import type {
   ParentDocumentPreview,
   ParentEventPreview,
   ParentMessageThreadPreview,
-  ParentPaymentMethodPreview,
   ParentPaymentPreview,
   StatusBadgeVariant,
 } from "@/types/app"
@@ -80,8 +79,4 @@ export function getPaymentBadgeVariant(status: ParentPaymentPreview["status"]): 
   }
 }
 
-export function getAutopayBadgeVariant(
-  status: ParentPaymentMethodPreview["autopayStatus"]
-): StatusBadgeVariant {
-  return status === "enabled" ? "success" : "secondary"
-}
+

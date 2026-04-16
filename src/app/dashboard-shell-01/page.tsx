@@ -85,7 +85,7 @@ const enrollments = [
     child: "Mila Torres",
     program: "Infant",
     start: "Sep 10",
-    status: "Tour completed",
+    status: "Application sent",
   },
   {
     child: "Elijah Smith",
@@ -173,7 +173,7 @@ const announcements = [
     status: "Draft",
   },
   {
-    title: "Tuition auto-pay deadline",
+    title: "Tuition payment reminder",
     audience: "Billing",
     status: "Published",
   },
@@ -310,7 +310,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <CardTitle className="text-xl">Enrollment queue</CardTitle>
-                          <CardDescription>Track tour outcomes, missing items, and who is ready to be approved.</CardDescription>
+                          <CardDescription>Track missing items and who is ready to be approved.</CardDescription>
                         </div>
                         <Badge className="rounded-full bg-sky-100 text-sky-700 hover:bg-sky-100">12 open</Badge>
                       </div>
@@ -435,7 +435,7 @@ export default function AdminDashboard() {
                       {[
                         "5 families opened the latest tuition reminder",
                         "3 parents requested schedule changes this week",
-                        "2 new tour leads have not been contacted yet",
+                        "2 new leads have not been contacted yet",
                         "1 parent is waiting on a billing clarification",
                       ].map((item, index) => (
                         <div key={item} className="flex items-start gap-3 rounded-[1.25rem] border border-slate-100 bg-slate-50/70 p-4">
@@ -565,7 +565,7 @@ function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     "Ready for review": "bg-sky-100 text-sky-700",
     "Missing documents": "bg-amber-100 text-amber-700",
-    "Tour completed": "bg-teal-100 text-teal-700",
+    "Application sent": "bg-teal-100 text-teal-700",
     "Waitlist priority": "bg-violet-100 text-violet-700",
     Scheduled: "bg-sky-100 text-sky-700",
     Draft: "bg-slate-100 text-slate-700",
