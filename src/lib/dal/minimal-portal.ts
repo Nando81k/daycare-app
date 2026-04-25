@@ -5,10 +5,11 @@ import type {
   ParentPaymentPreview,
   SimpleAdminChildPreview,
   SimpleAdminDocumentPreview,
-  SimpleAdminEnrollmentPreview,
   SimpleAdminInvoicePreview,
+  SimpleAdminWorkspacePreview,
   SimpleParentPortalPreview,
   StatusBadgeVariant,
+  WaitlistEntryPreview,
 } from "@/types/app"
 import { requireRole } from "@/lib/auth"
 import { prisma } from "@/lib/db"
@@ -397,7 +398,31 @@ function getAdminPaymentStatus(family:
   }
 }
 
-export async function getSimpleAdminEnrollmentData(): Promise<SimpleAdminEnrollmentPreview[]> {
+function mapWaitlistStatus(status: "REVIEW" | "OFFER_READY" | "LONG_RANGE"): WaitlistEntryPreview["status"] {
+  switch (status) {
+    case "REVIEW":
+      return "review"
+    case "OFFER_READY":
+      return "offer-ready"
+    case "LONG_RANGE":
+      return "long-range"
+  }
+}
+
+function mapPriority(priority: "HIGH" | "MEDIUM" | "NORMAL" | "LOW"): WaitlistEntryPreview["priority"] {
+  switch (priority) {
+    case "HIGH":
+      return "high"
+    case "MEDIUM":
+      return "medium"
+    case "NORMAL":
+      return "low"
+    case "LOW":
+      return "low"
+  }
+}
+
+export async function getSimpleAdminWorkspaceData(): Promise<SimpleAdminWorkspacePreview> {
   await requireRole("ADMIN")
 
   const enrollments = await prisma.enrollmentLead.findMany({
@@ -437,34 +462,62 @@ export async function getSimpleAdminEnrollmentData(): Promise<SimpleAdminEnrollm
     },
   })
 
-  return enrollments.map((lead) => {
-    const enrollmentStatus = getEnrollmentStatus(lead.stage)
-    const paymentStatus = getAdminPaymentStatus(lead.family)
-
-    return {
-      id: lead.id,
-      familyId: lead.familyId,
-      parentName: lead.parentName,
-      familyName: lead.familyName,
-      email: lead.email,
-      phone: lead.phone,
-      childName: lead.childName,
-      childAgeLabel: lead.childAgeLabel,
-      requestedStart: lead.requestedStart,
-      programInterest: lead.programInterest,
-      scheduleNeed: lead.scheduleNeed ?? undefined,
-      note: lead.note,
-      submittedAt: formatMonthDay(lead.createdAt),
-      enrollmentStatusLabel: enrollmentStatus.label,
-      enrollmentStatusTone: enrollmentStatus.tone,
-      paymentStatusLabel: paymentStatus.label,
-      paymentStatusTone: paymentStatus.tone,
-      paymentDetail: paymentStatus.detail,
-      documents: mapDocumentPreviews(lead.family?.documents ?? []),
-      invoices: mapInvoicePreviews(lead.family?.invoices ?? []),
-      children: mapChildPreviews(lead.family?.children ?? []),
-    }
+  const waitlistLeads = await prisma.enrollmentLead.findMany({
+    where: {
+      leadType: "WAITLIST",
+      waitlistStatus: {
+        not: null,
+      },
+    },
+    orderBy: [
+      {
+        createdAt: "desc",
+      },
+    ],
   })
+
+  return {
+    enrollments: enrollments.map((lead) => {
+      const enrollmentStatus = getEnrollmentStatus(lead.stage)
+      const paymentStatus = getAdminPaymentStatus(lead.family)
+
+      return {
+        id: lead.id,
+        familyId: lead.familyId,
+        parentName: lead.parentName,
+        familyName: lead.familyName,
+        email: lead.email,
+        phone: lead.phone,
+        childName: lead.childName,
+        childAgeLabel: lead.childAgeLabel,
+        requestedStart: lead.requestedStart,
+        programInterest: lead.programInterest,
+        scheduleNeed: lead.scheduleNeed ?? undefined,
+        note: lead.note,
+        submittedAt: formatMonthDay(lead.createdAt),
+        enrollmentStatusLabel: enrollmentStatus.label,
+        enrollmentStatusTone: enrollmentStatus.tone,
+        paymentStatusLabel: paymentStatus.label,
+        paymentStatusTone: paymentStatus.tone,
+        paymentDetail: paymentStatus.detail,
+        documents: mapDocumentPreviews(lead.family?.documents ?? []),
+        invoices: mapInvoicePreviews(lead.family?.invoices ?? []),
+        children: mapChildPreviews(lead.family?.children ?? []),
+      }
+    }),
+    waitlistEntries: waitlistLeads.map((lead) => ({
+      id: lead.id,
+      familyName: lead.familyName,
+      childName: lead.childName,
+      ageLabel: lead.childAgeLabel,
+      scheduleNeed: lead.scheduleNeed ?? "Schedule not set",
+      requestedStart: lead.requestedStart,
+      priority: mapPriority(lead.priority),
+      status: mapWaitlistStatus(lead.waitlistStatus ?? "REVIEW"),
+      assignedTo: lead.assignedTo,
+      note: lead.note,
+    })),
+  }
 }
 
 function getDocumentStatusTone(status: string): StatusBadgeVariant {

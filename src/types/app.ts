@@ -875,6 +875,11 @@ export type SimpleAdminEnrollmentPreview = {
   children: SimpleAdminChildPreview[]
 }
 
+export type SimpleAdminWorkspacePreview = {
+  enrollments: SimpleAdminEnrollmentPreview[]
+  waitlistEntries: WaitlistEntryPreview[]
+}
+
 export type MutationActionState = {
   success: boolean
   message: string | null
