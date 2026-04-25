@@ -106,7 +106,7 @@ export function MarketingHero() {
               size="lg"
               className="rounded-full bg-slate-900 px-8 text-base text-white shadow-lg transition hover:bg-slate-800"
             >
-              <Link href="/tour">Schedule a Tour</Link>
+              <Link href="/waitlist">Join Our Waitlist</Link>
             </Button>
 
             <Button

@@ -1,7 +1,21 @@
 import type { Metadata } from "next"
+import { Fraunces, Inter } from "next/font/google"
 
 import { brandConfig } from "@/config/brand"
 import "./globals.css"
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-display",
+  axes: ["opsz"],
+})
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-body",
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL(brandConfig.siteUrl),
@@ -30,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {children}
       </body>

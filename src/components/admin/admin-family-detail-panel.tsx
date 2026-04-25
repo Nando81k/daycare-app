@@ -158,12 +158,6 @@ export function AdminFamilyDetailPanel({
                   </StatusBadge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Autopay</span>
-                  <StatusBadge variant={family.balance.autopayStatus === "enabled" ? "success" : "default"}>
-                    {family.balance.autopayStatus === "enabled" ? "Enabled" : "Manual"}
-                  </StatusBadge>
-                </div>
-                <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Method</span>
                   <span className="text-foreground">
                     {family.balance.paymentMethodDetail ?? family.balance.method}

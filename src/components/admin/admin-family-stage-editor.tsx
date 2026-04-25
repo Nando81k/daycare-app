@@ -19,9 +19,7 @@ const initialState: AdminActionState = {
 }
 
 const stageOptions = [
-  { label: "Tour requested", value: "TOUR_REQUESTED" },
   { label: "Contacted", value: "CONTACTED" },
-  { label: "Tour scheduled", value: "TOUR_SCHEDULED" },
   { label: "Application sent", value: "APPLICATION_SENT" },
   { label: "Accepted", value: "ACCEPTED" },
   { label: "Denied", value: "DENIED" },

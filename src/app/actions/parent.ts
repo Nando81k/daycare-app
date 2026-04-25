@@ -20,7 +20,6 @@ import {
   sendParentReplySchema,
   submitEnrollmentApplicationSchema,
   submitDocumentUploadSchema,
-  toggleAutopaySchema,
   updateParentSettingsSchema,
   upsertAuthorizedPickupSchema,
 } from "@/lib/validators/parent"
@@ -1112,61 +1111,5 @@ export async function submitParentDocumentUpload(
   return getMutationState({
     success: true,
     message: "Document uploaded and sent for review.",
-  })
-}
-
-export async function toggleParentAutopay(
-  _previousState: ParentActionState,
-  formData: FormData
-): Promise<ParentActionState> {
-  const { user, profile } = await getParentActionContext()
-
-  const parsed = toggleAutopaySchema.safeParse({
-    enabled: getStringValue(formData, "enabled"),
-  })
-
-  if (!parsed.success) {
-    return getMutationState({
-      error: "Autopay could not be updated.",
-      fieldErrors: getFieldErrors(parsed.error),
-    })
-  }
-
-  await prisma.familyBillingProfile.upsert({
-    where: {
-      familyId: profile.familyId,
-    },
-    update: {
-      autopayEnabled: parsed.data.enabled,
-      autopayUpdatedAt: new Date(),
-    },
-    create: {
-      familyId: profile.familyId,
-      autopayEnabled: parsed.data.enabled,
-      autopayUpdatedAt: new Date(),
-    },
-  })
-
-  await prisma.auditLog.create({
-    data: {
-      actorUserId: user.id,
-      action: "parent.billing.autopay.toggle",
-      subjectType: "FamilyBillingProfile",
-      subjectId: profile.familyId,
-      details: {
-        enabled: parsed.data.enabled,
-      },
-    },
-  })
-
-  revalidatePaths([
-    "/parent",
-    "/parent/billing",
-    "/admin/billing",
-  ])
-
-  return getMutationState({
-    success: true,
-    message: parsed.data.enabled ? "Autopay enabled." : "Autopay turned off.",
   })
 }

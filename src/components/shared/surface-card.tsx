@@ -4,10 +4,10 @@ import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 const toneClasses: Record<NonNullable<SurfaceCardProps["tone"]>, string> = {
-  default: "surface-panel",
-  accent: "surface-panel-emphasis",
-  muted: "border-border/40 bg-muted/72 backdrop-blur-md",
-  strong: "surface-panel-strong",
+  default: "border border-border/60 bg-card",
+  accent: "border border-accent/40 bg-accent/6",
+  muted: "border border-border/40 bg-secondary/40",
+  strong: "border border-border/70 bg-card",
 }
 
 const densityClasses: Record<NonNullable<SurfaceCardProps["density"]>, string> = {
@@ -25,9 +25,10 @@ export function SurfaceCard({
   return (
     <Card
       className={cn(
+        "rounded-sm shadow-none",
         toneClasses[tone],
         densityClasses[density],
-        interactive && "row-hover",
+        interactive && "transition-colors hover:border-accent/50 hover:bg-accent/4",
         className
       )}
       {...props}

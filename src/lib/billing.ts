@@ -24,6 +24,45 @@ function getCardDetails(paymentMethod: Stripe.PaymentMethod | null | undefined) 
   }
 }
 
+function canReusePaymentIntent(status: Stripe.PaymentIntent.Status) {
+  return (
+    status === "requires_payment_method" ||
+    status === "requires_confirmation" ||
+    status === "requires_action"
+  )
+}
+
+function mapPaymentIntentStatus(status: Stripe.PaymentIntent.Status) {
+  if (status === "succeeded") {
+    return "PAID" as const
+  }
+
+  if (status === "processing") {
+    return "PROCESSING" as const
+  }
+
+  return "FAILED" as const
+}
+
+function getReceiptUrl(latestCharge: string | Stripe.Charge | null | undefined) {
+  if (!latestCharge || typeof latestCharge === "string") {
+    return null
+  }
+
+  return latestCharge.receipt_url ?? null
+}
+
+function getPaymentTimestamp(
+  paymentIntent: Stripe.PaymentIntent,
+  latestCharge: string | Stripe.Charge | null | undefined
+) {
+  if (latestCharge && typeof latestCharge !== "string") {
+    return new Date(latestCharge.created * 1000)
+  }
+
+  return new Date(paymentIntent.created * 1000)
+}
+
 async function ensureFamilyStripeCustomer(familyId: string) {
   const stripe = getStripeClient()
 
@@ -194,6 +233,32 @@ export async function createInvoicePaymentIntent(invoiceId: string) {
     throw new Error("That invoice is not available for payment.")
   }
 
+  if (invoice.stripePaymentIntentId) {
+    try {
+      const existingIntent = await stripe.paymentIntents.retrieve(invoice.stripePaymentIntentId)
+
+      if (existingIntent.status === "succeeded") {
+        await syncPaymentIntent(existingIntent.id)
+        throw new Error("This invoice has already been paid.")
+      }
+
+      if (existingIntent.status === "processing") {
+        throw new Error("This payment is already processing.")
+      }
+
+      if (existingIntent.client_secret && canReusePaymentIntent(existingIntent.status)) {
+        return {
+          id: existingIntent.id,
+          clientSecret: existingIntent.client_secret,
+        }
+      }
+    } catch (error) {
+      if (!(error instanceof Stripe.errors.StripeInvalidRequestError)) {
+        throw error
+      }
+    }
+  }
+
   const { customerId } = await ensureFamilyStripeCustomer(invoice.familyId)
   const paymentIntent = await stripe.paymentIntents.create({
     amount: invoice.amountCents,
@@ -236,7 +301,7 @@ export async function syncPaymentIntent(paymentIntentId: string) {
   }
 
   const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
-    expand: ["payment_method"],
+    expand: ["payment_method", "latest_charge"],
   })
   const invoiceId = paymentIntent.metadata.invoiceId
   const familyId = paymentIntent.metadata.familyId
@@ -246,6 +311,10 @@ export async function syncPaymentIntent(paymentIntentId: string) {
   }
 
   const cardDetails = getCardDetails(paymentIntent.payment_method as Stripe.PaymentMethod | null)
+  const latestCharge = paymentIntent.latest_charge as string | Stripe.Charge | null | undefined
+  const paidAt = getPaymentTimestamp(paymentIntent, latestCharge)
+  const mappedStatus = mapPaymentIntentStatus(paymentIntent.status)
+  const receiptUrl = getReceiptUrl(latestCharge)
 
   await prisma.payment.upsert({
     where: {
@@ -257,18 +326,11 @@ export async function syncPaymentIntent(paymentIntentId: string) {
       label: paymentIntent.metadata.label ?? "Invoice payment",
       amountCents: paymentIntent.amount,
       method: cardDetails.label ?? "Stripe payment method",
-      status:
-        paymentIntent.status === "succeeded"
-          ? "PAID"
-          : paymentIntent.status === "processing"
-            ? "PROCESSING"
-            : "FAILED",
-      paidAt: new Date(paymentIntent.created * 1000),
+      status: mappedStatus,
+      paidAt,
       processedAt: new Date(),
       stripePaymentMethodId: cardDetails.paymentMethodId,
-      receiptUrl: paymentIntent.latest_charge && typeof paymentIntent.latest_charge === "string"
-        ? null
-        : null,
+      receiptUrl,
       failureReason: paymentIntent.last_payment_error?.message ?? null,
     },
     create: {
@@ -277,16 +339,12 @@ export async function syncPaymentIntent(paymentIntentId: string) {
       label: paymentIntent.metadata.label ?? "Invoice payment",
       amountCents: paymentIntent.amount,
       method: cardDetails.label ?? "Stripe payment method",
-      status:
-        paymentIntent.status === "succeeded"
-          ? "PAID"
-          : paymentIntent.status === "processing"
-            ? "PROCESSING"
-            : "FAILED",
-      paidAt: new Date(paymentIntent.created * 1000),
+      status: mappedStatus,
+      paidAt,
       processedAt: new Date(),
       stripePaymentIntentId: paymentIntent.id,
       stripePaymentMethodId: cardDetails.paymentMethodId,
+      receiptUrl,
       failureReason: paymentIntent.last_payment_error?.message ?? null,
     },
   })
@@ -332,94 +390,4 @@ export async function syncPaymentIntent(paymentIntentId: string) {
     invoiceId,
     status: paymentIntent.status,
   }
-}
-
-export async function runAutopaySweep() {
-  const stripe = getStripeClient()
-
-  if (!stripe) {
-    throw new Error("Stripe is not configured for this environment.")
-  }
-
-  const dueInvoices = await prisma.invoice.findMany({
-    where: {
-      status: "DUE",
-      family: {
-        billingProfile: {
-          autopayEnabled: true,
-          defaultPaymentMethodId: {
-            not: null,
-          },
-          stripeCustomerId: {
-            not: null,
-          },
-        },
-      },
-    },
-    include: {
-      family: {
-        include: {
-          billingProfile: true,
-        },
-      },
-    },
-  })
-
-  const results: Array<{ invoiceId: string; status: string }> = []
-
-  for (const invoice of dueInvoices) {
-    try {
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: invoice.amountCents,
-        currency: "usd",
-        customer: invoice.family.billingProfile?.stripeCustomerId ?? undefined,
-        payment_method: invoice.family.billingProfile?.defaultPaymentMethodId ?? undefined,
-        confirm: true,
-        off_session: true,
-        metadata: {
-          familyId: invoice.familyId,
-          invoiceId: invoice.id,
-          label: invoice.label,
-        },
-      })
-
-      await syncPaymentIntent(paymentIntent.id)
-      results.push({
-        invoiceId: invoice.id,
-        status: paymentIntent.status,
-      })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Autopay failed."
-
-      await prisma.familyBillingProfile.update({
-        where: {
-          familyId: invoice.familyId,
-        },
-        data: {
-          lastPaymentError: message,
-        },
-      })
-
-      await prisma.payment.create({
-        data: {
-          familyId: invoice.familyId,
-          invoiceId: invoice.id,
-          label: invoice.label,
-          amountCents: invoice.amountCents,
-          method: "Autopay on file",
-          status: "FAILED",
-          paidAt: new Date(),
-          processedAt: new Date(),
-          failureReason: message,
-        },
-      })
-
-      results.push({
-        invoiceId: invoice.id,
-        status: "failed",
-      })
-    }
-  }
-
-  return results
 }

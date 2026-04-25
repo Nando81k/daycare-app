@@ -24,12 +24,8 @@ export function getEnrollmentStageVariant(
   stage: EnrollmentLeadPreview["stage"]
 ): StatusBadgeVariant {
   switch (stage) {
-    case "tour-requested":
-      return "warning"
     case "contacted":
       return "info"
-    case "tour-scheduled":
-      return "success"
     case "application-sent":
       return "secondary"
     case "accepted":
@@ -71,8 +67,6 @@ export function getWaitlistStatusVariant(
   switch (status) {
     case "offer-ready":
       return "success"
-    case "tour-pending":
-      return "info"
     case "review":
       return "warning"
     case "long-range":

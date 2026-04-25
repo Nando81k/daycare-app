@@ -654,11 +654,8 @@ export async function getParentPortalData(): Promise<
       billingProfile?.defaultPaymentMethodLabel ??
       paymentHistory[0]?.method ??
       "No card on file yet",
-    autopayStatus: billingProfile?.autopayEnabled ? "enabled" : "manual",
     note: isStripeConfigured()
-      ? billingProfile?.autopayEnabled
-        ? "Autopay is active for the default payment method on file."
-        : "Card setup is available and manual payments stay visible below."
+      ? "Card setup is available and manual payments stay visible below."
       : "Stripe keys are not configured in this environment yet. Billing controls will stay visible, but online collection needs setup before use.",
     brand: billingProfile?.defaultPaymentMethodBrand ?? undefined,
     last4: billingProfile?.defaultPaymentMethodLast4 ?? undefined,
@@ -776,7 +773,6 @@ export async function getParentBillingData(): Promise<{
         familyId: "",
         label: "Primary payment method",
         detail: "No card on file yet",
-        autopayStatus: "manual",
         note: stripeConfigured
           ? "Card setup is available and manual payments stay visible below."
           : "Stripe keys are not configured in this environment yet. Billing controls will stay visible, but online collection needs setup before use.",
@@ -818,11 +814,8 @@ export async function getParentBillingData(): Promise<{
       billingProfile?.defaultPaymentMethodLabel ??
       paymentHistory[0]?.method ??
       "No card on file yet",
-    autopayStatus: billingProfile?.autopayEnabled ? "enabled" : "manual",
     note: stripeConfigured
-      ? billingProfile?.autopayEnabled
-        ? "Autopay is active for the default payment method on file."
-        : "Card setup is available and manual payments stay visible below."
+      ? "Card setup is available and manual payments stay visible below."
       : "Stripe keys are not configured in this environment yet. Billing controls will stay visible, but online collection needs setup before use.",
     brand: billingProfile?.defaultPaymentMethodBrand ?? undefined,
     last4: billingProfile?.defaultPaymentMethodLast4 ?? undefined,

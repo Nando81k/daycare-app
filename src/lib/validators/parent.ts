@@ -64,9 +64,7 @@ export const createDailyReportPhotoSchema = z.object({
   ...blobAssetSchema.shape,
 })
 
-export const toggleAutopaySchema = z.object({
-  enabled: z.enum(["true", "false"]).transform((value) => value === "true"),
-})
+
 
 export const createSetupIntentSchema = z.object({
   familyId: requiredString,
