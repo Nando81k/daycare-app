@@ -1,16 +1,12 @@
 "use client"
 
 import type { FormEvent, ReactNode } from "react"
-import { CheckCircleIcon, CircleDollarSignIcon, CreditCardIcon, WalletCardsIcon } from "lucide-react"
+import { CheckCircleIcon, CircleDollarSignIcon, CreditCardIcon } from "lucide-react"
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
 import { loadStripe } from "@stripe/stripe-js"
-import { useActionState, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 
-import { toggleParentAutopay } from "@/app/actions/parent"
-import { ParentSubmitButton } from "@/components/parent/parent-action-panel"
-import { getAutopayBadgeVariant } from "@/components/parent/parent-status"
-import { StatusBadge } from "@/components/shared/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -29,7 +25,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { initialMutationState } from "@/lib/action-state"
 import type { MinimalInvoicePreview, ParentPaymentMethodPreview } from "@/types/app"
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -189,18 +184,29 @@ function BillingPanel({
   )
 }
 
+function hasSavedCard(paymentMethod: ParentPaymentMethodPreview) {
+  return (
+    Boolean(paymentMethod.last4) ||
+    /ending in|visa|mastercard|amex|discover/i.test(paymentMethod.detail)
+  )
+}
+
 function StripeSetupSection({
   familyId,
   paymentMethod,
+  className,
 }: {
   familyId: string
   paymentMethod: ParentPaymentMethodPreview
+  className?: string
 }) {
   const router = useRouter()
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const canUseStripe = paymentMethod.stripeConfigured && Boolean(stripePromise)
+  const savedCardExists = hasSavedCard(paymentMethod)
 
   async function prepareSetup() {
     setIsLoading(true)
@@ -237,19 +243,25 @@ function StripeSetupSection({
     <BillingPanel
       icon={<CreditCardIcon />}
       title="Saved card"
-      description="Keep the default payment method current for manual payments and future autopay."
+      description="Use a saved card for secure online payments."
+      badge={
+        <Badge variant={canUseStripe ? "success" : "info"}>
+          {canUseStripe ? "Online payments ready" : "Online setup unavailable"}
+        </Badge>
+      }
       action={
         !clientSecret ? (
           <Button
             type="button"
             size="sm"
             onClick={() => void prepareSetup()}
-            disabled={isLoading || !stripePromise}
+            disabled={isLoading || !canUseStripe}
           >
-            {isLoading ? "Preparing..." : "Set up card"}
+            {isLoading ? "Preparing..." : savedCardExists ? "Update card" : "Set up card"}
           </Button>
         ) : null
       }
+      className={className}
     >
       <div className="flex flex-col gap-4">
         <div className="rounded-[1rem] border border-border/60 bg-background/90 px-4 py-4">
@@ -297,7 +309,7 @@ function StripeSetupSection({
             <DialogTitle className="text-center">Card saved</DialogTitle>
             <DialogDescription className="text-center">
               Your payment method has been updated successfully. It will be used
-              for future payments and autopay.
+              for future payments.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center">
@@ -308,6 +320,22 @@ function StripeSetupSection({
         </DialogContent>
       </Dialog>
     </BillingPanel>
+  )
+}
+
+export function ParentSavedCardPanel({
+  paymentMethod,
+  className,
+}: {
+  paymentMethod: ParentPaymentMethodPreview
+  className?: string
+}) {
+  return (
+    <StripeSetupSection
+      familyId={paymentMethod.familyId}
+      paymentMethod={paymentMethod}
+      className={className}
+    />
   )
 }
 
@@ -470,7 +498,6 @@ export function ParentBillingControls({
   paymentMethod: ParentPaymentMethodPreview
   invoices: MinimalInvoicePreview[]
 }) {
-  const [state, formAction] = useActionState(toggleParentAutopay, initialMutationState)
   const currentDueInvoice = useMemo(
     () => invoices.find((invoice) => invoice.status === "due"),
     [invoices]
@@ -483,56 +510,7 @@ export function ParentBillingControls({
         <StripePaymentSection invoice={currentDueInvoice} canUseStripe={canUseStripe} />
 
         <div className="grid gap-4 content-start">
-          <StripeSetupSection
-            familyId={paymentMethod.familyId}
-            paymentMethod={paymentMethod}
-          />
-
-          <BillingPanel
-            icon={<WalletCardsIcon />}
-            title="Autopay"
-            description="Automatic billing stays in the same workspace as saved card management instead of becoming a separate settings surface."
-            badge={
-              <StatusBadge variant={getAutopayBadgeVariant(paymentMethod.autopayStatus)}>
-                {paymentMethod.autopayStatus}
-              </StatusBadge>
-            }
-          >
-            <div className="flex flex-col gap-4">
-              <div className="rounded-[1rem] border border-border/60 bg-background/90 px-4 py-4">
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {paymentMethod.last4
-                    ? "Once enabled, the saved card will be charged automatically whenever a due invoice reaches its billing date."
-                    : "Save a card first to unlock autopay."}
-                </p>
-              </div>
-
-              <form action={formAction} className="flex flex-wrap items-center gap-3">
-                <input
-                  type="hidden"
-                  name="enabled"
-                  value={paymentMethod.autopayStatus === "enabled" ? "false" : "true"}
-                />
-                <ParentSubmitButton
-                  idleLabel={
-                    paymentMethod.autopayStatus === "enabled"
-                      ? "Turn off autopay"
-                      : "Turn on autopay"
-                  }
-                  pendingLabel="Saving..."
-                  disabled={!canUseStripe || !paymentMethod.last4}
-                  variant={paymentMethod.autopayStatus === "enabled" ? "outline" : "default"}
-                />
-              </form>
-
-              {state.error ? (
-                <InlineMessage tone="destructive" label="Update failed" description={state.error} />
-              ) : null}
-              {state.success && state.message ? (
-                <InlineMessage tone="success" label="Saved" description={state.message} />
-              ) : null}
-            </div>
-          </BillingPanel>
+          <ParentSavedCardPanel paymentMethod={paymentMethod} />
         </div>
       </div>
     </div>

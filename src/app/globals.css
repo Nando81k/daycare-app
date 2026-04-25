@@ -5,48 +5,49 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Editorial palette: ivory + deep green + gold */
   --font-sans-stack:
-    "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    var(--font-body), "Inter", "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-heading-stack:
-    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  --background: oklch(0.982 0.014 91.8);
-  --foreground: oklch(0.295 0.03 228.8);
-  --card: oklch(0.992 0.008 95.5);
-  --card-foreground: oklch(0.295 0.03 228.8);
-  --popover: oklch(0.992 0.008 95.5);
-  --popover-foreground: oklch(0.295 0.03 228.8);
-  --primary: oklch(0.625 0.072 190.8);
-  --primary-foreground: oklch(0.985 0.008 95.2);
-  --secondary: oklch(0.949 0.022 83.5);
-  --secondary-foreground: oklch(0.325 0.028 228.5);
-  --muted: oklch(0.968 0.014 92.4);
-  --muted-foreground: oklch(0.45 0.022 224.1);
-  --accent: oklch(0.94 0.03 171.2);
-  --accent-foreground: oklch(0.325 0.028 228.5);
-  --destructive: oklch(0.62 0.177 27.5);
-  --destructive-foreground: oklch(0.985 0.01 95.4);
-  --border: oklch(0.892 0.016 188.7);
-  --input: oklch(0.892 0.016 188.7);
-  --ring: oklch(0.625 0.072 190.8);
+    var(--font-display), "Fraunces", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --background: #faf6ef;
+  --foreground: #1a2a22;
+  --card: #fffcf6;
+  --card-foreground: #1a2a22;
+  --popover: #fffcf6;
+  --popover-foreground: #1a2a22;
+  --primary: #1e3a2e;
+  --primary-foreground: #faf6ef;
+  --secondary: #efe9dc;
+  --secondary-foreground: #1a2a22;
+  --muted: #f2ede2;
+  --muted-foreground: #5a6a60;
+  --accent: #b8924a;
+  --accent-foreground: #1a2a22;
+  --destructive: #b23a3a;
+  --destructive-foreground: #faf6ef;
+  --border: #dcd3bf;
+  --input: #dcd3bf;
+  --ring: #b8924a;
   --radius: 0.25rem;
-  --shadow-soft: 0 2px 8px -2px rgba(34, 63, 63, 0.18);
-  --shadow-float: 0 4px 16px -4px rgba(18, 47, 48, 0.22);
+  --shadow-soft: 0 2px 8px -2px rgba(26, 42, 34, 0.16);
+  --shadow-float: 0 4px 16px -4px rgba(26, 42, 34, 0.22);
   --success:
-    var(--color-emerald-500);
+    var(--color-emerald-700);
   --success-foreground:
-    var(--color-emerald-900);
+    var(--color-emerald-50);
   --info:
-    var(--color-violet-500);
+    var(--color-amber-700);
   --info-foreground:
-    var(--color-violet-900);
+    var(--color-amber-50);
   --warning:
-    var(--color-yellow-500);
+    var(--color-amber-600);
   --warning-foreground:
-    var(--color-yellow-900);
+    var(--color-amber-50);
   --invert:
-    var(--color-zinc-900);
+    #1a2a22;
   --invert-foreground:
-    var(--color-zinc-50);
+    #faf6ef;
 }
 
 @theme inline {
@@ -107,7 +108,7 @@ body {
   min-height: 100vh;
   font-family: var(--font-sans-stack);
   background-image:
-    linear-gradient(180deg, rgba(255, 252, 248, 0.96), rgba(246, 242, 236, 1));
+    linear-gradient(180deg, rgba(255, 252, 248, 0.96), rgba(244, 238, 226, 1));
   background-attachment: fixed;
 }
 
@@ -165,8 +166,8 @@ a {
   }
 
   .surface-panel-emphasis {
-    @apply rounded-[var(--radius-lg)] border border-primary/16;
-    background: linear-gradient(145deg, rgba(238, 250, 248, 0.94), rgba(255, 249, 242, 0.96));
+    @apply rounded-[var(--radius-lg)] border border-accent/30;
+    background: linear-gradient(145deg, rgba(255, 249, 235, 0.96), rgba(247, 240, 222, 0.96));
     box-shadow: var(--shadow-float);
   }
 
@@ -205,7 +206,7 @@ a {
   .image-panel::after {
     content: "";
     @apply pointer-events-none absolute inset-0;
-    background: linear-gradient(180deg, transparent 48%, rgba(25, 38, 41, 0.48) 100%);
+    background: linear-gradient(180deg, transparent 48%, rgba(26, 42, 34, 0.5) 100%);
   }
 
   .image-grain::before {
@@ -219,7 +220,7 @@ a {
 
   .portal-backdrop {
     background:
-      linear-gradient(180deg, rgba(255, 252, 248, 0.94), rgba(246, 241, 234, 0.98));
+      linear-gradient(180deg, rgba(255, 252, 248, 0.94), rgba(244, 237, 222, 0.98));
   }
 
   .workspace-backdrop {
@@ -228,7 +229,7 @@ a {
   }
 
   .portal-sidebar-surface {
-    @apply border border-border/55 bg-[linear-gradient(180deg,rgba(255,252,248,0.98),rgba(245,240,233,0.94))];
+    @apply border border-border/55 bg-[linear-gradient(180deg,rgba(255,252,248,0.98),rgba(243,236,221,0.94))];
     box-shadow: var(--shadow-float);
   }
 
@@ -339,15 +340,15 @@ a {
   --success-foreground:
     var(--color-emerald-600);
   --info:
-    var(--color-violet-500);
+    var(--color-amber-500);
   --info-foreground:
-    var(--color-violet-600);
+    var(--color-amber-100);
   --warning:
-    var(--color-yellow-500);
+    var(--color-amber-500);
   --warning-foreground:
-    var(--color-yellow-600);
+    var(--color-amber-100);
   --invert:
-    var(--color-zinc-700);
+    #faf6ef;
   --invert-foreground:
-    var(--color-zinc-50);
+    #1a2a22;
 }

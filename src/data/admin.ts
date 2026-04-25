@@ -24,7 +24,7 @@ export const adminMetrics: AdminMetricPreview[] = [
   {
     label: "Open leads",
     value: "14",
-    detail: "Tour requests and new family inquiries that still need follow-up.",
+    detail: "New family inquiries that still need follow-up.",
   },
   {
     label: "Today's attendance",
@@ -51,9 +51,9 @@ export const adminEnrollmentLeads: EnrollmentLeadPreview[] = [
     childAgeLabel: "Toddler",
     requestedStart: "May 2026",
     programInterest: "Toddler program",
-    source: "Tour request form",
+    source: "Contact form",
     submittedAt: "Apr 2",
-    stage: "tour-requested",
+    stage: "contacted",
     priority: "high",
     assignedTo: "Sofia Chen",
     note: "Parents asked about early drop-off options and upcoming toddler openings.",
@@ -81,10 +81,10 @@ export const adminEnrollmentLeads: EnrollmentLeadPreview[] = [
     programInterest: "Preschool program",
     source: "Waitlist form",
     submittedAt: "Mar 31",
-    stage: "tour-scheduled",
+    stage: "contacted",
     priority: "normal",
     assignedTo: "Mina Patel",
-    note: "Tour booked for Friday morning. Family asked about kindergarten readiness support.",
+    note: "Family asked about kindergarten readiness support.",
   },
   {
     id: "lead-104",
@@ -123,9 +123,9 @@ export const adminWaitlistEntries: WaitlistEntryPreview[] = [
     scheduleNeed: "3 days per week",
     requestedStart: "September 2026",
     priority: "medium",
-    status: "tour-pending",
+    status: "review",
     assignedTo: "Sofia Chen",
-    note: "Parents want to tour once the toddler room summer schedule is posted.",
+    note: "Parents considering the toddler room once the summer schedule is posted.",
   },
   {
     id: "wait-203",
@@ -617,7 +617,6 @@ export const adminBalances: FamilyBalancePreview[] = [
     invoiceCount: 1,
     method: "Manual card payment",
     status: "due",
-    autopayStatus: "manual",
   },
   {
     id: "bal-602",
@@ -627,7 +626,6 @@ export const adminBalances: FamilyBalancePreview[] = [
     invoiceCount: 2,
     method: "ACH on file",
     status: "overdue",
-    autopayStatus: "enabled",
   },
   {
     id: "bal-603",
@@ -637,7 +635,6 @@ export const adminBalances: FamilyBalancePreview[] = [
     invoiceCount: 0,
     method: "ACH on file",
     status: "current",
-    autopayStatus: "enabled",
   },
 ]
 
@@ -845,8 +842,7 @@ export const adminReportBars = {
     { label: "Overdue", value: 0, total: 26060, note: "Most families are current or within due window" },
   ] satisfies ReportBarPreview[],
   enrollment: [
-    { label: "Tour requested", value: 5, total: 14, note: "New leads still awaiting first response" },
-    { label: "Tour scheduled", value: 4, total: 14, note: "Families moving into active evaluation" },
+    { label: "Contacted", value: 9, total: 14, note: "New leads in initial follow-up" },
     { label: "Application sent", value: 2, total: 14, note: "Closer to placement decision" },
   ] satisfies ReportBarPreview[],
 }
@@ -859,8 +855,7 @@ export const adminSettingsSections: AdminSettingsSectionPreview[] = [
     description: "Operational settings that shape enrollment and family communication.",
     items: [
       { id: "setting-1", label: "Business hours", value: "7:30 AM - 5:45 PM" },
-      { id: "setting-2", label: "Tour windows", value: "Weekday mornings and midday quiet blocks" },
-      { id: "setting-3", label: "Waitlist follow-up cadence", value: "Within 2 business days", note: "Long-range families reviewed monthly." },
+      { id: "setting-2", label: "Waitlist follow-up cadence", value: "Within 2 business days", note: "Long-range families reviewed monthly." },
     ],
   },
   {
@@ -871,7 +866,6 @@ export const adminSettingsSections: AdminSettingsSectionPreview[] = [
     items: [
       { id: "setting-4", label: "Monthly tuition due", value: "10th of each month" },
       { id: "setting-5", label: "Late reminder sequence", value: "3, 7, and 14 days after due date" },
-      { id: "setting-6", label: "Autopay availability", value: "Planned for Phase 4 integration" },
     ],
   },
   {
@@ -955,7 +949,7 @@ export const adminDashboardPreview: AdminDashboardPreview = {
       label: "Billing",
       title: "Collections follow-up should match the billing state families see.",
       description:
-        "Due balances, autopay state, and invoice drafting need to use the same billing language that parents see in their portal.",
+        "Due balances and invoice drafting need to use the same billing language that parents see in their portal.",
       ownerLabel: "School follow-up",
       recentLabel: "$3,690 across 2 families needs action",
       actionLabel: "Open billing",
@@ -965,7 +959,6 @@ export const adminDashboardPreview: AdminDashboardPreview = {
       stats: [
         { label: "Due", value: "1" },
         { label: "Overdue", value: "1" },
-        { label: "Autopay on", value: "2" },
       ],
     },
     {
@@ -1022,11 +1015,11 @@ export const adminEnrollmentPageContent = {
   metadata: {
     title: "Enrollment",
     description:
-      "Lead review and tour follow-up with clear stage visibility, ownership, and next-step notes.",
+      "Lead review and family follow-up with clear stage visibility, ownership, and next-step notes.",
     pathname: "/admin/enrollment",
   } satisfies SiteMetadata,
   eyebrow: "Enrollment",
-  title: "Lead review and tour follow-up",
+  title: "Lead review and family follow-up",
   description:
     "New family interest should move through a clear pipeline so next steps are visible and no inquiry is lost in the shuffle.",
 }

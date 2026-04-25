@@ -40,14 +40,10 @@ function toLabel(value: string) {
     .join(" ")
 }
 
-function mapLeadStage(stage: "TOUR_REQUESTED" | "CONTACTED" | "TOUR_SCHEDULED" | "APPLICATION_SENT" | "ACCEPTED" | "DENIED"): EnrollmentLeadPreview["stage"] {
+function mapLeadStage(stage: "CONTACTED" | "APPLICATION_SENT" | "ACCEPTED" | "DENIED"): EnrollmentLeadPreview["stage"] {
   switch (stage) {
-    case "TOUR_REQUESTED":
-      return "tour-requested"
     case "CONTACTED":
       return "contacted"
-    case "TOUR_SCHEDULED":
-      return "tour-scheduled"
     case "APPLICATION_SENT":
       return "application-sent"
     case "ACCEPTED":
@@ -70,12 +66,10 @@ function mapPriority(priority: "HIGH" | "MEDIUM" | "NORMAL" | "LOW"): "high" | "
   }
 }
 
-function mapWaitlistStatus(status: "REVIEW" | "TOUR_PENDING" | "OFFER_READY" | "LONG_RANGE"): WaitlistEntryPreview["status"] {
+function mapWaitlistStatus(status: "REVIEW" | "OFFER_READY" | "LONG_RANGE"): WaitlistEntryPreview["status"] {
   switch (status) {
     case "REVIEW":
       return "review"
-    case "TOUR_PENDING":
-      return "tour-pending"
     case "OFFER_READY":
       return "offer-ready"
     case "LONG_RANGE":
@@ -248,7 +242,6 @@ function buildAdminDashboardDomains(params: {
   const submittedDocuments = documents.filter((document) => document.status === "submitted").length
   const dueBalances = balances.filter((balance) => balance.status === "due").length
   const overdueBalances = balances.filter((balance) => balance.status === "overdue").length
-  const autopayEnabledCount = balances.filter((balance) => balance.autopayStatus === "enabled").length
   const schoolWideEvents = calendarEvents.filter((event) => event.targetScope === "school").length
   const classroomTargetedEvents = calendarEvents.filter((event) => event.targetScope === "classroom").length
 
@@ -319,7 +312,7 @@ function buildAdminDashboardDomains(params: {
         ? "Collections follow-up should match the billing state families see."
         : "Billing is current across active family balances.",
       description:
-        "Due balances, autopay state, and invoice drafting need to use the same billing language that parents see in their portal.",
+        "Due balances and invoice drafting need to use the same billing language that parents see in their portal.",
       ownerLabel: "School follow-up",
       recentLabel: `${dueBalances} due · ${overdueBalances} overdue`,
       actionLabel: "Open billing",
@@ -328,7 +321,6 @@ function buildAdminDashboardDomains(params: {
       statusTone: overdueBalances ? "destructive" : dueBalances ? "warning" : "success",
       stats: [
         { label: "Families due", value: String(dueBalances + overdueBalances) },
-        { label: "Autopay on", value: String(autopayEnabledCount) },
       ],
     },
     {
@@ -562,9 +554,6 @@ export async function getAdminPortalData(): Promise<{
         invoiceCount: dueInvoices.length,
         method: family.payments[0]?.method ?? "Manual invoice follow-up",
         status: balanceStatus,
-        autopayStatus: family.billingProfile?.autopayEnabled
-          ? ("enabled" as const)
-          : ("manual" as const),
         paymentMethodDetail: family.billingProfile?.defaultPaymentMethodLabel ?? undefined,
         lastPaymentStatus: family.payments[0]
           ? ({
@@ -866,7 +855,7 @@ export async function getAdminPortalData(): Promise<{
     {
       label: "Open leads",
       value: String(leads.length),
-      detail: "Tour requests, waitlist entries, and new family inquiries still needing review.",
+      detail: "Waitlist entries and new family inquiries still needing review.",
     },
     {
       label: "Latest attendance snapshot",
@@ -929,16 +918,10 @@ export async function getAdminPortalData(): Promise<{
 
   const enrollmentBars: ReportBarPreview[] = [
     {
-      label: "Tour requested",
-      value: leads.filter((lead) => lead.stage === "TOUR_REQUESTED").length,
+      label: "Contacted",
+      value: leads.filter((lead) => lead.stage === "CONTACTED").length,
       total: Math.max(leads.length, 1),
       note: "New family interest still waiting for a first clear next step.",
-    },
-    {
-      label: "Tour scheduled",
-      value: leads.filter((lead) => lead.stage === "TOUR_SCHEDULED").length,
-      total: Math.max(leads.length, 1),
-      note: "Families actively evaluating fit and timing.",
     },
     {
       label: "Application sent",

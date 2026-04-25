@@ -19,7 +19,6 @@ const columns: AdminTableColumn[] = [
   { key: "children", header: "Children" },
   { key: "dueDate", header: "Due" },
   { key: "totalDue", header: "Balance" },
-  { key: "autopay", header: "Autopay" },
   { key: "status", header: "Status" },
 ]
 
@@ -33,7 +32,6 @@ function getRows(families: FamilyHubRecord[]): AdminTableRow[] {
     children: family.childRecords.map((child) => child.name).join(", ") || "—",
     dueDate: family.balance?.dueDate ?? "—",
     totalDue: family.balance?.totalDue ?? "$0",
-    autopay: family.balance ? formatAdminLabel(family.balance.autopayStatus) : "Manual",
     status: {
       label: formatAdminLabel(family.balance?.status ?? family.balanceStatus),
       variant: getFamilyBalanceVariant(family.balance?.status ?? family.balanceStatus),
@@ -73,7 +71,6 @@ export function AdminBillingPageView({
   const selectedFamily = familyRecords.find((family) => family.id === selectedFamilyId) ?? familyRecords[0] ?? null
   const dueCount = balances.filter((balance) => balance.status === "due").length
   const overdueCount = balances.filter((balance) => balance.status === "overdue").length
-  const autopayEnabledCount = balances.filter((balance) => balance.autopayStatus === "enabled").length
   const totalDue = useMemo(
     () =>
       balances.reduce((sum, balance) => {
@@ -115,11 +112,7 @@ export function AdminBillingPageView({
           value={String(overdueCount)}
           detail="Families needing a firmer collections follow-up."
         />
-        <SummaryFact
-          label="Autopay"
-          value={String(autopayEnabledCount)}
-          detail="Families already set up for automatic payment processing."
-        />
+
       </AdminPageHeader>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_23rem]">
@@ -129,7 +122,7 @@ export function AdminBillingPageView({
           columns={columns}
           rows={rows}
           searchPlaceholder="Search family, child, or balance"
-          searchKeys={["family", "children", "dueDate", "totalDue", "autopay", "status"]}
+          searchKeys={["family", "children", "dueDate", "totalDue", "status"]}
           onRowClick={(row) => setSelectedFamilyId(row._id as string)}
         />
 
@@ -161,7 +154,7 @@ export function AdminBillingPageView({
                   </div>
                   <div className="surface-panel-quiet rounded-[1rem] px-4 py-3">
                     <p className="text-sm font-semibold text-foreground">
-                      Autopay {selectedFamily.balance?.autopayStatus === "enabled" ? "enabled" : "manual"}
+                      Payment method
                     </p>
                     <p className="mt-1 text-sm leading-6 text-muted-foreground">
                       {selectedFamily.balance?.paymentMethodDetail ?? selectedFamily.balance?.method ?? "No payment method on file"}

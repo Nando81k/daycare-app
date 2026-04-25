@@ -193,17 +193,6 @@ export type ContactMethod = {
   description: string
 }
 
-export type TourRequestFormValues = {
-  parentName: string
-  email: string
-  phone: string
-  childAgeRange: string
-  programInterest: string
-  startTimeframe: string
-  tourTiming: string
-  notes: string
-}
-
 export type WaitlistFormValues = {
   parentName: string
   email: string
@@ -287,7 +276,6 @@ export type ParentPaymentMethodPreview = {
   familyId: string
   label: string
   detail: string
-  autopayStatus: "enabled" | "manual"
   note: string
   brand?: string
   last4?: string
@@ -564,9 +552,7 @@ export type EnrollmentLeadPreview = {
   source: string
   submittedAt: string
   stage:
-    | "tour-requested"
     | "contacted"
-    | "tour-scheduled"
     | "application-sent"
     | "accepted"
     | "denied"
@@ -583,7 +569,7 @@ export type WaitlistEntryPreview = {
   scheduleNeed: string
   requestedStart: string
   priority: "high" | "medium" | "low"
-  status: "review" | "tour-pending" | "offer-ready" | "long-range"
+  status: "review" | "offer-ready" | "long-range"
   assignedTo: string
   note: string
 }
@@ -680,7 +666,6 @@ export type FamilyBalancePreview = {
   invoiceCount: number
   method: string
   status: "current" | "due" | "overdue"
-  autopayStatus: "enabled" | "manual"
   paymentMethodDetail?: string
   lastPaymentStatus?: "paid" | "processing" | "failed"
   lastPaymentDate?: string
@@ -890,6 +875,11 @@ export type SimpleAdminEnrollmentPreview = {
   children: SimpleAdminChildPreview[]
 }
 
+export type SimpleAdminWorkspacePreview = {
+  enrollments: SimpleAdminEnrollmentPreview[]
+  waitlistEntries: WaitlistEntryPreview[]
+}
+
 export type MutationActionState = {
   success: boolean
   message: string | null
@@ -904,9 +894,7 @@ export type ParentActionState = MutationActionState
 export type UpdateEnrollmentLeadValues = {
   leadId: string
   stage:
-    | "TOUR_REQUESTED"
     | "CONTACTED"
-    | "TOUR_SCHEDULED"
     | "APPLICATION_SENT"
     | "ACCEPTED"
     | "DENIED"
@@ -917,7 +905,7 @@ export type UpdateEnrollmentLeadValues = {
 
 export type UpdateWaitlistEntryValues = {
   leadId: string
-  waitlistStatus: "REVIEW" | "TOUR_PENDING" | "OFFER_READY" | "LONG_RANGE"
+  waitlistStatus: "REVIEW" | "OFFER_READY" | "LONG_RANGE"
   priority: "HIGH" | "MEDIUM" | "LOW"
   assignedTo: string
   note: string

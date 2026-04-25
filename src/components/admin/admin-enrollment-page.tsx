@@ -136,7 +136,7 @@ export function AdminEnrollmentPageView({
   const selectedLead = enrollmentLeads.find((l) => l.id === selectedLeadId) ?? null
   const selectedEntry = waitlistEntries.find((e) => e.id === selectedEntryId) ?? null
 
-  const tourScheduledCount = enrollmentLeads.filter((l) => l.stage === "tour-scheduled").length
+  const contactedCount = enrollmentLeads.filter((l) => l.stage === "contacted").length
   const applicationSentCount = enrollmentLeads.filter((l) => l.stage === "application-sent").length
   const highPriorityCount = enrollmentLeads.filter((l) => l.priority === "high").length
   const offerReadyCount = waitlistEntries.filter((e) => e.status === "offer-ready").length
@@ -151,10 +151,7 @@ export function AdminEnrollmentPageView({
           <CardTitle>{adminEnrollmentPageContent.title}</CardTitle>
           <CardDescription>{adminEnrollmentPageContent.description}</CardDescription>
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Link href="/tour" className={buttonVariants({ variant: "default" })}>
-              View public tour form
-            </Link>
-            <Link href="/waitlist" className={buttonVariants({ variant: "outline" })}>
+            <Link href="/waitlist" className={buttonVariants({ variant: "default" })}>
               View public waitlist form
             </Link>
           </div>
@@ -166,8 +163,8 @@ export function AdminEnrollmentPageView({
               <p className="mt-1 text-lg font-semibold text-foreground">{enrollmentLeads.length}</p>
             </div>
             <div className="metric-chip">
-              <p className="text-sm font-medium text-muted-foreground">Tours scheduled</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">{tourScheduledCount}</p>
+              <p className="text-sm font-medium text-muted-foreground">Contacted</p>
+              <p className="mt-1 text-lg font-semibold text-foreground">{contactedCount}</p>
             </div>
             <div className="metric-chip">
               <p className="text-sm font-medium text-muted-foreground">High-priority follow-up</p>

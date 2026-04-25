@@ -54,13 +54,13 @@ export const simpleParentPaymentPageContent = {
 
 export const simpleAdminDashboardPageContent = {
   metadata: {
-    title: "Admin Enrollments",
+    title: "Admin Review",
     description:
-      "Lightweight admin view for enrollment submissions, payment state, and manual approval.",
+      "Lightweight admin workspace for enrollment submissions, waitlist review, payment state, and manual follow-up.",
     pathname: "/admin",
   } satisfies SiteMetadata,
-  eyebrow: "Enrollment review",
-  title: "Submitted enrollments and payment status",
+  eyebrow: "Enrollment and waitlist review",
+  title: "Review submitted enrollments and waitlist follow-up",
   description:
-    "Review new enrollment submissions, check whether a family has paid, and approve enrollments manually.",
+    "Keep submitted applications, waitlist priorities, payment status, and next actions in one clear admin workspace.",
 }

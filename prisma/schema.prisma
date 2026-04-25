@@ -12,15 +12,12 @@ enum UserRole {
 }
 
 enum EnrollmentLeadType {
-  TOUR
   WAITLIST
   CONTACT
 }
 
 enum EnrollmentLeadStage {
-  TOUR_REQUESTED
   CONTACTED
-  TOUR_SCHEDULED
   APPLICATION_SENT
   ACCEPTED
   DENIED
@@ -35,7 +32,6 @@ enum EnrollmentLeadPriority {
 
 enum WaitlistStatus {
   REVIEW
-  TOUR_PENDING
   OFFER_READY
   LONG_RANGE
 }
@@ -351,8 +347,7 @@ model FamilyBillingProfile {
   defaultPaymentMethodBrand String?
   defaultPaymentMethodLast4 String?
   defaultPaymentMethodLabel String?
-  autopayEnabled            Boolean  @default(false)
-  autopayUpdatedAt          DateTime?
+
   lastPaymentError          String?
   family                    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
   createdAt                 DateTime @default(now())
@@ -403,7 +398,6 @@ model EnrollmentLead {
   note              String
   scheduleNeed      String?
   waitlistStatus    WaitlistStatus?
-  preferredTourTime String?
   referralSource    String?
   family            Family?                @relation(fields: [familyId], references: [id], onDelete: SetNull)
   createdAt         DateTime               @default(now())

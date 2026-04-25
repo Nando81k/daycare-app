@@ -4,6 +4,8 @@ import { syncPaymentIntent, syncSetupIntent } from "@/lib/billing"
 import { appEnv } from "@/lib/env"
 import { getStripeClient } from "@/lib/stripe"
 
+export const runtime = "nodejs"
+
 export async function POST(request: Request) {
   const stripe = getStripeClient()
 

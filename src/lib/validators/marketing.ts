@@ -18,17 +18,6 @@ const requiredPhone = z.string().trim().refine((value) => value.replace(/\D/g, "
   message: "Enter a valid phone number.",
 })
 
-export const tourRequestSchema = z.object({
-  parentName: requiredText("Parent or guardian name"),
-  email: requiredEmail,
-  phone: requiredPhone,
-  childAgeRange: requiredText("Child age range"),
-  programInterest: requiredText("Program interest"),
-  startTimeframe: requiredText("Preferred start timeframe"),
-  tourTiming: requiredText("Preferred tour timing"),
-  notes: z.string().trim().max(600, "Keep notes under 600 characters."),
-})
-
 export const waitlistSchema = z.object({
   parentName: requiredText("Parent or guardian name"),
   email: requiredEmail,

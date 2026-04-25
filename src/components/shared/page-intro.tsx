@@ -6,22 +6,33 @@ export function PageIntro({ eyebrow, title, description, actions, align = "start
   return (
     <section
       className={cn(
-        "surface-panel-strong section-grid relative flex flex-col gap-6 overflow-hidden px-6 py-8 md:px-8 md:py-10",
+        "flex flex-col gap-8 border-b border-border/60 pb-14 md:pb-20",
         align === "center" && "items-center text-center"
       )}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,rgba(118,158,154,0.2),transparent_70%)]" />
-      <div className={cn("relative max-w-3xl space-y-4", align === "center" && "items-center text-center")}>
-        {eyebrow ? <p className="editorial-kicker">{eyebrow}</p> : null}
-        <div className="space-y-3">
-          <h1 className="text-balance text-4xl leading-tight text-foreground md:text-[3.7rem]">{title}</h1>
-          <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-[1.08rem]">
-            {description}
-          </p>
-        </div>
+      {eyebrow ? <p className="editorial-kicker">{eyebrow}</p> : null}
+
+      <div className={cn("space-y-6", align === "center" ? "max-w-3xl" : "max-w-4xl")}>
+        <h1 className="font-heading text-balance text-5xl leading-[1.04] tracking-[-0.02em] text-foreground md:text-7xl lg:text-[5rem]">
+          {title}
+        </h1>
+        <p
+          className={cn(
+            "max-w-2xl text-base leading-7 text-muted-foreground md:text-lg",
+            align === "center" && "mx-auto"
+          )}
+        >
+          {description}
+        </p>
       </div>
+
       {actions ? (
-        <div className={cn("relative flex flex-wrap items-center gap-3", align === "center" && "justify-center")}>
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-4",
+            align === "center" && "justify-center"
+          )}
+        >
           {actions}
         </div>
       ) : null}
