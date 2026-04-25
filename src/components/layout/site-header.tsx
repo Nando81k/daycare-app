@@ -2,34 +2,54 @@ import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { brandConfig } from "@/config/brand"
+import { marketingNav } from "@/config/navigation"
+
+const HEADER_NAV = marketingNav.filter((item) =>
+  ["/programs", "/about", "/tuition", "/faq"].includes(item.href)
+)
 
 export function SiteHeader() {
   return (
-    <header className="fixed top-0 z-50 w-full px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto mt-4 flex max-w-7xl items-center justify-between rounded-2xl border border-white/30 bg-white/70 px-5 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
+      <div className="shell-container flex h-16 items-center justify-between gap-6 md:h-20">
         <Link
           href="/"
-          className="flex items-center gap-3 transition-opacity hover:opacity-90"
+          className="flex items-center gap-3 transition-opacity hover:opacity-80"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-100 to-teal-100 shadow-inner">
-            <span className="text-sm font-bold tracking-tight text-slate-800">AC</span>
-          </div>
-
-          <div className="leading-tight">
-            <p className="text-sm font-semibold tracking-tight text-slate-900">
-              {brandConfig.name}
-            </p>
-            <p className="text-xs text-slate-500">Daycare</p>
-          </div>
+          <span className="font-heading text-xl tracking-tight text-foreground md:text-2xl">
+            {brandConfig.shortName}
+          </span>
+          <span className="hidden text-xs uppercase tracking-[0.22em] text-muted-foreground sm:inline">
+            Daycare
+          </span>
         </Link>
 
-        <Button
-          asChild
-          variant="secondary"
-          className="h-10 rounded-full bg-slate-900 px-5 text-sm font-medium text-white shadow-md transition hover:bg-slate-800 hover:text-white"
-        >
-          <Link href="/login/parent">Sign In</Link>
-        </Button>
+        <nav className="hidden items-center gap-8 md:flex">
+          {HEADER_NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-sm font-medium uppercase tracking-[0.18em] text-foreground/80 transition-colors hover:text-foreground"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-4">
+          <Link
+            href="/login/parent"
+            className="hidden text-sm font-medium uppercase tracking-[0.18em] text-foreground/80 hover:text-foreground sm:inline"
+          >
+            Sign in
+          </Link>
+          <Button
+            asChild
+            className="rounded-none bg-primary px-5 text-primary-foreground hover:bg-primary/90"
+          >
+            <Link href="/contact">Plan a visit</Link>
+          </Button>
+        </div>
       </div>
     </header>
   )
