@@ -1,11 +1,9 @@
-import { AuthWorkspace } from "@/components/auth/auth-workspace"
+import { AdminLoginScreen } from "@/components/auth/admin-login-screen"
 import { loginPageContent } from "@/data/marketing"
 import { createPageMetadata } from "@/lib/metadata"
 
-const page = loginPageContent.admin
-
-export const metadata = createPageMetadata(page.metadata)
+export const metadata = createPageMetadata(loginPageContent.admin.metadata)
 
 export default function AdminLoginPage() {
-  return <AuthWorkspace defaultTab="admin-login" />
+  return <AdminLoginScreen />
 }

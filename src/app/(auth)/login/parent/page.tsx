@@ -1,11 +1,9 @@
-import { AuthWorkspace } from "@/components/auth/auth-workspace"
+import { ParentLoginScreen } from "@/components/auth/parent-login-screen"
 import { loginPageContent } from "@/data/marketing"
 import { createPageMetadata } from "@/lib/metadata"
 
-const page = loginPageContent.parent
-
-export const metadata = createPageMetadata(page.metadata)
+export const metadata = createPageMetadata(loginPageContent.parent.metadata)
 
 export default function ParentLoginPage() {
-  return <AuthWorkspace defaultTab="parent-login" />
+  return <ParentLoginScreen />
 }
