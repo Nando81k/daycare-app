@@ -1,6 +1,5 @@
 import { createHmac, randomBytes } from "node:crypto"
 
-import type { UserRole } from "@prisma/client"
 import { cookies, headers } from "next/headers"
 import { forbidden, redirect } from "next/navigation"
 
@@ -13,6 +12,7 @@ const SESSION_COOKIE_NAME = "abassadors_session"
 const SESSION_TTL_DAYS = 14
 const PASSWORD_RESET_TTL_HOURS = 2
 const INVITE_TTL_HOURS = 72
+type UserRole = "PARENT" | "ADMIN"
 
 function getRoleLoginPath(role: UserRole) {
   return role === "PARENT" ? "/login/parent" : "/login/admin"

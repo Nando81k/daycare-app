@@ -1,6 +1,5 @@
 "use server"
 
-import type { UserRole } from "@prisma/client"
 import { redirect } from "next/navigation"
 
 import {
@@ -32,6 +31,7 @@ export type LoginActionState = {
 }
 
 export type AuthMutationActionState = MutationActionState
+type UserRole = "PARENT" | "ADMIN"
 
 function getPortalRole(role: "parent" | "admin"): UserRole {
   return role === "parent" ? "PARENT" : "ADMIN"

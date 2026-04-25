@@ -803,7 +803,7 @@ export async function updateParentSettings(
   }
 
   const currentPreferences = Array.isArray(profile.notificationPreferences)
-    ? profile.notificationPreferences.map((item) => {
+    ? profile.notificationPreferences.map((item: unknown) => {
         const row = item as {
           id?: string
           label?: string
@@ -879,7 +879,9 @@ export async function upsertAuthorizedPickup(
     })
   }
 
-  const child = profile.family.children.find((item) => item.slug === parsed.data.childSlug)
+  const child = profile.family.children.find(
+    (item: { id: string; slug: string }) => item.slug === parsed.data.childSlug
+  )
 
   if (!child) {
     return getMutationState({
@@ -971,7 +973,9 @@ export async function deleteAuthorizedPickup(
     })
   }
 
-  const child = profile.family.children.find((item) => item.slug === parsed.data.childSlug)
+  const child = profile.family.children.find(
+    (item: { id: string; slug: string }) => item.slug === parsed.data.childSlug
+  )
 
   if (!child) {
     return getMutationState({
