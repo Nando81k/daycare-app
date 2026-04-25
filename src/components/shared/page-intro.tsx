@@ -10,7 +10,7 @@ export function PageIntro({ eyebrow, title, description, actions, align = "start
         align === "center" && "items-center text-center"
       )}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,rgba(118,158,154,0.2),transparent_70%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,rgba(184,146,74,0.18),transparent_70%)]" />
       <div className={cn("relative max-w-3xl space-y-4", align === "center" && "items-center text-center")}>
         {eyebrow ? <p className="editorial-kicker">{eyebrow}</p> : null}
         <div className="space-y-3">
