@@ -1,6 +1,6 @@
 import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 
-import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 export function CtaBand({
@@ -25,36 +25,38 @@ export function CtaBand({
   return (
     <section
       className={cn(
-        "surface-panel-emphasis section-grid relative overflow-hidden px-6 py-8 md:px-8 md:py-10",
+        "relative bg-primary text-primary-foreground",
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,rgba(118,158,154,0.22),transparent_70%)]" />
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-3xl space-y-3">
-          {eyebrow ? <p className="editorial-kicker">{eyebrow}</p> : null}
-          <h2 className="text-balance text-4xl leading-tight text-foreground md:text-[3rem]">{title}</h2>
-          <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">{description}</p>
+      <div className="grid gap-12 px-8 py-16 md:px-12 md:py-20 lg:grid-cols-12 lg:items-end lg:gap-16">
+        <div className="lg:col-span-7">
+          {eyebrow ? (
+            <p className="text-xs uppercase tracking-[0.22em] text-accent">{eyebrow}</p>
+          ) : null}
+          <h2 className="mt-6 font-heading text-balance text-4xl leading-tight tracking-[-0.01em] md:text-5xl lg:text-[3.25rem]">
+            {title}
+          </h2>
         </div>
-        <div className="flex flex-wrap gap-4">
-          <Link
-            href={primaryHref}
-            className={cn(
-              buttonVariants({ variant: "default", size: "lg" }),
-              "h-12 px-7 text-base font-semibold shadow-md transition-all duration-200 hover:scale-[1.03] hover:shadow-lg hover:brightness-110"
-            )}
-          >
-            {primaryLabel}
-          </Link>
-          <Link
-            href={secondaryHref}
-            className={cn(
-              buttonVariants({ variant: "outline", size: "lg" }),
-              "h-12 px-7 text-base font-semibold transition-all duration-200 hover:scale-[1.03] hover:border-primary/40 hover:shadow-md"
-            )}
-          >
-            {secondaryLabel}
-          </Link>
+
+        <div className="lg:col-span-5">
+          <p className="text-base leading-7 text-primary-foreground/80 md:text-lg">{description}</p>
+
+          <div className="mt-10 flex flex-wrap items-center gap-6">
+            <Link
+              href={primaryHref}
+              className="inline-flex h-12 items-center bg-background px-7 text-sm font-medium uppercase tracking-[0.18em] text-foreground transition-colors hover:bg-background/90"
+            >
+              {primaryLabel}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+            <Link
+              href={secondaryHref}
+              className="text-sm font-medium uppercase tracking-[0.18em] text-primary-foreground underline-offset-4 hover:underline"
+            >
+              {secondaryLabel}
+            </Link>
+          </div>
         </div>
       </div>
     </section>
