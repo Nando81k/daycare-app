@@ -11,7 +11,7 @@ export function getStripeClient() {
 
   if (!stripeClient) {
     stripeClient = new Stripe(appEnv.stripeSecretKey, {
-      apiVersion: "2025-02-24.acacia",
+      apiVersion: "2026-03-25.dahlia",
       appInfo: {
         name: "Ambassadors Care",
         version: "0.1.0",

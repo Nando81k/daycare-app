@@ -260,19 +260,24 @@ export async function createInvoicePaymentIntent(invoiceId: string) {
   }
 
   const { customerId } = await ensureFamilyStripeCustomer(invoice.familyId)
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: invoice.amountCents,
-    currency: "usd",
-    customer: customerId,
-    automatic_payment_methods: {
-      enabled: true,
+  const paymentIntent = await stripe.paymentIntents.create(
+    {
+      amount: invoice.amountCents,
+      currency: "usd",
+      customer: customerId,
+      automatic_payment_methods: {
+        enabled: true,
+      },
+      metadata: {
+        familyId: invoice.familyId,
+        invoiceId: invoice.id,
+        label: invoice.label,
+      },
     },
-    metadata: {
-      familyId: invoice.familyId,
-      invoiceId: invoice.id,
-      label: invoice.label,
-    },
-  })
+    {
+      idempotencyKey: `pi-${invoice.id}-${invoice.updatedAt.getTime()}`,
+    }
+  )
 
   if (!paymentIntent.client_secret) {
     throw new Error("Stripe did not return a payment client secret.")
