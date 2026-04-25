@@ -23,8 +23,10 @@ export function MarketingMediaPanel({
   priority?: boolean
   align?: "bottom" | "center"
 }) {
+  const hasOverlay = Boolean(eyebrow || title || description || asset.caption)
+
   return (
-    <div className={cn("image-panel image-grain min-h-[23rem]", className)}>
+    <div className={cn("relative overflow-hidden border border-border/60 bg-muted", className)}>
       <Image
         src={asset.src}
         alt={asset.alt}
@@ -34,20 +36,38 @@ export function MarketingMediaPanel({
         className={cn("object-cover", imageClassName)}
         style={{ objectPosition: asset.objectPosition }}
       />
-      {(eyebrow || title || description || asset.caption) ? (
-        <div
-          className={cn(
-            "absolute inset-x-0 z-10 flex flex-col gap-2 px-5 pb-5 text-white md:px-6 md:pb-6",
-            align === "center" ? "inset-y-0 justify-center pt-8" : "bottom-0"
-          )}
-        >
-          {eyebrow ? <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-white/82">{eyebrow}</p> : null}
-          {title ? <h3 className="max-w-lg text-2xl leading-tight md:text-[2rem]">{title}</h3> : null}
-          {description ? <p className="max-w-lg text-sm leading-6 text-white/84">{description}</p> : null}
-          {!description && asset.caption ? (
-            <p className="max-w-lg text-sm leading-6 text-white/84">{asset.caption}</p>
-          ) : null}
-        </div>
+      {hasOverlay ? (
+        <>
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-0",
+              align === "center"
+                ? "bg-linear-to-t from-foreground/55 via-foreground/15 to-transparent"
+                : "bg-linear-to-t from-foreground/65 via-foreground/15 to-transparent"
+            )}
+          />
+          <div
+            className={cn(
+              "absolute inset-x-0 z-10 flex flex-col gap-3 px-6 pb-6 text-background md:px-8 md:pb-8",
+              align === "center" ? "inset-y-0 justify-center pt-8" : "bottom-0"
+            )}
+          >
+            {eyebrow ? (
+              <p className="text-xs uppercase tracking-[0.22em] text-background/80">{eyebrow}</p>
+            ) : null}
+            {title ? (
+              <h3 className="font-heading max-w-lg text-2xl leading-tight tracking-[-0.01em] text-background md:text-3xl">
+                {title}
+              </h3>
+            ) : null}
+            {description ? (
+              <p className="max-w-lg text-sm leading-6 text-background/80">{description}</p>
+            ) : null}
+            {!description && asset.caption ? (
+              <p className="max-w-lg text-sm leading-6 text-background/80">{asset.caption}</p>
+            ) : null}
+          </div>
+        </>
       ) : null}
     </div>
   )
