@@ -62,7 +62,7 @@ export function AdminInvoiceEditor({
               label="Amount (cents)"
               type="number"
               inputMode="numeric"
-              placeholder="e.g. 15000 for $150.00"
+              placeholder="e.g. 15000 for ₦150.00"
               error={state.fieldErrors.amountCents}
             />
             <AdminTextField

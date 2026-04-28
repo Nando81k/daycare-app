@@ -262,7 +262,7 @@ export async function createInvoicePaymentIntent(invoiceId: string) {
   const { customerId } = await ensureFamilyStripeCustomer(invoice.familyId)
   const paymentIntent = await stripe.paymentIntents.create({
     amount: invoice.amountCents,
-    currency: "usd",
+    currency: "ngn",
     customer: customerId,
     automatic_payment_methods: {
       enabled: true,

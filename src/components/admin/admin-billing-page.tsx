@@ -31,7 +31,7 @@ function getRows(families: FamilyHubRecord[]): AdminTableRow[] {
     },
     children: family.childRecords.map((child) => child.name).join(", ") || "—",
     dueDate: family.balance?.dueDate ?? "—",
-    totalDue: family.balance?.totalDue ?? "$0",
+    totalDue: family.balance?.totalDue ?? "₦0",
     status: {
       label: formatAdminLabel(family.balance?.status ?? family.balanceStatus),
       variant: getFamilyBalanceVariant(family.balance?.status ?? family.balanceStatus),
@@ -141,7 +141,7 @@ export function AdminBillingPageView({
                   <div className="surface-panel-quiet rounded-[1rem] px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-foreground">
-                        {selectedFamily.balance?.totalDue ?? "$0"}
+                        {selectedFamily.balance?.totalDue ?? "₦0"}
                       </p>
                       <StatusBadge variant={getFamilyBalanceVariant(selectedFamily.balance?.status ?? selectedFamily.balanceStatus)}>
                         {formatAdminLabel(selectedFamily.balance?.status ?? selectedFamily.balanceStatus)}

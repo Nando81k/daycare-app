@@ -4,7 +4,7 @@ import { useActionState, useState } from "react"
 import {
   BookOpenIcon,
   CalendarDaysIcon,
-  DollarSignIcon,
+  BanknoteIcon,
   PencilIcon,
   PlusIcon,
 } from "lucide-react"
@@ -288,7 +288,7 @@ function RateForm({
             type="number"
             inputMode="numeric"
             defaultValue={currentCents != null ? String(currentCents) : ""}
-            placeholder="e.g. 150000 for $1,500.00"
+            placeholder="e.g. 150000 for ₦1,500.00"
             error={state.fieldErrors.rateCents}
           />
           <AdminTextField
@@ -602,7 +602,7 @@ export function AdminProgramsPageView({
             <span className="text-lg font-semibold">{activeSchedules}</span>
           </div>
           <div className="flex items-center gap-2">
-            <DollarSignIcon className="size-4 text-muted-foreground" />
+            <BanknoteIcon className="size-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Rates</span>
             <span className="text-lg font-semibold">{totalRates}</span>
           </div>

@@ -237,21 +237,21 @@ export const parentInvoices: MinimalInvoicePreview[] = [
   {
     id: "inv-1009",
     label: "April Tuition",
-    amount: "$1,520.00",
+    amount: "₦1,520.00",
     dueDate: "Apr 10",
     status: "due",
   },
   {
     id: "inv-1008",
     label: "March Tuition",
-    amount: "$1,520.00",
+    amount: "₦1,520.00",
     dueDate: "Mar 10",
     status: "paid",
   },
   {
     id: "inv-1010",
     label: "May Tuition",
-    amount: "$1,520.00",
+    amount: "₦1,520.00",
     dueDate: "May 10",
     status: "draft",
   },
@@ -262,7 +262,7 @@ export const parentPaymentHistory: ParentPaymentPreview[] = [
     id: "pay-201",
     label: "March Tuition",
     date: "Mar 8",
-    amount: "$1,520.00",
+    amount: "₦1,520.00",
     method: "Visa ending in 4242",
     status: "paid",
   },
@@ -270,7 +270,7 @@ export const parentPaymentHistory: ParentPaymentPreview[] = [
     id: "pay-185",
     label: "Annual registration fee",
     date: "Jan 12",
-    amount: "$150.00",
+    amount: "₦150.00",
     method: "Bank transfer",
     status: "paid",
   },
@@ -445,7 +445,7 @@ export const parentDashboardPreview: ParentDashboardPreview = {
     },
     {
       label: "April tuition",
-      value: "$1,520 due Apr 10",
+      value: "₦1,520 due Apr 10",
       tone: "warning",
     },
     {
@@ -518,13 +518,13 @@ export const parentDashboardPreview: ParentDashboardPreview = {
       description:
         "Families see the same due-state language the school uses for follow-up, so payment status stays easy to understand on both sides.",
       ownerLabel: "Shared billing status",
-      recentLabel: "$1,520 due Apr 10",
+      recentLabel: "₦1,520 due Apr 10",
       actionLabel: "Open billing",
       actionHref: "/parent/billing",
       statusLabel: "Due soon",
       statusTone: "warning",
       stats: [
-        { label: "Current invoice", value: "$1,520" },
+        { label: "Current invoice", value: "₦1,520" },
       ],
     },
     {

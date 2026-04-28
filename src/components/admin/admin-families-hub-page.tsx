@@ -5,6 +5,10 @@ import { useState } from "react"
 
 import { AdminChildrenEditor } from "@/components/admin/admin-children-editor"
 import { AdminDataTable } from "@/components/admin/admin-data-table"
+import {
+  DrawerBody,
+  DrawerSummary,
+} from "@/components/admin/admin-detail-drawer"
 import { AdminDocumentReviewEditor } from "@/components/admin/admin-document-review-editor"
 import { AdminFamilyDetailPanel } from "@/components/admin/admin-family-detail-panel"
 import {
@@ -14,6 +18,7 @@ import {
 } from "@/components/admin/admin-status"
 import { AlertBanner } from "@/components/shared/alert-banner"
 import { PageShell } from "@/components/shared/page-shell"
+import { StatusBadge } from "@/components/shared/status-badge"
 import { buttonVariants } from "@/components/ui/button"
 import {
   Card,
@@ -32,7 +37,6 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
@@ -238,14 +242,9 @@ export function AdminFamiliesHubPageView({
           }
         }}
       >
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{selectedFamily?.familyName}</SheetTitle>
-            <SheetDescription>
-              {selectedFamily
-                ? `${selectedFamily.guardians.join(" · ")} · ${selectedFamily.primaryEmail}`
-                : "Family details"}
-            </SheetDescription>
+        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-2xl">
+          <SheetHeader className="border-b border-border/60 px-5 py-3">
+            <SheetTitle className="text-base">Family details</SheetTitle>
           </SheetHeader>
           {selectedFamily && (
             <AdminFamilyDetailPanel
@@ -266,20 +265,32 @@ export function AdminFamiliesHubPageView({
           if (!open) setSelectedDocId(null)
         }}
       >
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Review document</SheetTitle>
-            <SheetDescription>
-              {selectedDoc
-                ? `${selectedDoc.title} · ${selectedDoc.familyName}`
-                : "Document details"}
-            </SheetDescription>
+        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-lg">
+          <SheetHeader className="border-b border-border/60 px-5 py-3">
+            <SheetTitle className="text-base">Review document</SheetTitle>
           </SheetHeader>
           {selectedDoc && (
-            <AdminDocumentReviewEditor
-              key={selectedDoc.id}
-              document={selectedDoc}
-            />
+            <DrawerBody>
+              <DrawerSummary
+                title={selectedDoc.title}
+                subtitle={`${selectedDoc.childName} · ${selectedDoc.familyName}`}
+                badges={
+                  <StatusBadge variant={getDocumentVariant(selectedDoc.status)}>
+                    {formatAdminLabel(selectedDoc.status)}
+                  </StatusBadge>
+                }
+                meta={
+                  <>
+                    <span>Due {selectedDoc.dueDate}</span>
+                    <span>Owner · {selectedDoc.owner}</span>
+                  </>
+                }
+              />
+              <AdminDocumentReviewEditor
+                key={selectedDoc.id}
+                document={selectedDoc}
+              />
+            </DrawerBody>
           )}
         </SheetContent>
       </Sheet>

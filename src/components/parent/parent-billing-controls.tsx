@@ -1,7 +1,7 @@
 "use client"
 
 import type { FormEvent, ReactNode } from "react"
-import { CheckCircleIcon, CircleDollarSignIcon, CreditCardIcon } from "lucide-react"
+import { CheckCircleIcon, BanknoteIcon, CreditCardIcon } from "lucide-react"
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
 import { loadStripe } from "@stripe/stripe-js"
 import { useMemo, useState } from "react"
@@ -389,7 +389,7 @@ function StripePaymentSection({
 
   return (
     <BillingPanel
-      icon={<CircleDollarSignIcon />}
+      icon={<BanknoteIcon />}
       title="Pay current invoice"
       description="Keep the next tuition charge visible and actionable without jumping into a separate billing table."
       prominent

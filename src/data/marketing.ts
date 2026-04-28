@@ -290,7 +290,7 @@ export const tuitionTiers: TuitionTier[] = [
   {
     name: "Full-Time Care",
     cadence: "5 days per week",
-    amount: "$2,280 / month",
+    amount: "₦2,280 / month",
     blurb: "Best for families who need consistency, early drop-off flexibility, and stable weekly routines.",
     includes: [
       "Daily care, meals, and classroom materials",
@@ -302,7 +302,7 @@ export const tuitionTiers: TuitionTier[] = [
   {
     name: "Part-Time Care",
     cadence: "3 days per week",
-    amount: "$1,520 / month",
+    amount: "₦1,520 / month",
     blurb: "Flexible weekly care for families balancing home days, work shifts, or part-time schedules.",
     includes: [
       "Consistent classroom placement on scheduled days",
@@ -314,7 +314,7 @@ export const tuitionTiers: TuitionTier[] = [
   {
     name: "Preschool Enrichment",
     cadence: "Morning schedule",
-    amount: "$980 / month",
+    amount: "₦980 / month",
     blurb: "A lighter schedule with project time, social routines, and thoughtful transition support.",
     includes: [
       "Morning preschool curriculum and project work",

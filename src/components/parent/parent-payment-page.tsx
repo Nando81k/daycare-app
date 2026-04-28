@@ -9,7 +9,7 @@ import {
   ArrowLeftIcon,
   CalendarDaysIcon,
   CheckCircleIcon,
-  CircleDollarSignIcon,
+  BanknoteIcon,
   FileTextIcon,
   ShieldCheckIcon,
 } from "lucide-react"
@@ -268,7 +268,7 @@ export function ParentPaymentPageView({ invoice, enrollmentApproved }: ParentPay
 
                 <div className="flex items-center gap-3">
                   <span className="flex size-9 items-center justify-center rounded-full border border-border/60 bg-muted/16 text-primary [&_svg]:size-4">
-                    <CircleDollarSignIcon />
+                    <BanknoteIcon />
                   </span>
                   <div>
                     <p className="text-sm font-medium text-foreground">{invoice.amount}</p>

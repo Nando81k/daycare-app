@@ -56,7 +56,7 @@ const statCards: Array<{
   },
   {
     title: "Outstanding balance",
-    value: "$4,280",
+    value: "₦4,280",
     change: "7 invoices due this week",
     tone: "amber",
   },
@@ -140,7 +140,7 @@ const messageQueue = [
 const billingAlerts = [
   {
     family: "Johnson Family",
-    detail: "Invoice due tomorrow · $1,450",
+    detail: "Invoice due tomorrow · ₦1,450",
     status: "Due soon",
   },
   {
@@ -150,7 +150,7 @@ const billingAlerts = [
   },
   {
     family: "Bennett Family",
-    detail: "Partial payment received · $650 outstanding",
+    detail: "Partial payment received · ₦650 outstanding",
     status: "Partial",
   },
 ]

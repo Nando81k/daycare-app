@@ -13,9 +13,9 @@ function formatDate(
 }
 
 export function formatCurrencyFromCents(amountCents: number) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-NG", {
     style: "currency",
-    currency: "USD",
+    currency: "NGN",
   }).format(amountCents / 100)
 }
 

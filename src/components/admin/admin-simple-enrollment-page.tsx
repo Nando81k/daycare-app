@@ -1,7 +1,7 @@
 "use client"
 
 import { useActionState, useState } from "react"
-import type { ComponentType, ReactNode } from "react"
+import type { ReactNode } from "react"
 import {
   Baby,
   Check,
@@ -25,6 +25,15 @@ import {
   createDocumentRequest,
   declineEnrollmentApplication,
 } from "@/app/actions/admin"
+import {
+  DrawerActionBar,
+  DrawerBody,
+  DrawerEmpty,
+  DrawerField,
+  DrawerFieldGrid,
+  DrawerSection,
+  DrawerSummary,
+} from "@/components/admin/admin-detail-drawer"
 import { AdminWaitlistEditor } from "@/components/admin/admin-waitlist-editor"
 import {
   formatAdminLabel,
@@ -53,7 +62,6 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
@@ -246,227 +254,200 @@ function RequestDocsButton({
   )
 }
 
-function DetailSection({
-  label,
-  icon: Icon,
-  children,
-}: {
-  label: string
-  icon?: ComponentType<{ className?: string }>
-  children: ReactNode
-}) {
-  return (
-    <div className="flex flex-col gap-2.5">
-      <p className="flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        {Icon ? <Icon className="size-3.5" /> : null}
-        {label}
-      </p>
-      {children}
-    </div>
-  )
-}
-
-function DetailRow({
-  label,
-  value,
-}: {
-  label: string
-  value: ReactNode
-}) {
-  return (
-    <div className="flex items-start justify-between gap-6 py-0.5">
-      <span className="shrink-0 text-sm text-muted-foreground/80">{label}</span>
-      <span className="text-right text-sm font-medium text-foreground">{value}</span>
-    </div>
-  )
-}
-
 function EnrollmentDetailPanel({ entry }: { entry: SimpleAdminEnrollmentPreview }) {
   const isDecided =
     entry.enrollmentStatusLabel === "Approved" || entry.enrollmentStatusLabel === "Denied"
 
   return (
-    <div className="flex flex-col gap-5 overflow-y-auto px-1 pb-8 pt-2">
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/50 bg-muted/30 p-3">
-        <span className="mr-auto text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          Quick actions
-        </span>
-        <ApproveButton leadId={entry.id} disabled={isDecided} />
-        <DeclineButton leadId={entry.id} disabled={isDecided} />
-        <RequestDocsButton familyId={entry.familyId} />
-      </div>
+    <DrawerBody>
+      <DrawerSummary
+        title={entry.parentName}
+        subtitle={`${entry.familyName} family`}
+        badges={
+          <>
+            <StatusBadge variant={entry.enrollmentStatusTone}>
+              {entry.enrollmentStatusLabel}
+            </StatusBadge>
+            <StatusBadge variant={entry.paymentStatusTone}>
+              {entry.paymentStatusLabel}
+            </StatusBadge>
+          </>
+        }
+        meta={
+          <>
+            <span>Submitted {entry.submittedAt}</span>
+            <span>{entry.programInterest}</span>
+            <span>Start {entry.requestedStart}</span>
+          </>
+        }
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-border/50 p-4">
-          <DetailSection label="Parent and contact" icon={UserCircle}>
-            <div className="grid gap-x-8 gap-y-0.5 sm:grid-cols-2">
-              <DetailRow label="Name" value={entry.parentName} />
-              <DetailRow label="Family" value={entry.familyName} />
-              <DetailRow label="Email" value={entry.email} />
-              <DetailRow label="Phone" value={entry.phone} />
-            </div>
-          </DetailSection>
-        </div>
+        <DrawerSection title="Parent and contact" icon={UserCircle}>
+          <DrawerFieldGrid>
+            <DrawerField label="Name" value={entry.parentName} />
+            <DrawerField label="Family" value={entry.familyName} />
+            <DrawerField label="Email" value={entry.email} />
+            <DrawerField label="Phone" value={entry.phone} />
+          </DrawerFieldGrid>
+        </DrawerSection>
 
-        <div className="rounded-lg border border-border/50 p-4">
-          <DetailSection label="Enrollment" icon={ClipboardList}>
-            <div className="grid gap-x-8 gap-y-0.5 sm:grid-cols-2">
-              <DetailRow
-                label="Status"
-                value={
-                  <StatusBadge variant={entry.enrollmentStatusTone}>
-                    {entry.enrollmentStatusLabel}
-                  </StatusBadge>
-                }
-              />
-              <DetailRow label="Requested start" value={entry.requestedStart} />
-              <DetailRow label="Program" value={entry.programInterest} />
-              <DetailRow label="Schedule" value={entry.scheduleNeed ?? "—"} />
-              <DetailRow label="Submitted" value={entry.submittedAt} />
-            </div>
-            {entry.note ? (
-              <p className="mt-2 rounded-md bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                {entry.note}
-              </p>
-            ) : null}
-          </DetailSection>
-        </div>
+        <DrawerSection title="Enrollment" icon={ClipboardList}>
+          <DrawerFieldGrid>
+            <DrawerField label="Requested start" value={entry.requestedStart} />
+            <DrawerField label="Program" value={entry.programInterest} />
+            <DrawerField label="Schedule" value={entry.scheduleNeed ?? "—"} />
+            <DrawerField label="Submitted" value={entry.submittedAt} />
+          </DrawerFieldGrid>
+          {entry.note ? (
+            <p className="rounded-md bg-muted/40 px-3 py-2 text-sm leading-6 text-muted-foreground">
+              {entry.note}
+            </p>
+          ) : null}
+        </DrawerSection>
 
-        <div className="rounded-lg border border-border/50 p-4">
-          <DetailSection label="Child on application" icon={Baby}>
-            <div className="grid gap-x-8 gap-y-0.5 sm:grid-cols-2">
-              <DetailRow label="Name" value={entry.childName} />
-              <DetailRow label="Age" value={entry.childAgeLabel} />
-            </div>
-          </DetailSection>
-        </div>
+        <DrawerSection title="Child on application" icon={Baby}>
+          <DrawerFieldGrid>
+            <DrawerField label="Name" value={entry.childName} />
+            <DrawerField label="Age" value={entry.childAgeLabel} />
+          </DrawerFieldGrid>
+        </DrawerSection>
 
-        <div className="rounded-lg border border-border/50 p-4">
-          <DetailSection label="Payment" icon={CreditCard}>
-            <div className="grid gap-x-8 gap-y-0.5 sm:grid-cols-2">
-              <DetailRow
-                label="Status"
-                value={
-                  <StatusBadge variant={entry.paymentStatusTone}>
-                    {entry.paymentStatusLabel}
-                  </StatusBadge>
-                }
-              />
-              <DetailRow label="Detail" value={entry.paymentDetail} />
-            </div>
-            {entry.invoices.length > 0 ? (
-              <div className="mt-3 flex flex-col gap-1.5">
-                {entry.invoices.map((invoice) => (
-                  <div
-                    key={invoice.id}
-                    className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-muted/20 p-2.5"
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-sm font-medium text-foreground">{invoice.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {invoice.amount} · due {invoice.dueDate}
-                      </p>
-                    </div>
-                    <StatusBadge variant={invoice.statusTone}>{invoice.status}</StatusBadge>
+        <DrawerSection title="Payment" icon={CreditCard}>
+          <DrawerFieldGrid>
+            <DrawerField
+              label="Status"
+              value={
+                <StatusBadge variant={entry.paymentStatusTone}>
+                  {entry.paymentStatusLabel}
+                </StatusBadge>
+              }
+            />
+            <DrawerField label="Detail" value={entry.paymentDetail} />
+          </DrawerFieldGrid>
+          {entry.invoices.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {entry.invoices.map((invoice) => (
+                <div
+                  key={invoice.id}
+                  className="flex items-center justify-between gap-3 rounded-md border border-border/50 bg-muted/20 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{invoice.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {invoice.amount} · due {invoice.dueDate}
+                    </p>
                   </div>
-                ))}
-              </div>
-            ) : null}
-          </DetailSection>
-        </div>
-
-        {entry.children.length > 0 ? (
-          <div className="col-span-full rounded-lg border border-border/50 p-4">
-            <DetailSection label="Enrolled children" icon={Users}>
-              <div className="grid gap-3 lg:grid-cols-2">
-                {entry.children.map((child) => (
-                  <Card key={child.id} className="border-border/60 shadow-sm">
-                    <CardContent className="flex flex-col gap-2 p-4 text-sm">
-                      <p className="font-medium text-foreground">
-                        {child.firstName} {child.lastName}
-                      </p>
-                      <div className="grid gap-x-8 gap-y-0.5 sm:grid-cols-2">
-                        <DetailRow label="Birthday" value={child.birthday} />
-                        <DetailRow label="Age" value={child.ageLabel} />
-                        <DetailRow label="Teacher" value={child.teacherLabel} />
-                        {child.summary ? <DetailRow label="Summary" value={child.summary} /> : null}
-                      </div>
-                      {child.allergies != null && String(child.allergies) !== "null" ? (
-                        <DetailRow label="Allergies" value={String(child.allergies)} />
-                      ) : null}
-                      {child.medicalNotes != null && String(child.medicalNotes) !== "null" ? (
-                        <DetailRow label="Medical notes" value={String(child.medicalNotes)} />
-                      ) : null}
-                      {child.comfortNotes != null && String(child.comfortNotes) !== "null" ? (
-                        <DetailRow label="Comfort notes" value={String(child.comfortNotes)} />
-                      ) : null}
-                      {child.classroomName !== "Unassigned" ? (
-                        <div className="mt-1.5 rounded-md border border-border/50 bg-muted/30 p-2.5">
-                          <p className="mb-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                            Room assignment
-                          </p>
-                          <div className="grid gap-x-8 gap-y-0.5 sm:grid-cols-2">
-                            <DetailRow label="Room" value={child.classroomName} />
-                            <DetailRow label="Age group" value={child.classroomAgeGroup} />
-                            <DetailRow label="Capacity" value={child.classroomCapacity} />
-                            <DetailRow label="Lead teacher" value={child.classroomLeadTeacher} />
-                            <DetailRow label="Ratio" value={child.classroomRatioLabel} />
-                          </div>
-                        </div>
-                      ) : null}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </DetailSection>
-          </div>
-        ) : null}
-
-        <div className="col-span-full rounded-lg border border-border/50 p-4">
-          <DetailSection label={`Documents (${entry.documents.length})`} icon={FileText}>
-            {entry.documents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No documents uploaded yet.</p>
-            ) : (
-              <div className="grid gap-2 lg:grid-cols-2">
-                {entry.documents.map((document) => (
-                  <div
-                    key={document.id}
-                    className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-muted/20 p-3"
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-sm font-medium text-foreground">{document.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {document.category}
-                        {document.fileName ? ` · ${document.fileName}` : ""}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <StatusBadge variant={document.statusTone}>{document.status}</StatusBadge>
-                      {document.blobUrl ? (
-                        <a href={document.blobUrl} target="_blank" rel="noopener noreferrer">
-                          <Button type="button" variant="outline" size="sm">
-                            <ExternalLink className="mr-1.5 size-3.5" />
-                            View
-                          </Button>
-                        </a>
-                      ) : null}
-                      {document.blobDownloadUrl ? (
-                        <a href={document.blobDownloadUrl} download>
-                          <Button type="button" variant="outline" size="sm">
-                            <Download className="mr-1.5 size-3.5" />
-                            Download
-                          </Button>
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </DetailSection>
-        </div>
+                  <StatusBadge variant={invoice.statusTone}>{invoice.status}</StatusBadge>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </DrawerSection>
       </div>
-    </div>
+
+      {entry.children.length > 0 ? (
+        <DrawerSection title="Enrolled children" icon={Users}>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {entry.children.map((child) => (
+              <Card key={child.id} className="border-border/60 shadow-none">
+                <CardContent className="flex flex-col gap-3 p-4">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="text-sm font-semibold text-foreground">
+                      {child.firstName} {child.lastName}
+                    </p>
+                    {child.classroomName !== "Unassigned" ? (
+                      <span className="text-xs text-muted-foreground">{child.classroomName}</span>
+                    ) : null}
+                  </div>
+                  <DrawerFieldGrid>
+                    <DrawerField label="Birthday" value={child.birthday} />
+                    <DrawerField label="Age" value={child.ageLabel} />
+                    <DrawerField label="Teacher" value={child.teacherLabel} />
+                  </DrawerFieldGrid>
+                  {child.summary ? (
+                    <DrawerField label="Summary" value={child.summary} span={2} />
+                  ) : null}
+                  {child.allergies != null && String(child.allergies) !== "null" ? (
+                    <DrawerField label="Allergies" value={String(child.allergies)} span={2} />
+                  ) : null}
+                  {child.medicalNotes != null && String(child.medicalNotes) !== "null" ? (
+                    <DrawerField label="Medical notes" value={String(child.medicalNotes)} span={2} />
+                  ) : null}
+                  {child.comfortNotes != null && String(child.comfortNotes) !== "null" ? (
+                    <DrawerField label="Comfort notes" value={String(child.comfortNotes)} span={2} />
+                  ) : null}
+                  {child.classroomName !== "Unassigned" ? (
+                    <div className="rounded-md bg-muted/40 px-3 py-2.5">
+                      <p className="mb-1.5 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Room assignment
+                      </p>
+                      <DrawerFieldGrid>
+                        <DrawerField label="Age group" value={child.classroomAgeGroup} />
+                        <DrawerField label="Capacity" value={child.classroomCapacity} />
+                        <DrawerField label="Lead teacher" value={child.classroomLeadTeacher} />
+                        <DrawerField label="Ratio" value={child.classroomRatioLabel} />
+                      </DrawerFieldGrid>
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </DrawerSection>
+      ) : null}
+
+      <DrawerSection title={`Documents (${entry.documents.length})`} icon={FileText}>
+        {entry.documents.length === 0 ? (
+          <DrawerEmpty
+            title="No documents uploaded yet"
+            description="Documents the family submits during enrollment will appear here."
+          />
+        ) : (
+          <div className="grid gap-2 lg:grid-cols-2">
+            {entry.documents.map((document) => (
+              <div
+                key={document.id}
+                className="flex items-center justify-between gap-3 rounded-md border border-border/50 bg-muted/20 px-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">{document.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {document.category}
+                    {document.fileName ? ` · ${document.fileName}` : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <StatusBadge variant={document.statusTone}>{document.status}</StatusBadge>
+                  {document.blobUrl ? (
+                    <a href={document.blobUrl} target="_blank" rel="noopener noreferrer">
+                      <Button type="button" variant="outline" size="sm">
+                        <ExternalLink className="mr-1.5 size-3.5" />
+                        View
+                      </Button>
+                    </a>
+                  ) : null}
+                  {document.blobDownloadUrl ? (
+                    <a href={document.blobDownloadUrl} download>
+                      <Button type="button" variant="outline" size="sm">
+                        <Download className="mr-1.5 size-3.5" />
+                        Download
+                      </Button>
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </DrawerSection>
+
+      <DrawerActionBar>
+        <RequestDocsButton familyId={entry.familyId} />
+        <DeclineButton leadId={entry.id} disabled={isDecided} />
+        <ApproveButton leadId={entry.id} disabled={isDecided} />
+      </DrawerActionBar>
+    </DrawerBody>
   )
 }
 
@@ -854,19 +835,14 @@ export function AdminSimpleEnrollmentPageView({
           }
         }}
       >
-        <SheetContent className="w-full overflow-y-auto data-[side=right]:sm:max-w-2xl data-[side=right]:lg:max-w-4xl">
+        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-2xl data-[side=right]:lg:max-w-3xl">
           {selectedEnrollment ? (
             <>
-              <SheetHeader className="border-b border-border/60 pb-4">
-                <SheetTitle className="flex items-center gap-2 text-lg">
-                  <UserCircle className="size-5 text-muted-foreground" />
-                  {selectedEnrollment.parentName}
+              <SheetHeader className="border-b border-border/60 px-5 py-3">
+                <SheetTitle className="flex items-center gap-2 text-base">
+                  <UserCircle className="size-4 text-muted-foreground" />
+                  Review enrollment
                 </SheetTitle>
-                <SheetDescription className="flex items-center gap-2 text-sm">
-                  <span>{selectedEnrollment.familyName} family</span>
-                  <span className="text-muted-foreground/50">·</span>
-                  <span>submitted {selectedEnrollment.submittedAt}</span>
-                </SheetDescription>
               </SheetHeader>
               <EnrollmentDetailPanel entry={selectedEnrollment} />
             </>
@@ -882,21 +858,32 @@ export function AdminSimpleEnrollmentPageView({
           }
         }}
       >
-        <SheetContent className="w-full overflow-y-auto data-[side=right]:sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Update waitlist entry</SheetTitle>
-            <SheetDescription>
-              {selectedWaitlistEntry
-                ? `${selectedWaitlistEntry.familyName} · ${selectedWaitlistEntry.childName}`
-                : "Edit waitlist details"}
-            </SheetDescription>
+        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-lg">
+          <SheetHeader className="border-b border-border/60 px-5 py-3">
+            <SheetTitle className="text-base">Update waitlist entry</SheetTitle>
           </SheetHeader>
           {selectedWaitlistEntry ? (
-            <AdminWaitlistEditor
-              key={selectedWaitlistEntry.id}
-              entry={selectedWaitlistEntry}
-              onClear={() => setSelectedWaitlistEntryId(null)}
-            />
+            <DrawerBody>
+              <DrawerSummary
+                title={selectedWaitlistEntry.familyName}
+                subtitle={`${selectedWaitlistEntry.childName} · ${selectedWaitlistEntry.ageLabel}`}
+                badges={
+                  <>
+                    <StatusBadge variant={getPriorityVariant(selectedWaitlistEntry.priority)}>
+                      {formatAdminLabel(selectedWaitlistEntry.priority)}
+                    </StatusBadge>
+                    <StatusBadge variant={getWaitlistStatusVariant(selectedWaitlistEntry.status)}>
+                      {formatAdminLabel(selectedWaitlistEntry.status)}
+                    </StatusBadge>
+                  </>
+                }
+              />
+              <AdminWaitlistEditor
+                key={selectedWaitlistEntry.id}
+                entry={selectedWaitlistEntry}
+                onClear={() => setSelectedWaitlistEntryId(null)}
+              />
+            </DrawerBody>
           ) : null}
         </SheetContent>
       </Sheet>

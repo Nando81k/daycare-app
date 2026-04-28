@@ -15,8 +15,14 @@ const HEADER_NAV = marketingNav.filter((item) =>
 const navLinkClasses =
   "group relative inline-flex items-center text-sm font-medium uppercase tracking-[0.18em] text-foreground/70 transition-colors duration-200 hover:text-foreground focus-visible:text-foreground focus-visible:outline-none aria-[current=page]:text-foreground after:absolute after:left-0 after:-bottom-1.5 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-accent after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-100 focus-visible:after:scale-x-100 aria-[current=page]:after:scale-x-100 aria-[current=page]:after:bg-accent"
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  currentUserRole?: "PARENT" | "ADMIN" | null
+}
+
+export function SiteHeader({ currentUserRole = null }: SiteHeaderProps = {}) {
   const pathname = usePathname()
+  const dashboardHref =
+    currentUserRole === "ADMIN" ? "/admin" : currentUserRole === "PARENT" ? "/parent/billing" : null
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`)
@@ -54,19 +60,30 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <Link
-            href="/login/parent"
-            aria-current={isActive("/login/parent") ? "page" : undefined}
-            className={cn(navLinkClasses, "hidden sm:inline-flex")}
-          >
-            Sign in
-          </Link>
-          <Button
-            asChild
-            className="rounded-none bg-primary px-5 text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--color-primary)_70%,transparent)]"
-          >
-            <Link href="/contact">Plan a visit</Link>
-          </Button>
+          {dashboardHref ? (
+            <Button
+              asChild
+              className="rounded-none bg-primary px-5 text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--color-primary)_70%,transparent)]"
+            >
+              <Link href={dashboardHref}>Go to dashboard</Link>
+            </Button>
+          ) : (
+            <>
+              <Link
+                href="/login/parent"
+                aria-current={isActive("/login/parent") ? "page" : undefined}
+                className={cn(navLinkClasses, "hidden sm:inline-flex")}
+              >
+                Sign in
+              </Link>
+              <Button
+                asChild
+                className="rounded-none bg-primary px-5 text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--color-primary)_70%,transparent)]"
+              >
+                <Link href="/contact">Plan a visit</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

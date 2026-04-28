@@ -33,7 +33,7 @@ export const adminMetrics: AdminMetricPreview[] = [
   },
   {
     label: "Balance due",
-    value: "$7,640",
+    value: "₦7,640",
     detail: "Outstanding family balances due before the next billing cycle closes.",
   },
   {
@@ -612,7 +612,7 @@ export const adminBalances: FamilyBalancePreview[] = [
   {
     id: "bal-601",
     familyName: "Harper Family",
-    totalDue: "$1,520",
+    totalDue: "₦1,520",
     dueDate: "Apr 10",
     invoiceCount: 1,
     method: "Manual card payment",
@@ -621,7 +621,7 @@ export const adminBalances: FamilyBalancePreview[] = [
   {
     id: "bal-602",
     familyName: "Brooks Family",
-    totalDue: "$2,170",
+    totalDue: "₦2,170",
     dueDate: "Apr 7",
     invoiceCount: 2,
     method: "ACH on file",
@@ -630,7 +630,7 @@ export const adminBalances: FamilyBalancePreview[] = [
   {
     id: "bal-603",
     familyName: "Martinez Family",
-    totalDue: "$0",
+    totalDue: "₦0",
     dueDate: "—",
     invoiceCount: 0,
     method: "ACH on file",
@@ -810,7 +810,7 @@ export const adminBillingReminders: AdminBillingReminderPreview[] = [
     id: "billing:inv-1009",
     familyName: "Harper Family",
     label: "April Tuition",
-    amount: "$1,520",
+    amount: "₦1,520",
     dueDate: "Apr 10",
     timeLabel: "By 1:00 PM",
     status: "due",
@@ -821,7 +821,7 @@ export const adminBillingReminders: AdminBillingReminderPreview[] = [
     id: "billing:inv-1014",
     familyName: "Brooks Family",
     label: "April Tuition",
-    amount: "$2,170",
+    amount: "₦2,170",
     dueDate: "Apr 7",
     timeLabel: "By 1:00 PM",
     status: "overdue",
@@ -951,7 +951,7 @@ export const adminDashboardPreview: AdminDashboardPreview = {
       description:
         "Due balances and invoice drafting need to use the same billing language that parents see in their portal.",
       ownerLabel: "School follow-up",
-      recentLabel: "$3,690 across 2 families needs action",
+      recentLabel: "₦3,690 across 2 families needs action",
       actionLabel: "Open billing",
       actionHref: "/admin/billing",
       statusLabel: "Due and overdue",

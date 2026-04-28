@@ -128,7 +128,7 @@ async function main() {
   // Add Teddy admin account
   await prisma.user.create({
     data: {
-      email: "Teddy@Ambassadorscare.org",
+      email: "teddy@ambassadorscare.org",
       passwordHash: hashPassword(teddyAdminPassword),
       name: "Teddy Ambassadors",
       role: "ADMIN",

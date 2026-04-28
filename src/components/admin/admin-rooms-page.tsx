@@ -7,6 +7,10 @@ import { AdminAttendanceEditor } from "@/components/admin/admin-attendance-edito
 import { AdminBarChart } from "@/components/admin/admin-bar-chart"
 import { AdminDataTable } from "@/components/admin/admin-data-table"
 import {
+  DrawerBody,
+  DrawerSummary,
+} from "@/components/admin/admin-detail-drawer"
+import {
   formatAdminLabel,
   getChildAttendanceVariant,
   getDocumentVariant,
@@ -27,7 +31,6 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
@@ -325,21 +328,28 @@ export function AdminRoomsPageView({
           if (!open) setSelectedChildId(null)
         }}
       >
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Update attendance</SheetTitle>
-            <SheetDescription>
-              {selectedChild
-                ? `${selectedChild.name} · ${selectedChild.classroom}`
-                : "Edit attendance record"}
-            </SheetDescription>
+        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-lg">
+          <SheetHeader className="border-b border-border/60 px-5 py-3">
+            <SheetTitle className="text-base">Update attendance</SheetTitle>
           </SheetHeader>
           {selectedChild && (
-            <AdminAttendanceEditor
-              key={selectedChild.id}
-              child={selectedChild}
-              onClear={() => setSelectedChildId(null)}
-            />
+            <DrawerBody>
+              <DrawerSummary
+                title={selectedChild.name}
+                subtitle={`${selectedChild.ageLabel} · ${selectedChild.classroom}`}
+                badges={
+                  <StatusBadge variant={getChildAttendanceVariant(selectedChild.attendanceStatus)}>
+                    {formatAdminLabel(selectedChild.attendanceStatus)}
+                  </StatusBadge>
+                }
+                meta={<span>{selectedChild.familyName}</span>}
+              />
+              <AdminAttendanceEditor
+                key={selectedChild.id}
+                child={selectedChild}
+                onClear={() => setSelectedChildId(null)}
+              />
+            </DrawerBody>
           )}
         </SheetContent>
       </Sheet>
