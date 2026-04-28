@@ -31,21 +31,21 @@ const PROGRAMS = [
     name: "Preschool",
     ages: "3 years",
     lede: "A gentle introduction to classroom life: shared meals, guided play, story time, and the first steady friendships.",
-    image: "/marketing/hero-daycare-circle.jpg",
+    image: "/marketing/cornrows-shapes.jpg",
     href: "/programs#preschool",
   },
   {
     name: "Pre-K",
     ages: "4 years",
     lede: "Reading, early numbers, and longer concentration in a setting that still feels warm and unhurried.",
-    image: "/marketing/playroom-learning.jpg",
+    image: "/marketing/smiling-with-pencil.jpg",
     href: "/programs#prek",
   },
   {
     name: "Junior Kindergarten",
     ages: "5 years",
     lede: "A strong, confident bridge into primary school — academics framed by curiosity, conversation, and care.",
-    image: "/marketing/storytime-classroom.jpg",
+    image: "/marketing/alphabet-cards.jpg",
     href: "/programs#jk",
   },
 ] as const
@@ -137,8 +137,8 @@ function Hero() {
               <figure className="relative">
                 <div className="relative aspect-4/5 w-full overflow-hidden">
                   <Image
-                    src="/marketing/hero-daycare-circle.jpg"
-                    alt="A caregiver kneels with two young children in a warm daycare classroom."
+                    src="/marketing/boy-at-desk.jpg"
+                    alt="A young boy with an afro concentrates on his work at a classroom desk."
                     fill
                     sizes="(min-width: 1024px) 40vw, 100vw"
                     className="object-cover"
@@ -310,8 +310,8 @@ function Spread() {
       <div className="relative">
         <div className="relative h-[60vh] w-full overflow-hidden md:h-[80vh]">
           <Image
-            src="/marketing/calm-circle-time.jpg"
-            alt="Children sit together for a calm classroom activity with a caregiver nearby."
+            src="/marketing/circle-time-folders.jpg"
+            alt="Preschool children gathered together with their classroom folders."
             fill
             sizes="100vw"
             className="object-cover"

@@ -11,8 +11,12 @@ const prisma = new PrismaClient({
 })
 
 const demoPassword = "DaycareDemo123!"
+
 const demoInviteToken = "demo-parent-invite-token"
 const demoResetToken = "demo-parent-reset-token"
+
+// Teddy admin account password (secure but easy to type)
+const teddyAdminPassword = "Ambassadors2026!"
 
 function hashPassword(password) {
   const salt = randomBytes(16).toString("hex")
@@ -111,11 +115,22 @@ async function main() {
     }),
   ])
 
+
   const adminUser = await prisma.user.create({
     data: {
       email: "director@abassadorscare.com",
       passwordHash: hashPassword(demoPassword),
       name: "Sofia Chen",
+      role: "ADMIN",
+    },
+  })
+
+  // Add Teddy admin account
+  await prisma.user.create({
+    data: {
+      email: "Teddy@Ambassadorscare.org",
+      passwordHash: hashPassword(teddyAdminPassword),
+      name: "Teddy Ambassadors",
       role: "ADMIN",
     },
   })

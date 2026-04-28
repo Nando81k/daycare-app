@@ -16,8 +16,8 @@ export function AuthStandalonePage({
   return (
     <AuthScreen
       imagePosition="left"
-      imageSrc="/marketing/storytime-classroom.jpg"
-      imageAlt="A teacher reads with children gathered together during story time."
+      imageSrc="/marketing/focused-markers.jpg"
+      imageAlt="A young child sits on the floor concentrating on a drawing with markers."
       imageCaption="Account & access"
       imageBadge="No. 05"
       eyebrow="Account"

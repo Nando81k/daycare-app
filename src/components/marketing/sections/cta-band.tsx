@@ -45,7 +45,7 @@ export function CtaBand({
           <div className="mt-10 flex flex-wrap items-center gap-6">
             <Link
               href={primaryHref}
-              className="inline-flex h-12 items-center bg-background px-7 text-sm font-medium uppercase tracking-[0.18em] text-foreground transition-colors hover:bg-background/90"
+              className="inline-flex h-12 items-center bg-accent px-7 text-sm font-medium uppercase tracking-[0.18em] text-foreground transition-all duration-200 hover:bg-accent/90 hover:shadow-[0_10px_28px_-12px_color-mix(in_oklab,var(--color-accent)_70%,transparent)]"
             >
               {primaryLabel}
               <ArrowRight className="ml-2 h-4 w-4" />

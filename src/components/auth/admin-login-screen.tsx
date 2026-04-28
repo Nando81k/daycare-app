@@ -5,8 +5,8 @@ export function AdminLoginScreen() {
   return (
     <AuthScreen
       imagePosition="right"
-      imageSrc="/marketing/storytime-classroom.jpg"
-      imageAlt="A teacher reads with children gathered together during story time."
+      imageSrc="/marketing/cardboard-craft.jpg"
+      imageAlt="A teacher works with young children on a cardboard craft project in a bright classroom."
       imageCaption="Staff workspace · Restricted"
       imageBadge="No. 03"
       eyebrow="Staff access"

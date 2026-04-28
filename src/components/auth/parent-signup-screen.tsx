@@ -22,8 +22,8 @@ export function ParentSignUpScreen() {
   return (
     <AuthScreen
       imagePosition="left"
-      imageSrc="/marketing/calm-circle-time.jpg"
-      imageAlt="Children sit together for a calm classroom activity with a caregiver nearby."
+      imageSrc="/marketing/discovery-toys.jpg"
+      imageAlt="A young girl explores a colorful learning toy in a bright preschool room."
       imageCaption="Now enrolling · Sept 2026"
       imageBadge="No. 04"
       eyebrow="Begin enrollment"

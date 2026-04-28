@@ -7,8 +7,8 @@ export function ParentLoginScreen() {
   return (
     <AuthScreen
       imagePosition="left"
-      imageSrc="/marketing/playroom-learning.jpg"
-      imageAlt="Children explore toys and materials in a bright daycare playroom."
+      imageSrc="/marketing/creative-table.jpg"
+      imageAlt="Two young children work side by side at a colorful preschool table."
       imageCaption="Family portal · 2026"
       imageBadge="No. 02"
       eyebrow="Welcome back"

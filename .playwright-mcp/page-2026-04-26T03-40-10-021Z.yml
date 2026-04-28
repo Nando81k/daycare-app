@@ -1,0 +1,260 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "Ambassadors Daycare" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]: Ambassadors
+          - generic [ref=e7]: Daycare
+        - navigation [ref=e8]:
+          - link "Programs" [ref=e9] [cursor=pointer]:
+            - /url: /programs
+          - link "About" [ref=e10] [cursor=pointer]:
+            - /url: /about
+          - link "Tuition" [ref=e11] [cursor=pointer]:
+            - /url: /tuition
+          - link "FAQ" [ref=e12] [cursor=pointer]:
+            - /url: /faq
+        - generic [ref=e13]:
+          - link "Sign in" [ref=e14] [cursor=pointer]:
+            - /url: /login/parent
+          - link "Plan a visit" [ref=e15] [cursor=pointer]:
+            - /url: /contact
+    - main [ref=e17]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - paragraph [ref=e23]: Now enrolling · September 2026
+            - heading "A school day that feels like home." [level=1] [ref=e24]
+            - paragraph [ref=e25]: Ambassadors Care is a small daycare in Benin City offering Preschool, Pre-K, and Junior Kindergarten. Quiet classrooms, attentive teachers, and a portal that keeps families close to the day.
+            - generic [ref=e26]:
+              - link "Plan a visit" [ref=e27] [cursor=pointer]:
+                - /url: /contact
+                - text: Plan a visit
+                - img
+              - link "Explore programs" [ref=e28] [cursor=pointer]:
+                - /url: /programs
+          - generic [ref=e29]:
+            - generic [ref=e30]:
+              - term [ref=e31]: Programs
+              - definition [ref=e32]: "3"
+            - generic [ref=e33]:
+              - term [ref=e34]: Ages
+              - definition [ref=e35]: 3 – 5
+            - generic [ref=e36]:
+              - term [ref=e37]: Where
+              - definition [ref=e38]: Benin City
+        - figure "Spring intake · 2026 No. 01" [ref=e41]:
+          - img "A caregiver kneels with two young children in a warm daycare classroom." [ref=e43]
+          - generic [ref=e44]:
+            - generic [ref=e45]: Spring intake · 2026
+            - generic [ref=e46]: No. 01
+      - generic [ref=e49]:
+        - generic [ref=e51]:
+          - paragraph [ref=e52]: "01"
+          - heading "Quality care, every day" [level=3] [ref=e53]
+          - paragraph [ref=e54]: A small, warm team that knows your child by name. Routines that respect attachment, language, and rest.
+        - generic [ref=e56]:
+          - paragraph [ref=e57]: "02"
+          - heading "Programs by age" [level=3] [ref=e58]
+          - paragraph [ref=e59]: Preschool, Pre-K, and Junior Kindergarten — each with its own rhythm, classroom, and curriculum thread.
+        - generic [ref=e61]:
+          - paragraph [ref=e62]: "03"
+          - heading "Affordable tuition" [level=3] [ref=e63]
+          - paragraph [ref=e64]: Tuition options designed for working families. Clear costs, predictable billing, and no surprises.
+        - generic [ref=e66]:
+          - paragraph [ref=e67]: "04"
+          - heading "Family-first communication" [level=3] [ref=e68]
+          - paragraph [ref=e69]: A daily portal with notes, photos, and updates. Quiet enough that the important things stand out.
+      - generic [ref=e72]:
+        - generic [ref=e74]:
+          - paragraph [ref=e75]: 02 · Approach
+          - heading "Care that pays attention to the small things." [level=2] [ref=e76]
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - paragraph [ref=e80]: Our classrooms stay small on purpose. Teachers know your child’s name on day one and what makes them laugh by week’s end. Days are predictable enough to feel safe, varied enough to feel alive.
+            - paragraph [ref=e81]: We share what matters — naps, meals, milestones, the moments worth keeping — and skip the noise that doesn’t. The aim is for parents to feel close to the day without being interrupted by it.
+          - link "Read about our team" [ref=e83] [cursor=pointer]:
+            - /url: /about
+            - text: Read about our team
+            - img [ref=e84]
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - generic [ref=e89]:
+            - paragraph [ref=e90]: 03 · Programs
+            - heading "Three programs, each with its own rhythm." [level=2] [ref=e91]
+          - paragraph [ref=e93]: Children move from Preschool through Junior Kindergarten on a steady arc. Each room has its own teacher, its own materials, and its own daily shape — built to meet the age and the child where they are.
+        - list [ref=e94]:
+          - listitem [ref=e95]:
+            - 'link "01 3 years Preschool A gentle introduction to classroom life: shared meals, guided play, story time, and the first steady friendships. Learn more Preschool classroom" [ref=e96] [cursor=pointer]':
+              - /url: /programs#preschool
+              - generic [ref=e97]:
+                - paragraph [ref=e98]: "01"
+                - paragraph [ref=e99]: 3 years
+              - generic [ref=e100]:
+                - heading "Preschool" [level=3] [ref=e101]
+                - paragraph [ref=e102]: "A gentle introduction to classroom life: shared meals, guided play, story time, and the first steady friendships."
+                - generic [ref=e103]:
+                  - text: Learn more
+                  - img [ref=e104]
+              - img "Preschool classroom" [ref=e108]
+          - listitem [ref=e109]:
+            - link "02 4 years Pre-K Reading, early numbers, and longer concentration in a setting that still feels warm and unhurried. Learn more Pre-K classroom" [ref=e110] [cursor=pointer]:
+              - /url: /programs#prek
+              - generic [ref=e111]:
+                - paragraph [ref=e112]: "02"
+                - paragraph [ref=e113]: 4 years
+              - generic [ref=e114]:
+                - heading "Pre-K" [level=3] [ref=e115]
+                - paragraph [ref=e116]: Reading, early numbers, and longer concentration in a setting that still feels warm and unhurried.
+                - generic [ref=e117]:
+                  - text: Learn more
+                  - img [ref=e118]
+              - img "Pre-K classroom" [ref=e122]
+          - listitem [ref=e123]:
+            - link "03 5 years Junior Kindergarten A strong, confident bridge into primary school — academics framed by curiosity, conversation, and care. Learn more Junior Kindergarten classroom" [ref=e124] [cursor=pointer]:
+              - /url: /programs#jk
+              - generic [ref=e125]:
+                - paragraph [ref=e126]: "03"
+                - paragraph [ref=e127]: 5 years
+              - generic [ref=e128]:
+                - heading "Junior Kindergarten" [level=3] [ref=e129]
+                - paragraph [ref=e130]: A strong, confident bridge into primary school — academics framed by curiosity, conversation, and care.
+                - generic [ref=e131]:
+                  - text: Learn more
+                  - img [ref=e132]
+              - img "Junior Kindergarten classroom" [ref=e136]
+      - generic [ref=e138]:
+        - img "Children sit together for a calm classroom activity with a caregiver nearby." [ref=e140]
+        - generic [ref=e144]:
+          - paragraph [ref=e145]: A note from the director
+          - blockquote [ref=e146]: “The day a child runs into the classroom without looking back — that’s the day we know we’ve done it right.”
+          - paragraph [ref=e147]: — Director of Care, Ambassadors Care
+      - generic [ref=e149]:
+        - generic [ref=e150]:
+          - generic [ref=e151]:
+            - paragraph [ref=e152]: 04 · Questions
+            - heading "Answers, plainly." [level=2] [ref=e153]
+          - paragraph [ref=e155]: The questions families ask before they walk through the door. If something isn’t here, the team is one call away.
+        - list [ref=e156]:
+          - listitem [ref=e157]:
+            - button "What programs do you offer?" [expanded] [ref=e158]:
+              - generic [ref=e159]: What programs do you offer?
+              - img [ref=e161]
+            - paragraph [ref=e166]: Preschool, Pre-K, and Junior Kindergarten. Each program has its own classroom, lead teacher, and daily rhythm tuned to the age group.
+          - listitem [ref=e167]:
+            - button "How does enrollment work?" [ref=e168]:
+              - generic [ref=e169]: How does enrollment work?
+              - img [ref=e171]
+            - paragraph [ref=e172]: Plan a visit, walk through the classrooms, and meet the team. Once you decide, the enrollment portal handles paperwork, scheduling, and tuition online.
+          - listitem [ref=e173]:
+            - button "What does tuition cover?" [ref=e174]:
+              - generic [ref=e175]: What does tuition cover?
+              - img [ref=e177]
+            - paragraph [ref=e178]: Daily care, all programs, meals and snacks, and parent portal access. Optional extras (extended hours, special programs) are billed transparently when used.
+          - listitem [ref=e179]:
+            - button "How will I hear about my child's day?" [ref=e180]:
+              - generic [ref=e181]: How will I hear about my child's day?
+              - img [ref=e183]
+            - paragraph [ref=e184]: "Through the parent portal: notes, photos, and updates from teachers, plus monthly milestones. Calm, organized, and never overwhelming."
+          - listitem [ref=e185]:
+            - button "Where are you located?" [ref=e186]:
+              - generic [ref=e187]: Where are you located?
+              - img [ref=e189]
+            - paragraph [ref=e190]: 5 Engineering Street off Textile Mill Road, Edo State, Benin City, Nigeria
+      - generic [ref=e193]:
+        - generic [ref=e194]:
+          - paragraph [ref=e195]: Plan a visit
+          - heading "Come by, see a classroom, meet the team." [level=2] [ref=e196]
+        - generic [ref=e197]:
+          - paragraph [ref=e198]: Visits last about 30 minutes. We’ll walk you through the rooms, talk through the day, and answer everything you bring.
+          - generic [ref=e199]:
+            - link "Schedule a visit" [ref=e200] [cursor=pointer]:
+              - /url: /contact
+              - text: Schedule a visit
+              - img
+            - link "Or call 08071671289" [ref=e201] [cursor=pointer]:
+              - /url: tel:08071671289
+    - contentinfo "Site footer" [ref=e202]:
+      - generic [ref=e203]:
+        - generic [ref=e204]:
+          - generic [ref=e205]:
+            - link "AC" [ref=e207] [cursor=pointer]:
+              - /url: /
+              - generic [ref=e208]: AC
+            - paragraph [ref=e210]: Ambassadors
+            - heading "Day care that feels like home, with quality care." [level=3] [ref=e212]
+            - paragraph [ref=e214]: Affordable programs by age, quality care, and a welcoming next step for families in Benin City.
+            - link "Start Enrollment" [ref=e216] [cursor=pointer]:
+              - /url: /signup/parent
+          - generic [ref=e217]:
+            - navigation "Explore" [ref=e218]:
+              - generic [ref=e219]:
+                - heading "Explore" [level=3] [ref=e221]
+                - list [ref=e222]:
+                  - listitem [ref=e223]:
+                    - link "Programs" [ref=e225] [cursor=pointer]:
+                      - /url: /programs
+                  - listitem [ref=e226]:
+                    - link "About" [ref=e228] [cursor=pointer]:
+                      - /url: /about
+                  - listitem [ref=e229]:
+                    - link "Tuition" [ref=e231] [cursor=pointer]:
+                      - /url: /tuition
+                  - listitem [ref=e232]:
+                    - link "FAQ" [ref=e234] [cursor=pointer]:
+                      - /url: /faq
+            - navigation "Get Started" [ref=e235]:
+              - generic [ref=e236]:
+                - heading "Get Started" [level=3] [ref=e238]
+                - list [ref=e239]:
+                  - listitem [ref=e240]:
+                    - link "Create Parent Account" [ref=e242] [cursor=pointer]:
+                      - /url: /signup/parent
+                  - listitem [ref=e243]:
+                    - link "Waitlist" [ref=e245] [cursor=pointer]:
+                      - /url: /waitlist
+                  - listitem [ref=e246]:
+                    - link "Contact" [ref=e248] [cursor=pointer]:
+                      - /url: /contact
+            - navigation "Portal" [ref=e249]:
+              - generic [ref=e250]:
+                - heading "Portal" [level=3] [ref=e252]
+                - list [ref=e253]:
+                  - listitem [ref=e254]:
+                    - link "Parent Login" [ref=e256] [cursor=pointer]:
+                      - /url: /login/parent
+                  - listitem [ref=e257]:
+                    - link "Admin Login" [ref=e259] [cursor=pointer]:
+                      - /url: /login/admin
+            - navigation "Contact" [ref=e260]:
+              - generic [ref=e261]:
+                - heading "Contact" [level=3] [ref=e263]
+                - list [ref=e264]:
+                  - listitem [ref=e265]:
+                    - link "Visit contact page" [ref=e267] [cursor=pointer]:
+                      - /url: /contact
+                  - listitem [ref=e268]:
+                    - link "hello@ambassadorscare.com" [ref=e270] [cursor=pointer]:
+                      - /url: mailto:hello@ambassadorscare.com
+                  - listitem [ref=e271]:
+                    - link "08071671289" [ref=e273] [cursor=pointer]:
+                      - /url: tel:08071671289
+        - generic [ref=e274]:
+          - list "Footer quick links" [ref=e275]:
+            - listitem [ref=e276]:
+              - link "Email Ambassadors Care" [ref=e278] [cursor=pointer]:
+                - /url: mailto:hello@ambassadorscare.com
+                - img [ref=e279]
+            - listitem [ref=e282]:
+              - link "Call Ambassadors Care" [ref=e284] [cursor=pointer]:
+                - /url: tel:08071671289
+                - img [ref=e285]
+            - listitem [ref=e287]:
+              - link "Open the Ambassadors Care contact page" [ref=e289] [cursor=pointer]:
+                - /url: /contact
+                - img [ref=e290]
+          - generic [ref=e293]:
+            - paragraph [ref=e294]: © 2026 Ambassadors Care. All rights reserved.
+            - paragraph [ref=e295]: 5 Engineering Street off Textile Mill Road, Edo State, Benin City, Nigeria
+  - alert [ref=e296]
