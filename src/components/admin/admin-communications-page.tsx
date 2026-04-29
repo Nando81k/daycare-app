@@ -5,6 +5,10 @@ import { useState } from "react"
 
 import { AdminAnnouncementEditor } from "@/components/admin/admin-announcement-editor"
 import { AdminDataTable } from "@/components/admin/admin-data-table"
+import {
+  DrawerBody,
+  DrawerSummary,
+} from "@/components/admin/admin-detail-drawer"
 import { AdminMessageReplyEditor } from "@/components/admin/admin-message-reply-editor"
 import {
   formatAdminLabel,
@@ -20,7 +24,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
@@ -219,32 +222,31 @@ export function AdminCommunicationsPageView({
               if (!open) setSelectedThreadId(null)
             }}
           >
-            <SheetContent className="sm:max-w-lg">
-              <SheetHeader>
-                <SheetTitle>{selectedThread?.subject ?? "Thread"}</SheetTitle>
-                <SheetDescription>
-                  {selectedThread?.familyName} · {selectedThread?.classroomLabel}
-                </SheetDescription>
+            <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-lg">
+              <SheetHeader className="border-b border-border/60 px-5 py-3">
+                <SheetTitle className="text-base">Message thread</SheetTitle>
               </SheetHeader>
               {selectedThread && (
-                <div className="space-y-6 p-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>Last message: {selectedThread.lastMessageAt}</span>
+                <DrawerBody>
+                  <DrawerSummary
+                    title={selectedThread.subject}
+                    subtitle={`${selectedThread.familyName} · ${selectedThread.classroomLabel}`}
+                    badges={
                       <StatusBadge variant={getMessageStatusVariant(selectedThread.status)}>
                         {formatAdminLabel(selectedThread.status)}
                       </StatusBadge>
-                    </div>
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {selectedThread.preview}
-                    </p>
-                  </div>
+                    }
+                    meta={<span>Last message {selectedThread.lastMessageAt}</span>}
+                  />
+                  <p className="rounded-md bg-muted/40 px-3 py-2 text-sm leading-6 text-muted-foreground">
+                    {selectedThread.preview}
+                  </p>
                   <AdminMessageReplyEditor
                     threadId={selectedThread.id}
                     subject={selectedThread.subject}
                     onClear={() => setSelectedThreadId(null)}
                   />
-                </div>
+                </DrawerBody>
               )}
             </SheetContent>
           </Sheet>

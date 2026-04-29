@@ -4,6 +4,10 @@ import Link from "next/link"
 import { useState } from "react"
 
 import { AdminDataTable } from "@/components/admin/admin-data-table"
+import {
+  DrawerBody,
+  DrawerSummary,
+} from "@/components/admin/admin-detail-drawer"
 import { AdminEnrollmentEditor } from "@/components/admin/admin-enrollment-editor"
 import { AdminWaitlistEditor } from "@/components/admin/admin-waitlist-editor"
 import {
@@ -14,6 +18,7 @@ import {
 } from "@/components/admin/admin-status"
 import { AlertBanner } from "@/components/shared/alert-banner"
 import { PageShell } from "@/components/shared/page-shell"
+import { StatusBadge } from "@/components/shared/status-badge"
 import { buttonVariants } from "@/components/ui/button"
 import {
   Card,
@@ -25,7 +30,6 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
@@ -226,21 +230,39 @@ export function AdminEnrollmentPageView({
           if (!open) setSelectedLeadId(null)
         }}
       >
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Update enrollment lead</SheetTitle>
-            <SheetDescription>
-              {selectedLead
-                ? `${selectedLead.familyName} · ${selectedLead.childName}`
-                : "Edit lead details"}
-            </SheetDescription>
+        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-lg">
+          <SheetHeader className="border-b border-border/60 px-5 py-3">
+            <SheetTitle className="text-base">Update enrollment lead</SheetTitle>
           </SheetHeader>
           {selectedLead && (
-            <AdminEnrollmentEditor
-              key={selectedLead.id}
-              lead={selectedLead}
-              onClear={() => setSelectedLeadId(null)}
-            />
+            <DrawerBody>
+              <DrawerSummary
+                title={selectedLead.familyName}
+                subtitle={`${selectedLead.childName} · ${selectedLead.programInterest}`}
+                badges={
+                  <>
+                    <StatusBadge variant={getEnrollmentStageVariant(selectedLead.stage)}>
+                      {formatAdminLabel(selectedLead.stage)}
+                    </StatusBadge>
+                    <StatusBadge variant={getPriorityVariant(selectedLead.priority)}>
+                      {formatAdminLabel(selectedLead.priority)}
+                    </StatusBadge>
+                  </>
+                }
+                meta={
+                  <>
+                    <span>Start {selectedLead.requestedStart}</span>
+                    <span>Source · {selectedLead.source}</span>
+                    <span>Owner · {selectedLead.assignedTo}</span>
+                  </>
+                }
+              />
+              <AdminEnrollmentEditor
+                key={selectedLead.id}
+                lead={selectedLead}
+                onClear={() => setSelectedLeadId(null)}
+              />
+            </DrawerBody>
           )}
         </SheetContent>
       </Sheet>
@@ -251,21 +273,39 @@ export function AdminEnrollmentPageView({
           if (!open) setSelectedEntryId(null)
         }}
       >
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Update waitlist entry</SheetTitle>
-            <SheetDescription>
-              {selectedEntry
-                ? `${selectedEntry.familyName} · ${selectedEntry.childName}`
-                : "Edit entry details"}
-            </SheetDescription>
+        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-lg">
+          <SheetHeader className="border-b border-border/60 px-5 py-3">
+            <SheetTitle className="text-base">Update waitlist entry</SheetTitle>
           </SheetHeader>
           {selectedEntry && (
-            <AdminWaitlistEditor
-              key={selectedEntry.id}
-              entry={selectedEntry}
-              onClear={() => setSelectedEntryId(null)}
-            />
+            <DrawerBody>
+              <DrawerSummary
+                title={selectedEntry.familyName}
+                subtitle={`${selectedEntry.childName} · ${selectedEntry.ageLabel}`}
+                badges={
+                  <>
+                    <StatusBadge variant={getWaitlistStatusVariant(selectedEntry.status)}>
+                      {formatAdminLabel(selectedEntry.status)}
+                    </StatusBadge>
+                    <StatusBadge variant={getPriorityVariant(selectedEntry.priority)}>
+                      {formatAdminLabel(selectedEntry.priority)}
+                    </StatusBadge>
+                  </>
+                }
+                meta={
+                  <>
+                    <span>Start {selectedEntry.requestedStart}</span>
+                    <span>Schedule · {selectedEntry.scheduleNeed}</span>
+                    <span>Owner · {selectedEntry.assignedTo}</span>
+                  </>
+                }
+              />
+              <AdminWaitlistEditor
+                key={selectedEntry.id}
+                entry={selectedEntry}
+                onClear={() => setSelectedEntryId(null)}
+              />
+            </DrawerBody>
           )}
         </SheetContent>
       </Sheet>
