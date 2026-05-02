@@ -68,13 +68,147 @@ async function resetDatabase() {
   await prisma.calendarEvent.deleteMany()
   await prisma.schoolSetting.deleteMany()
   await prisma.announcement.deleteMany()
+  await prisma.feeRule.deleteMany()
+  await prisma.enrollmentApplication.deleteMany()
+  await prisma.stripeSubscriptionMapping.deleteMany()
+  await prisma.adminProfile.deleteMany()
+  await prisma.programRate.deleteMany()
+  await prisma.program.deleteMany()
+  await prisma.schedule.deleteMany()
   await prisma.user.deleteMany()
   await prisma.classroom.deleteMany()
   await prisma.family.deleteMany()
 }
 
+async function seedFeeRules() {
+  await Promise.all([
+    prisma.feeRule.create({
+      data: {
+        kind: "REGISTRATION",
+        label: "Registration fee",
+        description: "One-time registration fee charged upon enrollment approval.",
+        amountCents: 25_000_00,
+        currency: "NGN",
+      },
+    }),
+    prisma.feeRule.create({
+      data: {
+        kind: "MATERIALS",
+        label: "Materials fee",
+        description: "Annual materials and supplies fee.",
+        amountCents: 12_000_00,
+        currency: "NGN",
+      },
+    }),
+    prisma.feeRule.create({
+      data: {
+        kind: "LATE",
+        label: "Late payment fee",
+        description: "Applied to invoices not paid by the due date.",
+        amountCents: 5_000_00,
+        currency: "NGN",
+      },
+    }),
+  ])
+}
+
+async function seedProgramsAndPricing() {
+  const programs = await Promise.all([
+    prisma.program.create({
+      data: {
+        slug: "infant-care",
+        name: "Infant Care",
+        ageRange: "6 weeks – 15 months",
+        description: "Calm, attentive care with predictable routines and gentle developmental play.",
+        sortOrder: 1,
+      },
+    }),
+    prisma.program.create({
+      data: {
+        slug: "toddler-program",
+        name: "Toddler Program",
+        ageRange: "15 months – 3 years",
+        description: "Playful exploration with structured circles for language and motor skills.",
+        sortOrder: 2,
+      },
+    }),
+    prisma.program.create({
+      data: {
+        slug: "preschool",
+        name: "Preschool",
+        ageRange: "3 – 4 years",
+        description: "Project-based learning, early literacy, and outdoor discovery.",
+        sortOrder: 3,
+      },
+    }),
+    prisma.program.create({
+      data: {
+        slug: "pre-k",
+        name: "Pre-K",
+        ageRange: "4 – 5 years",
+        description: "Kindergarten readiness with reading, writing, and confident social skills.",
+        sortOrder: 4,
+      },
+    }),
+  ])
+
+  const schedules = await Promise.all([
+    prisma.schedule.create({
+      data: {
+        slug: "full-time",
+        name: "Full-time",
+        daysDescription: "Mon – Fri, 7:30 AM – 5:30 PM",
+        sortOrder: 1,
+      },
+    }),
+    prisma.schedule.create({
+      data: {
+        slug: "part-time-mwf",
+        name: "Part-time · MWF",
+        daysDescription: "Mon / Wed / Fri",
+        sortOrder: 2,
+      },
+    }),
+    prisma.schedule.create({
+      data: {
+        slug: "part-time-tth",
+        name: "Part-time · T/Th",
+        daysDescription: "Tue / Thu",
+        sortOrder: 3,
+      },
+    }),
+  ])
+
+  // NGN amounts in minor units (kobo).
+  const rateMatrix = {
+    "infant-care": { "full-time": 285_000_00, "part-time-mwf": 198_000_00, "part-time-tth": 152_000_00 },
+    "toddler-program": { "full-time": 245_000_00, "part-time-mwf": 168_000_00, "part-time-tth": 132_000_00 },
+    preschool: { "full-time": 215_000_00, "part-time-mwf": 152_000_00, "part-time-tth": 118_000_00 },
+    "pre-k": { "full-time": 215_000_00, "part-time-mwf": 152_000_00, "part-time-tth": 118_000_00 },
+  }
+
+  for (const program of programs) {
+    const programRates = rateMatrix[program.slug]
+    if (!programRates) continue
+    for (const schedule of schedules) {
+      const rateCents = programRates[schedule.slug]
+      if (!rateCents) continue
+      await prisma.programRate.create({
+        data: {
+          programId: program.id,
+          scheduleId: schedule.id,
+          rateCents,
+          billingLabel: "per month",
+        },
+      })
+    }
+  }
+}
+
 async function main() {
   await resetDatabase()
+  await seedProgramsAndPricing()
+  await seedFeeRules()
 
   const [willowInfants, meadowToddlers, sunrisePreschool] = await Promise.all([
     prisma.classroom.create({
@@ -687,7 +821,7 @@ async function main() {
         description: "Five-day preschool tuition for April.",
         amountCents: 152000,
         dueDate: date("2026-04-10T17:00:00.000Z"),
-        status: "DUE",
+        status: "OPEN",
       },
     }),
     prisma.invoice.create({
@@ -721,7 +855,7 @@ async function main() {
         description: "Five-day preschool tuition for April.",
         amountCents: 152000,
         dueDate: date("2026-04-07T17:00:00.000Z"),
-        status: "DUE",
+        status: "OPEN",
       },
       {
         familyId: brooksFamily.id,
@@ -729,7 +863,7 @@ async function main() {
         description: "Three-day preschool tuition for March.",
         amountCents: 65000,
         dueDate: date("2026-03-10T17:00:00.000Z"),
-        status: "DUE",
+        status: "OPEN",
       },
       {
         familyId: martinezFamily.id,

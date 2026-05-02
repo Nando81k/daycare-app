@@ -5,49 +5,51 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Editorial palette: ivory + deep green + gold */
+  /* Ambassadors Day Care brand palette: navy + bright blue + gold + green */
   --font-sans-stack:
     var(--font-body), "Inter", "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-heading-stack:
     var(--font-display), "Fraunces", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  --background: #faf6ef;
-  --foreground: #1a2a22;
-  --card: #fffcf6;
-  --card-foreground: #1a2a22;
-  --popover: #fffcf6;
-  --popover-foreground: #1a2a22;
-  --primary: #1e3a2e;
-  --primary-foreground: #faf6ef;
-  --secondary: #efe9dc;
-  --secondary-foreground: #1a2a22;
-  --muted: #f2ede2;
-  --muted-foreground: #5a6a60;
-  --accent: #b8924a;
-  --accent-foreground: #1a2a22;
-  --destructive: #b23a3a;
-  --destructive-foreground: #faf6ef;
-  --border: #dcd3bf;
-  --input: #dcd3bf;
-  --ring: #b8924a;
-  --radius: 0.25rem;
-  --shadow-soft: 0 2px 8px -2px rgba(26, 42, 34, 0.16);
-  --shadow-float: 0 4px 16px -4px rgba(26, 42, 34, 0.22);
-  --success:
-    var(--color-emerald-700);
-  --success-foreground:
-    var(--color-emerald-50);
-  --info:
-    var(--color-amber-700);
-  --info-foreground:
-    var(--color-amber-50);
-  --warning:
-    var(--color-amber-600);
-  --warning-foreground:
-    var(--color-amber-50);
-  --invert:
-    #1a2a22;
-  --invert-foreground:
-    #faf6ef;
+
+  /* Brand semantic tokens (used by component utilities + custom Tailwind colors) */
+  --navy: #0D3B78;
+  --brand-blue: #2F80ED;
+  --brand-blue-soft: #69B7FF;
+  --brand-yellow: #F4C542;
+  --brand-green: #8BCF3F;
+  --brand-red: #EF5350;
+
+  /* shadcn surface tokens */
+  --background: #F4F9FF;
+  --foreground: #16324F;
+  --card: #FFFFFF;
+  --card-foreground: #16324F;
+  --popover: #FFFFFF;
+  --popover-foreground: #16324F;
+  --primary: #2F80ED;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E8F1FE;
+  --secondary-foreground: #16324F;
+  --muted: #EFF5FE;
+  --muted-foreground: #5B718C;
+  --accent: #F4C542;
+  --accent-foreground: #16324F;
+  --destructive: #EF5350;
+  --destructive-foreground: #FFFFFF;
+  --border: #D9E7F7;
+  --input: #D9E7F7;
+  --ring: #2F80ED;
+  --radius: 0.75rem;
+  --shadow-soft: 0 2px 10px -2px rgba(13, 59, 120, 0.12);
+  --shadow-float: 0 8px 24px -8px rgba(13, 59, 120, 0.18);
+  --success: #8BCF3F;
+  --success-foreground: #FFFFFF;
+  --info: #69B7FF;
+  --info-foreground: #0D3B78;
+  --warning: #F4C542;
+  --warning-foreground: #16324F;
+  --invert: #0D3B78;
+  --invert-foreground: #FFFFFF;
 }
 
 @theme inline {
@@ -70,6 +72,13 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  /* Brand semantic colors (use as bg-navy, text-brand-blue, etc) */
+  --color-navy: var(--navy);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-soft: var(--brand-blue-soft);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-brand-green: var(--brand-green);
+  --color-brand-red: var(--brand-red);
   --radius-sm: calc(var(--radius) * 0.7);
   --radius-md: calc(var(--radius) * 0.88);
   --radius-lg: var(--radius);
@@ -109,7 +118,7 @@ body {
   overflow-x: clip;
   font-family: var(--font-sans-stack);
   background-image:
-    linear-gradient(180deg, rgba(255, 252, 248, 0.96), rgba(244, 238, 226, 1));
+    linear-gradient(180deg, #FFFFFF 0%, #EAF3FF 100%);
   background-attachment: fixed;
 }
 
@@ -140,6 +149,7 @@ a {
   h4 {
     font-family: var(--font-heading-stack);
     letter-spacing: -0.025em;
+    color: var(--navy);
   }
 
   :focus-visible {
@@ -171,8 +181,8 @@ a {
   }
 
   .surface-panel-emphasis {
-    @apply rounded-[var(--radius-lg)] border border-accent/30;
-    background: linear-gradient(145deg, rgba(255, 249, 235, 0.96), rgba(247, 240, 222, 0.96));
+    @apply rounded-[var(--radius-lg)] border border-accent/45;
+    background: linear-gradient(145deg, #FFFBEC 0%, #FFF4D1 100%);
     box-shadow: var(--shadow-float);
   }
 
@@ -211,7 +221,7 @@ a {
   .image-panel::after {
     content: "";
     @apply pointer-events-none absolute inset-0;
-    background: linear-gradient(180deg, transparent 48%, rgba(26, 42, 34, 0.5) 100%);
+    background: linear-gradient(180deg, transparent 48%, rgba(13, 59, 120, 0.55) 100%);
   }
 
   .image-grain::before {
@@ -225,16 +235,16 @@ a {
 
   .portal-backdrop {
     background:
-      linear-gradient(180deg, rgba(255, 252, 248, 0.94), rgba(244, 237, 222, 0.98));
+      linear-gradient(180deg, #FFFFFF 0%, #EAF3FF 100%);
   }
 
   .workspace-backdrop {
-    @apply border border-border/40 bg-card/88;
+    @apply border border-border/40 bg-card/95;
     box-shadow: var(--shadow-soft);
   }
 
   .portal-sidebar-surface {
-    @apply border border-border/55 bg-[linear-gradient(180deg,rgba(255,252,248,0.98),rgba(243,236,221,0.94))];
+    @apply border border-border/55 bg-[linear-gradient(180deg,#FFFFFF_0%,#F4F9FF_100%)];
     box-shadow: var(--shadow-float);
   }
 
@@ -251,7 +261,7 @@ a {
   }
 
   .dashboard-list-item:hover {
-    @apply border-primary/18 bg-accent/30 shadow-(--shadow-soft);
+    @apply border-primary/25 bg-secondary/60 shadow-(--shadow-soft);
   }
 
   .dashboard-toolbar {
@@ -263,7 +273,7 @@ a {
   }
 
   .row-hover:hover {
-    @apply border-primary/18 bg-accent/30 shadow-(--shadow-soft);
+    @apply border-primary/25 bg-secondary/60 shadow-(--shadow-soft);
   }
 }
 
@@ -338,22 +348,13 @@ a {
 }
 
 .dark {
-  --destructive-foreground:
-    var(--color-red-600);
-  --success:
-    var(--color-emerald-500);
-  --success-foreground:
-    var(--color-emerald-600);
-  --info:
-    var(--color-amber-500);
-  --info-foreground:
-    var(--color-amber-100);
-  --warning:
-    var(--color-amber-500);
-  --warning-foreground:
-    var(--color-amber-100);
-  --invert:
-    #faf6ef;
-  --invert-foreground:
-    #1a2a22;
+  --destructive-foreground: #FFFFFF;
+  --success: #8BCF3F;
+  --success-foreground: #FFFFFF;
+  --info: #69B7FF;
+  --info-foreground: #0D3B78;
+  --warning: #F4C542;
+  --warning-foreground: #16324F;
+  --invert: #FFFFFF;
+  --invert-foreground: #0D3B78;
 }

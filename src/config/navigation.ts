@@ -1,6 +1,22 @@
 import {
+  BarChart3,
+  CalendarDays,
+  ClipboardList,
+  ClockIcon,
   CreditCardIcon,
+  FileText,
+  GraduationCap,
+  Hourglass,
   LayoutDashboardIcon,
+  MailOpen,
+  MegaphoneIcon,
+  MessageSquare,
+  School,
+  Settings,
+  ShieldCheck,
+  UserCog,
+  Users,
+  UsersRound,
 } from "lucide-react"
 
 import type { PortalNavGroup, SiteNavLink } from "@/types/app"
@@ -44,19 +60,55 @@ export const footerNav = [
 
 export const parentNav: PortalNavGroup[] = [
   {
-    title: "Parent Portal",
+    title: "Family portal",
     items: [
       {
         title: "Dashboard",
         href: "/parent",
         icon: LayoutDashboardIcon,
-        summary: "Application progress, checklist, and child enrollment details",
+        summary: "Today's overview, balance, and quick links",
       },
       {
-        title: "Overview",
+        title: "Billing",
         href: "/parent/billing",
         icon: CreditCardIcon,
-        summary: "Enrollment progress, current invoice, and payment history",
+        summary: "Invoices, payments, and saved cards",
+      },
+      {
+        title: "Messages",
+        href: "/parent/messages",
+        icon: MessageSquare,
+        summary: "Conversations with the classroom team",
+      },
+      {
+        title: "Documents",
+        href: "/parent/documents",
+        icon: FileText,
+        summary: "Required forms, immunizations, and signed agreements",
+      },
+      {
+        title: "Calendar",
+        href: "/parent/calendar",
+        icon: CalendarDays,
+        summary: "Closures, family events, and tuition reminders",
+      },
+      {
+        title: "Attendance",
+        href: "/parent/attendance",
+        icon: ClockIcon,
+        summary: "Daily check-ins and absence history",
+      },
+      {
+        title: "Announcements",
+        href: "/parent/announcements",
+        icon: MegaphoneIcon,
+        summary: "Updates from the school",
+      },
+      {
+        title: "Settings",
+        href: "/parent/settings",
+        icon: Settings,
+        summary: "Notification preferences and contact info",
       },
     ],
   },
@@ -64,20 +116,153 @@ export const parentNav: PortalNavGroup[] = [
 
 export const adminNav: PortalNavGroup[] = [
   {
-    title: "Admin Portal",
+    title: "Overview",
     items: [
       {
-        title: "Enrollments",
+        title: "Dashboard",
         href: "/admin",
         icon: LayoutDashboardIcon,
-        summary: "Submitted forms, payment state, and manual approval",
+        summary: "Today's attendance, balances, alerts, and follow-ups at a glance",
+      },
+    ],
+  },
+  {
+    title: "Enrollment",
+    items: [
+      {
+        title: "Applications",
+        href: "/admin/enrollment",
+        icon: ClipboardList,
+        summary: "Submitted applications and waitlist queue",
       },
       {
-        title: "Programs & Pricing",
-        href: "/admin/rooms",
+        title: "Waitlist",
+        href: "/admin/waitlist",
+        icon: Hourglass,
+        summary: "Families waiting for an open seat",
+      },
+    ],
+  },
+  {
+    title: "Families & children",
+    items: [
+      {
+        title: "Families",
+        href: "/admin/families",
+        icon: UsersRound,
+        summary: "Family directory with billing and child rosters",
+      },
+      {
+        title: "Children",
+        href: "/admin/children",
+        icon: Users,
+        summary: "Every enrolled child with health and classroom details",
+      },
+      {
+        title: "Classrooms",
+        href: "/admin/classrooms",
+        icon: School,
+        summary: "Capacity, ratios, and classroom assignments",
+      },
+    ],
+  },
+  {
+    title: "Daily operations",
+    items: [
+      {
+        title: "Attendance",
+        href: "/admin/attendance",
+        icon: ClockIcon,
+        summary: "Mark check-ins, absences, and follow-ups for today",
+      },
+      {
+        title: "Calendar",
+        href: "/admin/calendar",
+        icon: CalendarDays,
+        summary: "Closures, family events, and classroom schedules",
+      },
+      {
+        title: "Documents",
+        href: "/admin/documents",
+        icon: FileText,
+        summary: "Required forms, submissions to review, and expirations",
+      },
+      {
+        title: "Staff",
+        href: "/admin/staff",
+        icon: UserCog,
+        summary: "Educator roster, coverage gaps, and certifications",
+      },
+    ],
+  },
+  {
+    title: "Communications",
+    items: [
+      {
+        title: "Messages",
+        href: "/admin/messages",
+        icon: MessageSquare,
+        summary: "Family conversation threads",
+      },
+      {
+        title: "Communications hub",
+        href: "/admin/communications",
+        icon: MailOpen,
+        summary: "Threads + announcement drafts in one workspace",
+      },
+      {
+        title: "Announcements",
+        href: "/admin/announcements",
+        icon: MegaphoneIcon,
+        summary: "Publish updates to families and classrooms",
+      },
+    ],
+  },
+  {
+    title: "Finance",
+    items: [
+      {
+        title: "Billing",
+        href: "/admin/billing",
         icon: CreditCardIcon,
-        summary: "Manage classrooms, schedules, and tuition rates",
+        summary: "Outstanding balances, failed payments, and invoice creation",
+      },
+      {
+        title: "Programs & pricing",
+        href: "/admin/rooms",
+        icon: GraduationCap,
+        summary: "Programs, schedules, and the tuition rate matrix",
+      },
+      {
+        title: "Reports",
+        href: "/admin/reports",
+        icon: BarChart3,
+        summary: "Enrollment, attendance, and revenue reports",
+      },
+    ],
+  },
+  {
+    title: "Settings",
+    items: [
+      {
+        title: "Settings",
+        href: "/admin/settings",
+        icon: Settings,
+        summary: "Center policies, hours, contact info, and integrations",
+      },
+      {
+        title: "Security",
+        href: "/admin/security",
+        icon: ShieldCheck,
+        summary: "Two-factor authentication for your admin account",
+      },
+      {
+        title: "Audit log",
+        href: "/admin/audit",
+        icon: ClipboardList,
+        summary: "Every recorded action across the platform",
       },
     ],
   },
 ]
+

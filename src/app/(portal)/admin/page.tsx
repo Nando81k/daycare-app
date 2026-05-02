@@ -1,14 +1,24 @@
-import { AdminSimpleEnrollmentPageView } from "@/components/admin/admin-simple-enrollment-page"
-import { simpleAdminDashboardPageContent } from "@/data/minimal-portal"
-import { getSimpleAdminWorkspaceData } from "@/lib/dal/minimal-portal"
+import { AdminOverviewPageView } from "@/components/admin/admin-overview-page"
+import { adminOverviewPageContent } from "@/data/admin"
+import { getAdminPortalData } from "@/lib/dal/admin"
 import { createPageMetadata } from "@/lib/metadata"
 
-const page = simpleAdminDashboardPageContent
-
-export const metadata = createPageMetadata(page.metadata)
+export const metadata = createPageMetadata(adminOverviewPageContent.metadata)
 
 export default async function AdminOverviewPage() {
-  const data = await getSimpleAdminWorkspaceData()
+  const data = await getAdminPortalData()
 
-  return <AdminSimpleEnrollmentPageView {...data} />
+  return (
+    <AdminOverviewPageView
+      dashboard={data.dashboard}
+      attendanceBoard={data.attendanceBoard}
+      balances={data.balances}
+      documents={data.documents}
+      familyHub={data.familyHub}
+      messageThreads={data.messageThreads}
+      classrooms={data.classrooms}
+      waitlistEntries={data.waitlistEntries}
+      staffProfiles={data.staffProfiles}
+    />
+  )
 }

@@ -1,3 +1,5 @@
+import type { InvoiceStatus } from "@prisma/client"
+
 import type {
   AdminAnnouncementPreview,
   AdminBillingReminderPreview,
@@ -28,7 +30,7 @@ import type {
 } from "@/types/app"
 import { requireRole } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { formatCurrencyFromCents, formatFullDate, formatMonthDay, formatRelativeDateTime, formatTime } from "@/lib/format"
+import { formatCurrencyFromCents, formatFileSize, formatFullDate, formatMonthDay, formatRelativeDateTime, formatTime } from "@/lib/format"
 
 const SCHOOL_TIME_ZONE = "America/New_York"
 
@@ -123,8 +125,13 @@ function mapAttendanceStatus(status: "PRESENT" | "ABSENT" | "SCHEDULED"): AdminC
   }
 }
 
-function getFamilyBalanceStatus(invoices: Array<{ status: "PAID" | "DUE" | "DRAFT"; dueDate: Date; amountCents: number }>) {
-  const unpaidInvoices = invoices.filter((invoice) => invoice.status === "DUE")
+function getFamilyBalanceStatus(invoices: Array<{ status: InvoiceStatus; dueDate: Date; amountCents: number }>) {
+  const unpaidInvoices = invoices.filter(
+    (invoice) =>
+      invoice.status === "OPEN" ||
+      invoice.status === "PARTIALLY_PAID" ||
+      invoice.status === "FAILED"
+  )
 
   if (unpaidInvoices.length === 0) {
     return "current" as const
@@ -541,9 +548,9 @@ export async function getAdminPortalData(): Promise<{
   const balances = families
     .map((family) => {
       const totalDueCents = family.invoices
-        .filter((invoice) => invoice.status === "DUE")
+        .filter((invoice) => invoice.status === "OPEN")
         .reduce((total, invoice) => total + invoice.amountCents, 0)
-      const dueInvoices = family.invoices.filter((invoice) => invoice.status === "DUE")
+      const dueInvoices = family.invoices.filter((invoice) => invoice.status === "OPEN")
       const balanceStatus = getFamilyBalanceStatus(family.invoices)
 
       return {
@@ -583,6 +590,9 @@ export async function getAdminPortalData(): Promise<{
           note: document.note,
           fileName: document.fileName ?? undefined,
           downloadUrl: document.blobDownloadUrl ?? document.blobUrl ?? undefined,
+          previewUrl: document.blobUrl ?? document.blobDownloadUrl ?? undefined,
+          contentType: document.contentType ?? undefined,
+          sizeLabel: document.sizeBytes ? formatFileSize(document.sizeBytes) : undefined,
           submittedAt: document.submittedAt ? formatMonthDay(document.submittedAt) : undefined,
           reviewedByName: document.reviewedByName ?? undefined,
         }
@@ -779,7 +789,7 @@ export async function getAdminPortalData(): Promise<{
   const billingReminders = families
     .flatMap((family) =>
       family.invoices
-        .filter((invoice) => invoice.status === "DUE")
+        .filter((invoice) => invoice.status === "OPEN")
         .map((invoice) => ({
           invoice,
           familyName: family.familyName,
@@ -887,11 +897,11 @@ export async function getAdminPortalData(): Promise<{
     .reduce((sum, payment) => sum + payment.amountCents, 0)
   const dueSoonCents = families
     .flatMap((family) => family.invoices)
-    .filter((invoice) => invoice.status === "DUE" && invoice.dueDate >= new Date())
+    .filter((invoice) => invoice.status === "OPEN" && invoice.dueDate >= new Date())
     .reduce((sum, invoice) => sum + invoice.amountCents, 0)
   const overdueCents = families
     .flatMap((family) => family.invoices)
-    .filter((invoice) => invoice.status === "DUE" && invoice.dueDate < new Date())
+    .filter((invoice) => invoice.status === "OPEN" && invoice.dueDate < new Date())
     .reduce((sum, invoice) => sum + invoice.amountCents, 0)
   const revenueTotal = Math.max(collectedCents + dueSoonCents + overdueCents, 1)
 

@@ -46,6 +46,10 @@ prisma/dev.db-wal
 # vercel
 .vercel
 
+# playwright mcp scratch + ad-hoc screenshots
+.playwright-mcp/
+/*.png
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -55,7 +55,7 @@ export function Calendar({
         day: cn(
           "group/day relative p-0 text-center align-middle",
           "[&[data-today=true]>button]:ring-1 [&[data-today=true]>button]:ring-primary/45",
-          "[&[data-selected=true]>button]:border-primary/18 [&[data-selected=true]>button]:bg-primary [&[data-selected=true]>button]:text-primary-foreground [&[data-selected=true]>button]:shadow-[0_18px_36px_-28px_rgba(71,130,126,0.78)]",
+          "[&[data-selected=true]>button]:border-primary/25 [&[data-selected=true]>button]:bg-primary [&[data-selected=true]>button]:text-primary-foreground [&[data-selected=true]>button]:shadow-[0_18px_36px_-28px_rgba(13,59,120,0.55)]",
           "[&[data-outside=true]>button]:text-muted-foreground/38 [&[data-outside=true]>button]:opacity-80",
           "[&[data-disabled=true]>button]:text-muted-foreground/35 [&[data-disabled=true]>button]:opacity-55",
           defaultClassNames.day

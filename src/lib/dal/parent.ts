@@ -1,3 +1,5 @@
+import type { InvoiceStatus } from "@prisma/client"
+
 import type {
   ChildProfilePreview,
   DashboardDomainSummary,
@@ -42,13 +44,17 @@ function toObjectArray<T extends JsonRecord>(value: unknown) {
   return Array.isArray(value) ? (value as T[]) : []
 }
 
-function mapInvoiceStatus(status: "PAID" | "DUE" | "DRAFT"): MinimalInvoicePreview["status"] {
+function mapInvoiceStatus(status: InvoiceStatus): MinimalInvoicePreview["status"] {
   switch (status) {
     case "PAID":
+    case "REFUNDED":
       return "paid"
-    case "DUE":
+    case "OPEN":
+    case "PARTIALLY_PAID":
+    case "FAILED":
       return "due"
     case "DRAFT":
+    case "VOID":
       return "draft"
   }
 }
@@ -572,6 +578,8 @@ export async function getParentPortalData(): Promise<
     note: document.note,
     fileName: document.fileName ?? undefined,
     downloadUrl: document.blobDownloadUrl ?? document.blobUrl ?? undefined,
+    previewUrl: document.blobUrl ?? document.blobDownloadUrl ?? undefined,
+    contentType: document.contentType ?? undefined,
     submittedAt: document.submittedAt ? formatMonthDay(document.submittedAt) : undefined,
     sizeLabel: document.sizeBytes ? formatFileSize(document.sizeBytes) : undefined,
   }))
@@ -615,7 +623,7 @@ export async function getParentPortalData(): Promise<
   }))
 
   const billingEvents = profile.family.invoices
-    .filter((entry) => entry.status === "DUE")
+    .filter((entry) => entry.status === "OPEN")
     .map((entry) =>
       buildBillingReminderEvent({
         id: entry.id,
@@ -870,6 +878,88 @@ export async function getInvoiceForPayment(
       description: invoice.description ?? undefined,
     },
     enrollmentApproved: profile.family.enrollmentStage === "Approved",
+  }
+}
+
+export async function getParentDocuments(): Promise<ParentDocumentPreview[]> {
+  const user = await requireRole("PARENT")
+
+  const profile = await prisma.parentProfile.findUnique({
+    where: { userId: user.id },
+    select: {
+      family: {
+        select: {
+          documents: { orderBy: { updatedAt: "desc" } },
+        },
+      },
+    },
+  })
+
+  if (!profile) return []
+
+  return profile.family.documents.map((document) => ({
+    id: document.id,
+    title: document.title,
+    category: document.category,
+    status: mapDocumentStatus(document.status),
+    dueDate: document.dueDate ? formatMonthDay(document.dueDate) : undefined,
+    lastUpdated: formatMonthDay(document.updatedAt),
+    note: document.note,
+    fileName: document.fileName ?? undefined,
+    downloadUrl: document.blobDownloadUrl ?? document.blobUrl ?? undefined,
+    previewUrl: document.blobUrl ?? document.blobDownloadUrl ?? undefined,
+    contentType: document.contentType ?? undefined,
+    submittedAt: document.submittedAt ? formatMonthDay(document.submittedAt) : undefined,
+    sizeLabel: document.sizeBytes ? formatFileSize(document.sizeBytes) : undefined,
+  }))
+}
+
+export async function getParentEnrollmentWizardData() {
+  const user = await requireRole("PARENT")
+
+  const profile = await prisma.parentProfile.findUnique({
+    where: { userId: user.id },
+    include: {
+      user: { select: { email: true, name: true } },
+      family: {
+        select: {
+          familyName: true,
+          leads: {
+            orderBy: { updatedAt: "desc" },
+            take: 1,
+            where: { stage: { in: ["CONTACTED", "APPLICATION_SENT"] } },
+          },
+        },
+      },
+    },
+  })
+
+  if (!profile) return null
+
+  const lead = profile.family.leads[0] ?? null
+
+  return {
+    parent: {
+      familyName: profile.family.familyName,
+      parentName: profile.user.name,
+      email: profile.user.email,
+      phone: profile.phone,
+    },
+    lead: lead
+      ? {
+          id: lead.id,
+          familyName: lead.familyName,
+          parentName: lead.parentName,
+          email: lead.email,
+          phone: lead.phone,
+          childName: lead.childName,
+          childAgeLabel: lead.childAgeLabel,
+          requestedStart: lead.requestedStart,
+          programInterest: lead.programInterest,
+          scheduleNeed: lead.scheduleNeed,
+          note: lead.note,
+        }
+      : null,
   }
 }
 

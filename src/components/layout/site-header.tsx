@@ -16,13 +16,19 @@ const navLinkClasses =
   "group relative inline-flex items-center text-sm font-medium uppercase tracking-[0.18em] text-foreground/70 transition-colors duration-200 hover:text-foreground focus-visible:text-foreground focus-visible:outline-none aria-[current=page]:text-foreground after:absolute after:left-0 after:-bottom-1.5 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-accent after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-100 focus-visible:after:scale-x-100 aria-[current=page]:after:scale-x-100 aria-[current=page]:after:bg-accent"
 
 type SiteHeaderProps = {
-  currentUserRole?: "PARENT" | "ADMIN" | null
+  currentUserRole?: "PARENT" | "ADMIN" | "TEACHER" | null
 }
 
 export function SiteHeader({ currentUserRole = null }: SiteHeaderProps = {}) {
   const pathname = usePathname()
   const dashboardHref =
-    currentUserRole === "ADMIN" ? "/admin" : currentUserRole === "PARENT" ? "/parent/billing" : null
+    currentUserRole === "ADMIN"
+      ? "/admin"
+      : currentUserRole === "TEACHER"
+        ? "/teacher"
+        : currentUserRole === "PARENT"
+          ? "/parent/billing"
+          : null
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`)

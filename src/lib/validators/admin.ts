@@ -316,3 +316,89 @@ export const upsertProgramRateSchema = z.object({
   rateCents: z.coerce.number().int().positive("Must be a positive amount"),
   billingLabel: optionalTrimmedString,
 })
+
+// ---------------------------------------------------------------------------
+// Staff management
+// ---------------------------------------------------------------------------
+
+const staffStatusSchema = z.enum(["SCHEDULED", "COVERAGE_NEEDED", "OUT"])
+const staffAccountKindSchema = z.enum(["NONE", "ADMIN", "TEACHER"])
+
+const optionalEmail = z
+  .string()
+  .trim()
+  .email("Enter a valid email")
+  .or(z.literal(""))
+  .transform((value) => (value ? value.toLowerCase() : undefined))
+  .optional()
+
+export const createStaffMemberSchema = z
+  .object({
+    name: requiredString,
+    roleLabel: requiredString,
+    classroomId: optionalTrimmedString,
+    certification: optionalTrimmedString,
+    note: optionalTrimmedString,
+    status: staffStatusSchema.default("SCHEDULED"),
+    accountKind: staffAccountKindSchema.default("NONE"),
+    email: optionalEmail,
+  })
+  .refine(
+    (data) =>
+      data.accountKind === "NONE" || (data.email && data.email.length > 0),
+    {
+      message: "Email is required when creating a portal account.",
+      path: ["email"],
+    }
+  )
+
+export const updateStaffMemberSchema = z.object({
+  staffId: requiredString,
+  name: requiredString,
+  roleLabel: requiredString,
+  classroomId: optionalTrimmedString,
+  certification: optionalTrimmedString,
+  note: optionalTrimmedString,
+  status: staffStatusSchema,
+})
+
+export const assignStaffClassroomSchema = z.object({
+  staffId: requiredString,
+  classroomId: optionalTrimmedString,
+})
+
+export const removeStaffMemberSchema = z.object({
+  staffId: requiredString,
+})
+
+// ---------------------------------------------------------------------------
+// Classrooms
+// ---------------------------------------------------------------------------
+
+const slugPatternStrict = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+export const createClassroomSchema = z.object({
+  name: requiredString.min(2, "Name is too short"),
+  ageGroup: requiredString,
+  capacity: z.coerce.number().int().min(1, "Capacity must be at least 1").max(200),
+  leadTeacherName: optionalTrimmedString,
+  ratioLabel: optionalTrimmedString,
+  nextEvent: optionalTrimmedString,
+  note: optionalTrimmedString,
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(slugPatternStrict, "Lowercase letters, numbers, and hyphens only.")
+    .or(z.literal(""))
+    .transform((value) => value || undefined)
+    .optional(),
+})
+
+export const updateClassroomSchema = createClassroomSchema.extend({
+  classroomId: requiredString,
+})
+
+export const removeClassroomSchema = z.object({
+  classroomId: requiredString,
+})

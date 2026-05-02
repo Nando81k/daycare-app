@@ -352,6 +352,9 @@ export type ParentDocumentPreview = {
   note: string
   fileName?: string
   downloadUrl?: string
+  /** Inline-renderable URL for previewing in an iframe / img tag. */
+  previewUrl?: string
+  contentType?: string
   submittedAt?: string
   sizeLabel?: string
 }
@@ -697,6 +700,10 @@ export type DocumentQueuePreview = {
   note: string
   fileName?: string
   downloadUrl?: string
+  /** Inline-renderable URL for previewing in an iframe / img tag. */
+  previewUrl?: string
+  contentType?: string
+  sizeLabel?: string
   submittedAt?: string
   reviewedByName?: string
 }

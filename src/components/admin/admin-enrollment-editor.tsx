@@ -11,6 +11,7 @@ import {
   AdminTextareaField,
 } from "@/components/admin/admin-form-fields"
 import { Button } from "@/components/ui/button"
+import { parseDashboardApplicationNote } from "@/lib/parent-enrollment"
 import type { AdminActionState, EnrollmentLeadPreview } from "@/types/app"
 
 const initialState: AdminActionState = {
@@ -68,6 +69,7 @@ export function AdminEnrollmentEditor({
   onClear?: () => void
 }) {
   const [state, formAction] = useActionState(updateEnrollmentLead, initialState)
+  const { freeformNote } = parseDashboardApplicationNote(lead.note)
   const formKey = `${lead.id}-${lead.stage}-${lead.priority}-${lead.assignedTo}-${lead.note}`
 
   return (
@@ -94,9 +96,11 @@ export function AdminEnrollmentEditor({
           </div>
         }
       >
-        <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
-          {lead.note}
-        </div>
+        {freeformNote ? (
+          <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
+            {freeformNote}
+          </div>
+        ) : null}
         <AdminFieldGroup className="gap-4">
           <div className="grid gap-4 md:grid-cols-2">
             <AdminSelectField
@@ -124,7 +128,7 @@ export function AdminEnrollmentEditor({
           <AdminTextareaField
             name="note"
             label="Internal note"
-            defaultValue={lead.note}
+            defaultValue={freeformNote}
             placeholder="Capture the clearest next step or concern for this family."
             description="Keep the note actionable so the next follow-up does not depend on memory."
             error={state.fieldErrors.note}

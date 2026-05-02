@@ -6,8 +6,10 @@ import { useForm } from "react-hook-form"
 
 import { AlertBanner } from "@/components/shared/alert-banner"
 import { FormSection } from "@/components/shared/form-section"
+import { TurnstileWidget } from "@/components/shared/turnstile-widget"
 import { Button } from "@/components/ui/button"
 import { contactTopicOptions } from "@/data/marketing"
+import { publicAppEnv } from "@/lib/public-env"
 import { contactFormSchema } from "@/lib/validators/marketing"
 import type { ContactFormValues } from "@/types/app"
 
@@ -33,6 +35,7 @@ function toOptions(values: string[]) {
 export function ContactForm() {
   const [submitted, setSubmitted] = useState(false)
   const [submissionError, setSubmissionError] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState("")
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues,
@@ -41,12 +44,17 @@ export function ContactForm() {
   async function onSubmit(values: ContactFormValues) {
     setSubmissionError(null)
 
+    if (publicAppEnv.turnstileSiteKey && !turnstileToken) {
+      setSubmissionError("Please complete the security check before sending.")
+      return
+    }
+
     const response = await fetch("/api/public/contact", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(values),
+      body: JSON.stringify({ ...values, turnstileToken }),
     })
 
     const payload = (await response.json().catch(() => null)) as { message?: string; ok?: boolean } | null
@@ -139,6 +147,12 @@ export function ContactForm() {
           placeholder="Tell us what you are looking for and we will respond with the most useful next step."
           rows={6}
         />
+        {publicAppEnv.turnstileSiteKey && (
+          <TurnstileWidget
+            sitekey={publicAppEnv.turnstileSiteKey}
+            onToken={setTurnstileToken}
+          />
+        )}
       </form>
     </FormSection>
   )

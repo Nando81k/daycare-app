@@ -7,6 +7,7 @@ import { reviewDocumentSubmission } from "@/app/actions/admin"
 import { AdminSubmitButton } from "@/components/admin/admin-action-panel"
 import { AdminSelectField, AdminTextareaField } from "@/components/admin/admin-form-fields"
 import { AlertBanner } from "@/components/shared/alert-banner"
+import { DocumentPreviewButton } from "@/components/shared/document-preview-dialog"
 import type { AdminActionState, DocumentQueuePreview } from "@/types/app"
 
 const initialState: AdminActionState = {
@@ -66,15 +67,33 @@ export function AdminDocumentReviewEditor({
         />
       </div>
 
-      {document.downloadUrl ? (
-        <Link
-          href={document.downloadUrl}
-          target="_blank"
-          className="mt-4 inline-flex text-sm font-medium text-foreground underline-offset-4 hover:underline"
-        >
-          Download submitted file
-        </Link>
-      ) : null}
+      {(document.previewUrl || document.downloadUrl) && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <DocumentPreviewButton
+            label="Preview submission"
+            document={{
+              title: document.title,
+              fileName: document.fileName,
+              contentType: document.contentType,
+              sizeLabel: document.sizeLabel,
+              previewUrl: document.previewUrl,
+              downloadUrl: document.downloadUrl,
+              subtitle: `${document.familyName} · ${document.childName}${
+                document.submittedAt ? ` · submitted ${document.submittedAt}` : ""
+              }`,
+            }}
+          />
+          {document.downloadUrl && (
+            <Link
+              href={document.downloadUrl}
+              target="_blank"
+              className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Download submitted file
+            </Link>
+          )}
+        </div>
+      )}
 
       {state.error ? (
         <div className="mt-4">

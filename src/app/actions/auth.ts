@@ -15,8 +15,10 @@ import {
 import { getFieldErrors, getMutationState, getStringValue, type MutationActionState } from "@/lib/action-state"
 import { prisma } from "@/lib/db"
 import { buildAppUrl } from "@/lib/env"
+import { consumeRateLimit } from "@/lib/rate-limit"
 import { sendTransactionalEmail } from "@/lib/email"
 import { hashPassword } from "@/lib/password"
+import { verifyTotpCode } from "@/lib/totp"
 import {
   acceptInviteSchema,
   issueInviteSchema,
@@ -28,17 +30,22 @@ import {
 
 export type LoginActionState = {
   error: string | null
+  requiresTwoFactor?: boolean
 }
 
 export type AuthMutationActionState = MutationActionState
-type UserRole = "PARENT" | "ADMIN"
+type UserRole = "PARENT" | "ADMIN" | "TEACHER"
 
-function getPortalRole(role: "parent" | "admin"): UserRole {
-  return role === "parent" ? "PARENT" : "ADMIN"
+function getPortalRole(role: "parent" | "admin"): UserRole | UserRole[] {
+  // Admin login form accepts both ADMIN and TEACHER accounts; the post-login
+  // redirect routes them to /admin or /teacher respectively.
+  return role === "parent" ? "PARENT" : (["ADMIN", "TEACHER"] satisfies UserRole[])
 }
 
 function getPortalDestination(role: UserRole) {
-  return role === "PARENT" ? "/parent/billing" : "/admin"
+  if (role === "PARENT") return "/parent/billing"
+  if (role === "TEACHER") return "/teacher"
+  return "/admin"
 }
 
 export async function signInToPortal(
@@ -57,6 +64,19 @@ export async function signInToPortal(
     }
   }
 
+  const totpCode = String(formData.get("totpCode") ?? "").trim()
+
+  // 8 attempts per IP+email per 15 minutes — friendly to typos, slow to bruteforce.
+  const limit = await consumeRateLimit(
+    { scope: `login:${role}`, limit: 8, windowSec: 60 * 15 },
+    parsed.data.email
+  )
+  if (!limit.ok) {
+    return {
+      error: `Too many sign-in attempts. Try again in ${limit.retryAfterSec} seconds.`,
+    }
+  }
+
   const authenticationResult = await authenticateUser({
     email: parsed.data.email,
     password: parsed.data.password,
@@ -72,6 +92,23 @@ export async function signInToPortal(
   if (authenticationResult.status !== "success") {
     return {
       error: "The email, password, or portal role does not match an active account.",
+    }
+  }
+
+  const authedUser = authenticationResult.user
+  if (authedUser.twoFactorEnabledAt && authedUser.twoFactorSecret) {
+    if (!totpCode) {
+      return {
+        error: null,
+        requiresTwoFactor: true,
+      }
+    }
+
+    if (!verifyTotpCode(totpCode, authedUser.twoFactorSecret)) {
+      return {
+        error: "That two-factor code is invalid or expired. Try again.",
+        requiresTwoFactor: true,
+      }
     }
   }
 

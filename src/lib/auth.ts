@@ -12,10 +12,13 @@ const SESSION_COOKIE_NAME = "abassadors_session"
 const SESSION_TTL_DAYS = 14
 const PASSWORD_RESET_TTL_HOURS = 2
 const INVITE_TTL_HOURS = 72
-type UserRole = "PARENT" | "ADMIN"
+type UserRole = "PARENT" | "ADMIN" | "TEACHER"
 
 function getRoleLoginPath(role: UserRole) {
-  return role === "PARENT" ? "/login/parent" : "/login/admin"
+  if (role === "PARENT") return "/login/parent"
+  // Teachers and admins both authenticate through the admin login form for now;
+  // post-login we route to /admin or /teacher per the role.
+  return "/login/admin"
 }
 
 function hashSessionToken(token: string) {
@@ -51,7 +54,8 @@ export async function authenticateUser({
 }: {
   email: string
   password: string
-  role: UserRole
+  /** Single role or list of allowed roles (admin form accepts both ADMIN and TEACHER). */
+  role: UserRole | UserRole[]
 }) {
   const user = await prisma.user.findUnique({
     where: {
@@ -64,10 +68,13 @@ export async function authenticateUser({
       role: true,
       passwordHash: true,
       mustSetPassword: true,
+      twoFactorSecret: true,
+      twoFactorEnabledAt: true,
     },
   })
 
-  if (!user || user.role !== role) {
+  const allowedRoles = Array.isArray(role) ? role : [role]
+  if (!user || !allowedRoles.includes(user.role as UserRole)) {
     return {
       status: "invalid-credentials" as const,
     }
@@ -274,6 +281,55 @@ export async function markPasswordResetTokenUsed(id: string) {
       usedAt: new Date(),
     },
   })
+}
+
+/**
+ * Create a brand-new User in `mustSetPassword` state, then issue an invite token
+ * the recipient uses to set a real password. Returns both so callers can email
+ * the invite link or surface it in the admin UI.
+ */
+export async function createUserWithInvite({
+  name,
+  email,
+  role,
+  issuedByUserId,
+}: {
+  name: string
+  email: string
+  role: UserRole
+  issuedByUserId?: string
+}) {
+  const normalizedEmail = email.trim().toLowerCase()
+  const existing = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true },
+  })
+  if (existing) {
+    throw new Error("An account with that email already exists.")
+  }
+
+  // Random unguessable placeholder hash so the row is well-formed even though
+  // the user must reset before they can sign in.
+  const placeholder = randomBytes(24).toString("hex")
+  const user = await prisma.user.create({
+    data: {
+      email: normalizedEmail,
+      name: name.trim(),
+      role,
+      passwordHash: hashPassword(placeholder),
+      mustSetPassword: true,
+    },
+    select: { id: true, email: true, name: true, role: true },
+  })
+
+  const invite = await createAccountInviteToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role as UserRole,
+    issuedByUserId,
+  })
+
+  return { user, invite }
 }
 
 export async function createAccountInviteToken({

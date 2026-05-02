@@ -6,7 +6,9 @@ import { useForm } from "react-hook-form"
 
 import { AlertBanner } from "@/components/shared/alert-banner"
 import { FormSection } from "@/components/shared/form-section"
+import { TurnstileWidget } from "@/components/shared/turnstile-widget"
 import { Button } from "@/components/ui/button"
+import { publicAppEnv } from "@/lib/public-env"
 import {
   ageRangeOptions,
   programInterestOptions,
@@ -44,6 +46,7 @@ function toOptions(values: string[]) {
 export function WaitlistForm() {
   const [submitted, setSubmitted] = useState(false)
   const [submissionError, setSubmissionError] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState("")
   const form = useForm<WaitlistFormValues>({
     resolver: zodResolver(waitlistSchema),
     defaultValues,
@@ -52,12 +55,17 @@ export function WaitlistForm() {
   async function onSubmit(values: WaitlistFormValues) {
     setSubmissionError(null)
 
+    if (publicAppEnv.turnstileSiteKey && !turnstileToken) {
+      setSubmissionError("Please complete the security check before submitting.")
+      return
+    }
+
     const response = await fetch("/api/public/waitlist", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(values),
+      body: JSON.stringify({ ...values, turnstileToken }),
     })
 
     const payload = (await response.json().catch(() => null)) as { message?: string; ok?: boolean } | null
@@ -184,6 +192,12 @@ export function WaitlistForm() {
             description="Optional, but helpful if your timing or schedule is nuanced."
           />
         </MarketingFieldGroup>
+        {publicAppEnv.turnstileSiteKey && (
+          <TurnstileWidget
+            sitekey={publicAppEnv.turnstileSiteKey}
+            onToken={setTurnstileToken}
+          />
+        )}
       </form>
     </FormSection>
   )

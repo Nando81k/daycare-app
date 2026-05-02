@@ -1,11 +1,10 @@
 "use client"
 
-import Link from "next/link"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { usePathname } from "next/navigation"
 
+import { ParentTopbar } from "@/components/layout/parent-topbar"
 import { PortalTopbar } from "@/components/layout/portal-topbar"
-import { brandConfig } from "@/config/brand"
 import type { PortalKind } from "@/types/app"
 
 export function PortalShell({
@@ -35,28 +34,5 @@ export function PortalShell({
         </motion.main>
       </AnimatePresence>
     </div>
-  )
-}
-
-function ParentTopbar() {
-  return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
-      <div className="portal-shell-container flex h-16 items-center justify-between gap-4 md:h-20">
-        <Link href="/parent/billing" className="flex items-center gap-3">
-          <span className="font-heading text-xl tracking-tight text-foreground md:text-2xl">
-            {brandConfig.shortName}
-          </span>
-          <span className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-            Family
-          </span>
-        </Link>
-        <Link
-          href="/logout"
-          className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-destructive"
-        >
-          Sign out
-        </Link>
-      </div>
-    </header>
   )
 }

@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils"
 
 const initialState: LoginActionState = {
   error: null,
+  requiresTwoFactor: false,
 }
 
 const editorialInput =
@@ -50,6 +51,12 @@ export function PortalLoginForm({ portalRole }: { portalRole: "parent" | "admin"
     <form action={formAction} className="flex flex-col gap-8">
       {state.error ? (
         <AlertBanner tone="destructive" title="Unable to sign in" description={state.error} />
+      ) : state.requiresTwoFactor ? (
+        <AlertBanner
+          tone="info"
+          title="Two-factor required"
+          description="Open your authenticator app and enter the current six-digit code."
+        />
       ) : null}
 
       <EditorialFieldGroup>
@@ -90,7 +97,28 @@ export function PortalLoginForm({ portalRole }: { portalRole: "parent" | "admin"
           />
         </EditorialField>
 
-        <SubmitButton label={buttonLabel} />
+        {state.requiresTwoFactor ? (
+          <EditorialField>
+            <EditorialLabel htmlFor={`${portalRole}-totp`}>
+              Six-digit authenticator code
+            </EditorialLabel>
+            <Input
+              id={`${portalRole}-totp`}
+              name="totpCode"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              pattern="\d{6}"
+              required
+              autoFocus
+              className={cn(editorialInput, "tracking-[0.4em]")}
+            />
+          </EditorialField>
+        ) : null}
+
+        <SubmitButton
+          label={state.requiresTwoFactor ? "Verify code" : buttonLabel}
+        />
       </EditorialFieldGroup>
     </form>
   )

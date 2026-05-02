@@ -11,6 +11,11 @@ import {
   getDraftPlaceholder,
   serializeDashboardApplicationNote,
 } from "@/lib/parent-enrollment"
+import {
+  transitionApplicationToSubmitted,
+  upsertEnrollmentApplicationDraft,
+  type EnrollmentApplicationDraftInput,
+} from "@/lib/dal/enrollment-applications"
 import type { ParentActionState } from "@/types/app"
 import {
   createParentThreadSchema,
@@ -32,6 +37,54 @@ function revalidatePaths(paths: string[]) {
 
 function getBooleanValue(formData: FormData, key: string) {
   return getStringValue(formData, key) === "true"
+}
+
+function buildApplicationDraftInput(
+  familyId: string,
+  parentProfileId: string | null,
+  values: ReturnType<typeof getEnrollmentDashboardValues>,
+  parsed: {
+    parentName: string
+    familyName: string
+    email: string
+    phone: string
+    childFirstName: string
+    childLastName?: string | null
+    childAgeLabel: string
+    programInterest: string
+    scheduleNeed: string
+  }
+): EnrollmentApplicationDraftInput {
+  const payload = {
+    healthChecklist: values.healthChecklist,
+    authorizedPickups: values.authorizedPickups,
+    accepted: values.accepted,
+    note: values.note,
+    requestedStart: values.requestedStart,
+  }
+  return {
+    familyId,
+    parentProfileId,
+    childFirstName: parsed.childFirstName,
+    childLastName: parsed.childLastName ?? "",
+    dateOfBirth: values.dateOfBirth,
+    childAgeLabel: parsed.childAgeLabel,
+    primaryLanguage: values.primaryLanguage,
+    homeAddress: values.homeAddress,
+    parentName: parsed.parentName,
+    parentEmail: parsed.email,
+    parentPhone: parsed.phone,
+    relationshipToChild: values.relationshipToChild,
+    emergencyContactName: values.emergencyContactName,
+    emergencyContactPhone: values.emergencyContactPhone,
+    programSlug: parsed.programInterest,
+    scheduleSlug: parsed.scheduleNeed,
+    preferredStartDate: values.preferredStartDate,
+    pediatricianName: values.pediatricianName,
+    pediatricianPhone: values.pediatricianPhone,
+    healthNotes: values.healthNotes,
+    payload,
+  }
 }
 
 function getEnrollmentDashboardValues(formData: FormData) {
@@ -311,17 +364,7 @@ export async function saveEnrollmentApplicationDraft(
         id: profile.familyId,
       },
       data: {
-        familyName: parsed.data.familyName,
         enrollmentStage: "Draft saved",
-      },
-    })
-
-    await tx.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        name: parsed.data.parentName,
       },
     })
 
@@ -402,6 +445,25 @@ export async function saveEnrollmentApplicationDraft(
 
     return record
   })
+
+  // Phase 5 mirror: keep the canonical EnrollmentApplication in sync.
+  try {
+    await upsertEnrollmentApplicationDraft(
+      buildApplicationDraftInput(profile.familyId, profile.id, values, {
+        parentName: parsed.data.parentName,
+        familyName: parsed.data.familyName,
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        childFirstName: parsed.data.childFirstName,
+        childLastName: parsed.data.childLastName ?? "",
+        childAgeLabel: parsed.data.childAgeLabel ?? placeholder,
+        programInterest: parsed.data.programInterest ?? placeholder,
+        scheduleNeed: parsed.data.scheduleNeed ?? placeholder,
+      })
+    )
+  } catch (mirrorError) {
+    console.error("EnrollmentApplication mirror failed (draft):", mirrorError)
+  }
 
   revalidatePaths([
     "/parent",
@@ -503,17 +565,7 @@ export async function submitEnrollmentApplication(
         id: profile.familyId,
       },
       data: {
-        familyName: parsed.data.familyName,
         enrollmentStage: "Submitted",
-      },
-    })
-
-    await tx.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        name: parsed.data.parentName,
       },
     })
 
@@ -592,6 +644,26 @@ export async function submitEnrollmentApplication(
 
     return record
   })
+
+  // Phase 5 mirror: write to the canonical EnrollmentApplication and mark submitted.
+  try {
+    const application = await upsertEnrollmentApplicationDraft(
+      buildApplicationDraftInput(profile.familyId, profile.id, values, {
+        parentName: parsed.data.parentName,
+        familyName: parsed.data.familyName,
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        childFirstName: parsed.data.childFirstName,
+        childLastName: parsed.data.childLastName ?? "",
+        childAgeLabel: parsed.data.childAgeLabel,
+        programInterest: parsed.data.programInterest,
+        scheduleNeed: parsed.data.scheduleNeed,
+      })
+    )
+    await transitionApplicationToSubmitted(application.id)
+  } catch (mirrorError) {
+    console.error("EnrollmentApplication mirror failed (submit):", mirrorError)
+  }
 
   revalidatePaths([
     "/parent",

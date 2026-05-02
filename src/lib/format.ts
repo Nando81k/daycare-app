@@ -19,6 +19,16 @@ export function formatCurrencyFromCents(amountCents: number) {
   }).format(amountCents / 100)
 }
 
+/** Convert a major-unit amount (e.g. 1500 naira) to minor units (kobo). */
+export function toMinorUnits(amountMajor: number) {
+  return Math.round(amountMajor * 100)
+}
+
+/** Convert minor units (kobo) back to a major-unit number for display math. */
+export function fromMinorUnits(amountCents: number) {
+  return amountCents / 100
+}
+
 export function formatMonthDay(value: Date | string) {
   return formatDate(value, { month: "short", day: "numeric" })
 }

@@ -15,6 +15,10 @@ import {
 import { useMemo, useState } from "react"
 
 import { getDocumentBadgeVariant } from "@/components/parent/parent-status"
+import {
+  DocumentPreviewDialog,
+  type DocumentPreviewMeta,
+} from "@/components/shared/document-preview-dialog"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { buttonVariants, Button } from "@/components/ui/button"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
@@ -44,6 +48,20 @@ function getActionLabel(document: ParentDocumentPreview) {
   return "On file"
 }
 
+function toPreviewMeta(document: ParentDocumentPreview): DocumentPreviewMeta {
+  return {
+    title: document.title,
+    fileName: document.fileName,
+    contentType: document.contentType,
+    sizeLabel: document.sizeLabel,
+    previewUrl: document.previewUrl,
+    downloadUrl: document.downloadUrl,
+    subtitle: document.submittedAt
+      ? `${document.category} · submitted ${document.submittedAt}`
+      : document.category,
+  }
+}
+
 export function ParentDocumentsTable({
   documents,
 }: {
@@ -51,6 +69,9 @@ export function ParentDocumentsTable({
 }) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [query, setQuery] = useState("")
+  const [previewDoc, setPreviewDoc] = useState<ParentDocumentPreview | null>(
+    null
+  )
 
   const filteredDocuments = useMemo(() => {
     const trimmed = query.trim().toLowerCase()
@@ -127,16 +148,27 @@ export function ParentDocumentsTable({
         cell: ({ row }) => {
           const document = row.original
 
-          if (document.downloadUrl) {
+          if (document.previewUrl || document.downloadUrl) {
             return (
-              <Link
-                href={document.downloadUrl}
-                target="_blank"
-                className={buttonVariants({ variant: "outline", size: "sm" })}
-              >
-                <DownloadIcon data-icon="inline-start" />
-                Download
-              </Link>
+              <div className="flex items-center justify-end gap-1.5">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPreviewDoc(document)}
+                >
+                  Preview
+                </Button>
+                {document.downloadUrl && (
+                  <Link
+                    href={document.downloadUrl}
+                    target="_blank"
+                    className={buttonVariants({ variant: "ghost", size: "sm" })}
+                    aria-label={`Download ${document.title}`}
+                  >
+                    <DownloadIcon className="h-3.5 w-3.5" />
+                  </Link>
+                )}
+              </div>
             )
           }
 
@@ -258,6 +290,14 @@ export function ParentDocumentsTable({
           </div>
         )}
       </div>
+
+      <DocumentPreviewDialog
+        open={previewDoc !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewDoc(null)
+        }}
+        document={previewDoc ? toPreviewMeta(previewDoc) : null}
+      />
     </div>
   )
 }

@@ -1,3 +1,5 @@
+import type { InvoiceStatus } from "@prisma/client"
+
 import type {
   ParentDocumentPreview,
   ParentEnrollmentApplicationPreview,
@@ -62,7 +64,7 @@ function getPaymentStatus(params: {
         label: string
         amountCents: number
         dueDate: Date
-        status: "PAID" | "DUE" | "DRAFT"
+        status: InvoiceStatus
       }
     | null
   latestPaidPayment:
@@ -94,7 +96,7 @@ function getPaymentStatus(params: {
     }
   }
 
-  if (latestInvoice?.status === "DUE") {
+  if (latestInvoice?.status === "OPEN") {
     return {
       label: "Payment due",
       tone: "warning",
@@ -130,13 +132,17 @@ function mapPaymentStatus(status: "PAID" | "PROCESSING" | "FAILED"): ParentPayme
   }
 }
 
-function mapInvoiceStatus(status: "PAID" | "DUE" | "DRAFT") {
+function mapInvoiceStatus(status: InvoiceStatus) {
   switch (status) {
     case "PAID":
+    case "REFUNDED":
       return "paid" as const
-    case "DUE":
+    case "OPEN":
+    case "PARTIALLY_PAID":
+    case "FAILED":
       return "due" as const
     case "DRAFT":
+    case "VOID":
       return "draft" as const
   }
 }
@@ -289,6 +295,8 @@ export async function getSimpleParentPortalData(): Promise<SimpleParentPortalPre
     note: document.note,
     fileName: document.fileName ?? undefined,
     downloadUrl: document.blobDownloadUrl ?? document.blobUrl ?? undefined,
+    previewUrl: document.blobUrl ?? document.blobDownloadUrl ?? undefined,
+    contentType: document.contentType ?? undefined,
     submittedAt: document.submittedAt ? formatMonthDay(document.submittedAt) : undefined,
     sizeLabel: document.sizeBytes ? formatFileSize(document.sizeBytes) : undefined,
   }))
@@ -344,7 +352,7 @@ function getAdminPaymentStatus(family:
       invoices: Array<{
         amountCents: number
         dueDate: Date
-        status: "PAID" | "DUE" | "DRAFT"
+        status: InvoiceStatus
       }>
       payments: Array<{
         amountCents: number
@@ -362,7 +370,7 @@ function getAdminPaymentStatus(family:
     }
   }
 
-  const dueInvoice = family.invoices.find((invoice) => invoice.status === "DUE")
+  const dueInvoice = family.invoices.find((invoice) => invoice.status === "OPEN")
   const paidPayment = family.payments.find((payment) => payment.status === "PAID")
 
   if (dueInvoice) {
@@ -539,7 +547,7 @@ function getInvoiceStatusTone(status: string): StatusBadgeVariant {
   switch (status) {
     case "PAID":
       return "success"
-    case "DUE":
+    case "OPEN":
       return "warning"
     case "DRAFT":
       return "info"
@@ -617,7 +625,7 @@ function getInvoiceStatusLabel(status: string): string {
   switch (status) {
     case "PAID":
       return "Paid"
-    case "DUE":
+    case "OPEN":
       return "Due"
     case "DRAFT":
       return "Draft"

@@ -46,6 +46,13 @@ const FOOTER_SECTIONS: { title: string; links: LinkType[] }[] = [
       { href: phoneHref, label: brandConfig.phone },
     ],
   },
+  {
+    title: "Legal",
+    links: [
+      { href: "/privacy", label: "Privacy policy" },
+      { href: "/terms", label: "Terms of service" },
+    ],
+  },
 ]
 
 function LinkSection({ title, links }: LinkSectionProps) {

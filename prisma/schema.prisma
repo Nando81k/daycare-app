@@ -9,6 +9,7 @@ datasource db {
 enum UserRole {
   PARENT
   ADMIN
+  TEACHER
 }
 
 enum EnrollmentLeadType {
@@ -43,9 +44,29 @@ enum AttendanceStatus {
 }
 
 enum InvoiceStatus {
-  PAID
-  DUE
   DRAFT
+  OPEN
+  PAID
+  PARTIALLY_PAID
+  FAILED
+  REFUNDED
+  VOID
+}
+
+enum EnrollmentApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  WAITLISTED
+}
+
+enum FeeRuleKind {
+  REGISTRATION
+  MATERIALS
+  LATE
+  OTHER
 }
 
 enum PaymentStatus {
@@ -93,25 +114,29 @@ enum StaffStatus {
 }
 
 model User {
-  id                       String               @id @default(cuid())
-  email                    String               @unique
-  passwordHash             String
-  name                     String
-  role                     UserRole
-  mustSetPassword          Boolean              @default(false)
-  passwordChangedAt        DateTime?
-  lastSignedInAt           DateTime?
-  parentProfile            ParentProfile?
-  staffProfile             StaffProfile?
-  sessions                 Session[]
-  messages                 Message[]
-  auditLogs                AuditLog[]
-  receivedInvites          AccountInviteToken[] @relation("InviteRecipient")
-  issuedInvites            AccountInviteToken[] @relation("InviteIssuer")
-  passwordResetTokens      PasswordResetToken[]
-  uploadedDailyReportPhotos DailyReportPhoto[]  @relation("DailyReportPhotoUploader")
-  createdAt                DateTime             @default(now())
-  updatedAt                DateTime             @updatedAt
+  id                        String                  @id @default(cuid())
+  email                     String                  @unique
+  passwordHash              String
+  name                      String
+  role                      UserRole
+  mustSetPassword           Boolean                 @default(false)
+  passwordChangedAt         DateTime?
+  lastSignedInAt            DateTime?
+  twoFactorSecret           String?
+  twoFactorEnabledAt        DateTime?
+  parentProfile             ParentProfile?
+  staffProfile              StaffProfile?
+  adminProfile              AdminProfile?
+  enrollmentDecisions       EnrollmentApplication[] @relation("EnrollmentApplicationDecider")
+  sessions                  Session[]
+  messages                  Message[]
+  auditLogs                 AuditLog[]
+  receivedInvites           AccountInviteToken[]    @relation("InviteRecipient")
+  issuedInvites             AccountInviteToken[]    @relation("InviteIssuer")
+  passwordResetTokens       PasswordResetToken[]
+  uploadedDailyReportPhotos DailyReportPhoto[]      @relation("DailyReportPhotoUploader")
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
 }
 
 model Session {
@@ -128,7 +153,7 @@ model Session {
 }
 
 model Family {
-  id              String               @id @default(cuid())
+  id              String                      @id @default(cuid())
   familyName      String
   enrollmentStage String
   parents         ParentProfile[]
@@ -138,24 +163,27 @@ model Family {
   documents       Document[]
   messageThreads  MessageThread[]
   leads           EnrollmentLead[]
+  applications    EnrollmentApplication[]
+  subscriptions   StripeSubscriptionMapping[]
   billingProfile  FamilyBillingProfile?
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
 }
 
 model ParentProfile {
-  id                      String        @id @default(cuid())
-  userId                  String        @unique
+  id                      String                  @id @default(cuid())
+  userId                  String                  @unique
   familyId                String
   phone                   String
   billingContact          String
   pickupPolicy            String
   notificationPreferences Json
-  user                    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  family                  Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user                    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family                  Family                  @relation(fields: [familyId], references: [id], onDelete: Cascade)
   children                ParentChild[]
-  createdAt               DateTime      @default(now())
-  updatedAt               DateTime      @updatedAt
+  applications            EnrollmentApplication[]
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
 }
 
 model ParentChild {
@@ -169,9 +197,9 @@ model ParentChild {
 }
 
 model Classroom {
-  id              String         @id @default(cuid())
-  slug            String         @unique
-  name            String         @unique
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  name            String          @unique
   ageGroup        String
   capacity        Int
   leadTeacherName String
@@ -181,8 +209,8 @@ model Classroom {
   children        Child[]
   staffProfiles   StaffProfile[]
   calendarEvents  CalendarEvent[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 model Child {
@@ -248,21 +276,21 @@ model DailyReport {
 }
 
 model DailyReportPhoto {
-  id              String      @id @default(cuid())
-  dailyReportId   String
-  title           String
-  caption         String?
-  fileName        String
-  blobPathname    String
-  blobUrl         String
-  blobDownloadUrl String
-  contentType     String
-  sizeBytes       Int
+  id               String      @id @default(cuid())
+  dailyReportId    String
+  title            String
+  caption          String?
+  fileName         String
+  blobPathname     String
+  blobUrl          String
+  blobDownloadUrl  String
+  contentType      String
+  sizeBytes        Int
   uploadedByUserId String?
-  dailyReport     DailyReport @relation(fields: [dailyReportId], references: [id], onDelete: Cascade)
-  uploadedByUser  User?       @relation("DailyReportPhotoUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  dailyReport      DailyReport @relation(fields: [dailyReportId], references: [id], onDelete: Cascade)
+  uploadedByUser   User?       @relation("DailyReportPhotoUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 model AttendanceRecord {
@@ -305,19 +333,26 @@ model Message {
 }
 
 model Invoice {
-  id                    String        @id @default(cuid())
-  familyId              String
-  label                 String
-  description           String?
-  amountCents           Int
-  dueDate               DateTime
-  paidAt                DateTime?
-  status                InvoiceStatus
-  stripePaymentIntentId String?       @unique
-  family                Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  payments              Payment[]
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  id                      String                     @id @default(cuid())
+  familyId                String
+  label                   String
+  description             String?
+  amountCents             Int
+  dueDate                 DateTime
+  paidAt                  DateTime?
+  status                  InvoiceStatus
+  stripePaymentIntentId   String?                    @unique
+  stripeCheckoutSessionId String?                    @unique
+  /// Forward-compat link to a future Stripe Subscription (set in Phase 5+).
+  subscriptionId          String?
+  /// Optional reference to the FeeRule that generated this invoice.
+  feeRuleId               String?
+  family                  Family                     @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  feeRule                 FeeRule?                   @relation(fields: [feeRuleId], references: [id], onDelete: SetNull)
+  subscription            StripeSubscriptionMapping? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  payments                Payment[]
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
 }
 
 model Payment {
@@ -340,18 +375,18 @@ model Payment {
 }
 
 model FamilyBillingProfile {
-  id                        String   @id @default(cuid())
-  familyId                  String   @unique
-  stripeCustomerId          String?  @unique
+  id                        String  @id @default(cuid())
+  familyId                  String  @unique
+  stripeCustomerId          String? @unique
   defaultPaymentMethodId    String?
   defaultPaymentMethodBrand String?
   defaultPaymentMethodLast4 String?
   defaultPaymentMethodLabel String?
 
-  lastPaymentError          String?
-  family                    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  lastPaymentError String?
+  family           Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model Document {
@@ -380,28 +415,28 @@ model Document {
 }
 
 model EnrollmentLead {
-  id                String                 @id @default(cuid())
-  familyId          String?
-  parentName        String
-  familyName        String
-  email             String
-  phone             String
-  childName         String
-  childAgeLabel     String
-  requestedStart    String
-  programInterest   String
-  source            String
-  leadType          EnrollmentLeadType
-  stage             EnrollmentLeadStage
-  priority          EnrollmentLeadPriority
-  assignedTo        String
-  note              String
-  scheduleNeed      String?
-  waitlistStatus    WaitlistStatus?
-  referralSource    String?
-  family            Family?                @relation(fields: [familyId], references: [id], onDelete: SetNull)
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
+  id              String                 @id @default(cuid())
+  familyId        String?
+  parentName      String
+  familyName      String
+  email           String
+  phone           String
+  childName       String
+  childAgeLabel   String
+  requestedStart  String
+  programInterest String
+  source          String
+  leadType        EnrollmentLeadType
+  stage           EnrollmentLeadStage
+  priority        EnrollmentLeadPriority
+  assignedTo      String
+  note            String
+  scheduleNeed    String?
+  waitlistStatus  WaitlistStatus?
+  referralSource  String?
+  family          Family?                @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 }
 
 model StaffProfile {
@@ -459,29 +494,29 @@ model SchoolSetting {
 }
 
 model AccountInviteToken {
-  id             String   @id @default(cuid())
-  tokenHash      String   @unique
+  id             String    @id @default(cuid())
+  tokenHash      String    @unique
   userId         String
   email          String
   role           UserRole
   expiresAt      DateTime
   acceptedAt     DateTime?
   issuedByUserId String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  user           User     @relation("InviteRecipient", fields: [userId], references: [id], onDelete: Cascade)
-  issuedByUser   User?    @relation("InviteIssuer", fields: [issuedByUserId], references: [id], onDelete: SetNull)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation("InviteRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  issuedByUser   User?     @relation("InviteIssuer", fields: [issuedByUserId], references: [id], onDelete: SetNull)
 }
 
 model PasswordResetToken {
-  id         String   @id @default(cuid())
-  tokenHash  String   @unique
-  userId     String
-  expiresAt  DateTime
-  usedAt     DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AuditLog {
@@ -495,33 +530,42 @@ model AuditLog {
   actorUser   User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
 }
 
-/* ------------------------------------------------------------------ */
-/*  Programs, Schedules & Pricing                                      */
-/* ------------------------------------------------------------------ */
+/**
+ * ------------------------------------------------------------------
+ */
+/**
+ * Programs, Schedules & Pricing
+ */
+/**
+ * ------------------------------------------------------------------
+ */
 
 model Program {
-  id          String        @id @default(cuid())
-  slug        String        @unique
-  name        String        @unique
-  ageRange    String?
-  description String?
-  sortOrder   Int           @default(0)
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  rates       ProgramRate[]
+  id           String                  @id @default(cuid())
+  slug         String                  @unique
+  name         String                  @unique
+  ageRange     String?
+  description  String?
+  sortOrder    Int                     @default(0)
+  isActive     Boolean                 @default(true)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  rates        ProgramRate[]
+  applications EnrollmentApplication[]
+  feeRules     FeeRule[]
 }
 
 model Schedule {
-  id              String        @id @default(cuid())
-  slug            String        @unique
-  name            String        @unique
+  id              String                  @id @default(cuid())
+  slug            String                  @unique
+  name            String                  @unique
   daysDescription String?
-  sortOrder       Int           @default(0)
-  isActive        Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  sortOrder       Int                     @default(0)
+  isActive        Boolean                 @default(true)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
   rates           ProgramRate[]
+  applications    EnrollmentApplication[]
 }
 
 model ProgramRate {
@@ -537,4 +581,135 @@ model ProgramRate {
   schedule     Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   @@unique([programId, scheduleId])
+}
+
+/**
+ * ------------------------------------------------------------------
+ */
+/**
+ * Enrollment Applications (Phase 5)
+ */
+/**
+ * ------------------------------------------------------------------
+ */
+
+model EnrollmentApplication {
+  id                    String                      @id @default(cuid())
+  familyId              String?
+  parentProfileId       String?
+  childFirstName        String
+  childLastName         String
+  dateOfBirth           String
+  childAgeLabel         String
+  primaryLanguage       String
+  homeAddress           String
+  /// Guardian snapshot at submission time.
+  parentName            String
+  parentEmail           String
+  parentPhone           String
+  relationshipToChild   String
+  emergencyContactName  String
+  emergencyContactPhone String
+  /// Program/schedule selection — slugs and ids both stored.
+  programId             String?
+  scheduleId            String?
+  programSlug           String
+  scheduleSlug          String
+  preferredStartDate    String
+  /// Health & safety
+  pediatricianName      String
+  pediatricianPhone     String
+  healthNotes           String
+  /// Free-form flexible payload (consents, authorized pickups, etc.).
+  payload               Json
+  status                EnrollmentApplicationStatus @default(DRAFT)
+  /// Internal review fields
+  internalNote          String                      @default("")
+  decisionNote          String?
+  submittedAt           DateTime?
+  decidedAt             DateTime?
+  decidedByUserId       String?
+  family                Family?                     @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  parentProfile         ParentProfile?              @relation(fields: [parentProfileId], references: [id], onDelete: SetNull)
+  program               Program?                    @relation(fields: [programId], references: [id], onDelete: SetNull)
+  schedule              Schedule?                   @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  decidedByUser         User?                       @relation("EnrollmentApplicationDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+
+  @@index([familyId, status])
+  @@index([status, updatedAt])
+}
+
+/**
+ * ------------------------------------------------------------------
+ */
+/**
+ * Fee rules (Phase 5)
+ */
+/**
+ * ------------------------------------------------------------------
+ */
+
+model FeeRule {
+  id          String      @id @default(cuid())
+  kind        FeeRuleKind
+  label       String
+  description String?
+  amountCents Int
+  currency    String      @default("NGN")
+  isActive    Boolean     @default(true)
+  /// When set, the fee only applies to enrollments in this specific program.
+  programId   String?
+  program     Program?    @relation(fields: [programId], references: [id], onDelete: SetNull)
+  invoices    Invoice[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+/**
+ * ------------------------------------------------------------------
+ */
+/**
+ * Stripe Subscription mappings (forward-compat seam, Phase 5)
+ */
+/**
+ * ------------------------------------------------------------------
+ */
+
+model StripeSubscriptionMapping {
+  id                   String    @id @default(cuid())
+  familyId             String
+  stripeSubscriptionId String    @unique
+  stripeCustomerId     String?
+  productLabel         String?
+  status               String
+  currentPeriodEnd     DateTime?
+  metadata             Json?
+  family               Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  invoices             Invoice[]
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([familyId])
+}
+
+/**
+ * ------------------------------------------------------------------
+ */
+/**
+ * Admin profile (Phase 5)
+ */
+/**
+ * ------------------------------------------------------------------
+ */
+
+model AdminProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  title       String   @default("")
+  permissions Json
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -3,10 +3,22 @@
 import { revalidatePath } from "next/cache"
 import { TZDate } from "react-day-picker"
 
-import { requireRole } from "@/lib/auth"
+import {
+  buildAppUrl,
+  isResendConfigured,
+} from "@/lib/env"
+import { requireRole, createAccountInviteToken, createUserWithInvite } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { sendTransactionalEmail } from "@/lib/email"
 import {
   approveEnrollmentApplicationSchema,
+  assignStaffClassroomSchema,
+  createClassroomSchema,
+  createStaffMemberSchema,
+  removeClassroomSchema,
+  removeStaffMemberSchema,
+  updateClassroomSchema,
+  updateStaffMemberSchema,
   declineEnrollmentApplicationSchema,
   createCalendarEventSchema,
   createAnnouncementSchema,
@@ -340,6 +352,12 @@ export async function approveEnrollmentApplication(
     })
   }
 
+  // Pull the active registration fee, if any, to drive the invoice amount.
+  const registrationFee = await prisma.feeRule.findFirst({
+    where: { kind: "REGISTRATION", isActive: true },
+    orderBy: { createdAt: "desc" },
+  })
+
   await prisma.$transaction(async (tx) => {
     await tx.enrollmentLead.update({
       where: {
@@ -348,11 +366,24 @@ export async function approveEnrollmentApplication(
       data: {
         stage: "ACCEPTED",
         assignedTo: admin.name,
-        note: "Approved manually from the simplified admin enrollment dashboard.",
+        note: "Approved manually from the admin enrollment view.",
       },
     })
 
+    // Phase 5 mirror: flip any matching EnrollmentApplication to APPROVED.
     if (lead.familyId) {
+      await tx.enrollmentApplication.updateMany({
+        where: {
+          familyId: lead.familyId,
+          status: { in: ["DRAFT", "SUBMITTED", "UNDER_REVIEW"] },
+        },
+        data: {
+          status: "APPROVED",
+          decidedAt: new Date(),
+          decidedByUserId: admin.id,
+        },
+      })
+
       await tx.family.update({
         where: {
           id: lead.familyId,
@@ -368,12 +399,16 @@ export async function approveEnrollmentApplication(
       await tx.invoice.create({
         data: {
           familyId: lead.familyId,
-          label: `Enrollment fee – ${lead.childName}`,
+          label: registrationFee
+            ? `${registrationFee.label} – ${lead.childName}`
+            : `Enrollment fee – ${lead.childName}`,
           description:
+            registrationFee?.description ??
             "Registration fee generated automatically upon enrollment approval.",
-          amountCents: 15000,
+          amountCents: registrationFee?.amountCents ?? 15000,
           dueDate,
-          status: "DUE",
+          status: "OPEN",
+          feeRuleId: registrationFee?.id ?? null,
         },
       })
     }
@@ -389,6 +424,7 @@ export async function approveEnrollmentApplication(
           familyName: lead.familyName,
           childName: lead.childName,
           invoiceGenerated: !!lead.familyId,
+          feeRuleId: registrationFee?.id ?? null,
         },
       },
     })
@@ -460,6 +496,20 @@ export async function declineEnrollmentApplication(
     })
 
     if (lead.familyId) {
+      // Phase 5 mirror: flip matching application(s) to REJECTED.
+      await tx.enrollmentApplication.updateMany({
+        where: {
+          familyId: lead.familyId,
+          status: { in: ["DRAFT", "SUBMITTED", "UNDER_REVIEW"] },
+        },
+        data: {
+          status: "REJECTED",
+          decidedAt: new Date(),
+          decidedByUserId: admin.id,
+          decisionNote: parsed.data.note ?? null,
+        },
+      })
+
       await tx.family.update({
         where: {
           id: lead.familyId,
@@ -1551,6 +1601,45 @@ export async function createInvoice(
 }
 
 // ---------------------------------------------------------------------------
+// Refund Invoice
+// ---------------------------------------------------------------------------
+
+export async function refundInvoiceAction(
+  _previousState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const user = await requireRole("ADMIN")
+    const invoiceId = getStringValue(formData, "invoiceId")
+    const reason = getStringValue(formData, "reason")
+
+    if (!invoiceId) {
+      return getActionState({ error: "Invoice id is required." })
+    }
+
+    const { refundInvoice } = await import("@/lib/billing")
+    const result = await refundInvoice(invoiceId, {
+      reason,
+      actorUserId: user.id,
+    })
+
+    revalidatePaths(["/admin", "/admin/billing", "/parent", "/parent/billing"])
+
+    return getActionState({
+      success: true,
+      message: `Refund issued (${result.refundId}).`,
+    })
+  } catch (error) {
+    return getActionState({
+      error:
+        error instanceof Error
+          ? error.message
+          : "We could not refund this invoice right now.",
+    })
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Family Stage
 // ---------------------------------------------------------------------------
 
@@ -2045,5 +2134,615 @@ export async function upsertProgramRate(
     })
   } catch {
     return getActionState({ error: "Could not save this rate right now." })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Staff management
+// ---------------------------------------------------------------------------
+
+function getStaffFormValues(formData: FormData) {
+  return {
+    name: getStringValue(formData, "name"),
+    roleLabel: getStringValue(formData, "roleLabel"),
+    classroomId: getStringValue(formData, "classroomId") || undefined,
+    certification: getStringValue(formData, "certification") || undefined,
+    note: getStringValue(formData, "note") || undefined,
+    status: (getStringValue(formData, "status") || "SCHEDULED") as
+      | "SCHEDULED"
+      | "COVERAGE_NEEDED"
+      | "OUT",
+    accountKind: (getStringValue(formData, "accountKind") || "NONE") as
+      | "NONE"
+      | "ADMIN"
+      | "TEACHER",
+    email: getStringValue(formData, "email") || undefined,
+  }
+}
+
+async function sendStaffInviteEmail(params: {
+  to: string
+  name: string
+  role: "ADMIN" | "TEACHER"
+  inviteUrl: string
+  inviterName: string
+}) {
+  if (!isResendConfigured()) return
+  const portalLabel = params.role === "ADMIN" ? "admin" : "teacher"
+  await sendTransactionalEmail({
+    to: params.to,
+    subject: `You've been added to Ambassadors Care (${portalLabel})`,
+    text: `Hi ${params.name},\n\n${params.inviterName} added you as a ${portalLabel} on Ambassadors Care.\n\nUse this secure link to set your password and finish setup:\n${params.inviteUrl}\n\nThis link expires in 72 hours.`,
+    html: `<p>Hi ${params.name},</p><p>${params.inviterName} added you as a <strong>${portalLabel}</strong> on Ambassadors Care.</p><p>Use this secure link to set your password and finish setup:</p><p><a href="${params.inviteUrl}">${params.inviteUrl}</a></p><p>This link expires in 72 hours.</p>`,
+  })
+}
+
+export async function createStaffMember(
+  _previousState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const parsed = createStaffMemberSchema.safeParse(getStaffFormValues(formData))
+
+    if (!parsed.success) {
+      return getActionState({
+        error: "Check the staff details and try again.",
+        fieldErrors: getFieldErrors(parsed.error),
+      })
+    }
+
+    const { accountKind, email, ...staffData } = parsed.data
+    let userId: string | null = null
+    let inviteUrl: string | null = null
+
+    if (accountKind !== "NONE") {
+      if (!email) {
+        return getActionState({
+          error: "Email is required when creating a portal account.",
+          fieldErrors: { email: "Required for ADMIN / TEACHER accounts." },
+        })
+      }
+      const { user, invite } = await createUserWithInvite({
+        name: staffData.name,
+        email,
+        role: accountKind,
+        issuedByUserId: admin.id,
+      })
+      userId = user.id
+      inviteUrl = buildAppUrl(`/invite/${invite.rawToken}`)
+      await sendStaffInviteEmail({
+        to: user.email,
+        name: user.name,
+        role: accountKind,
+        inviteUrl,
+        inviterName: admin.name,
+      })
+    }
+
+    const staffProfile = await prisma.staffProfile.create({
+      data: {
+        userId,
+        classroomId: staffData.classroomId ?? null,
+        name: staffData.name,
+        roleLabel: staffData.roleLabel,
+        certification: staffData.certification ?? "",
+        status: staffData.status,
+        note: staffData.note ?? "",
+      },
+      select: { id: true, name: true, roleLabel: true },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.staff.create",
+        subjectType: "StaffProfile",
+        subjectId: staffProfile.id,
+        details: {
+          name: staffProfile.name,
+          roleLabel: staffProfile.roleLabel,
+          accountKind,
+          inviteUrl,
+        },
+      },
+    })
+
+    revalidatePaths(["/admin", "/admin/staff", "/admin/classrooms"])
+
+    return getActionState({
+      success: true,
+      message:
+        accountKind === "NONE"
+          ? `${staffProfile.name} added to staff.`
+          : `${staffProfile.name} added — invite sent to ${email}.`,
+      entityId: staffProfile.id,
+    })
+  } catch (error) {
+    return getActionState({
+      error:
+        error instanceof Error
+          ? error.message
+          : "We could not add this staff member right now.",
+    })
+  }
+}
+
+export async function updateStaffMember(
+  _previousState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const parsed = updateStaffMemberSchema.safeParse({
+      staffId: getStringValue(formData, "staffId"),
+      ...getStaffFormValues(formData),
+    })
+
+    if (!parsed.success) {
+      return getActionState({
+        error: "Check the staff details and try again.",
+        fieldErrors: getFieldErrors(parsed.error),
+      })
+    }
+
+    const { staffId, ...staffData } = parsed.data
+    const updated = await prisma.staffProfile.update({
+      where: { id: staffId },
+      data: {
+        name: staffData.name,
+        roleLabel: staffData.roleLabel,
+        classroomId: staffData.classroomId ?? null,
+        certification: staffData.certification ?? "",
+        status: staffData.status,
+        note: staffData.note ?? "",
+      },
+      select: { id: true, name: true },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.staff.update",
+        subjectType: "StaffProfile",
+        subjectId: updated.id,
+        details: { name: updated.name },
+      },
+    })
+
+    revalidatePaths(["/admin", "/admin/staff", "/admin/classrooms"])
+
+    return getActionState({
+      success: true,
+      message: `${updated.name}'s details saved.`,
+      entityId: updated.id,
+    })
+  } catch (error) {
+    return getActionState({
+      error:
+        error instanceof Error
+          ? error.message
+          : "We could not update this staff member right now.",
+    })
+  }
+}
+
+export async function assignStaffClassroom(
+  _previousState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const parsed = assignStaffClassroomSchema.safeParse({
+      staffId: getStringValue(formData, "staffId"),
+      classroomId: getStringValue(formData, "classroomId") || undefined,
+    })
+
+    if (!parsed.success) {
+      return getActionState({ error: "That assignment could not be saved." })
+    }
+
+    const updated = await prisma.staffProfile.update({
+      where: { id: parsed.data.staffId },
+      data: { classroomId: parsed.data.classroomId ?? null },
+      select: { id: true, name: true, classroom: { select: { name: true } } },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.staff.assign-classroom",
+        subjectType: "StaffProfile",
+        subjectId: updated.id,
+        details: { classroomId: parsed.data.classroomId ?? null },
+      },
+    })
+
+    revalidatePaths(["/admin", "/admin/staff", "/admin/classrooms"])
+
+    return getActionState({
+      success: true,
+      message: updated.classroom
+        ? `${updated.name} assigned to ${updated.classroom.name}.`
+        : `${updated.name} unassigned from classroom.`,
+    })
+  } catch {
+    return getActionState({ error: "We could not save that assignment right now." })
+  }
+}
+
+export async function resendStaffInvite(
+  _previousState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const staffId = getStringValue(formData, "staffId")
+    if (!staffId) return getActionState({ error: "Staff id is required." })
+
+    const profile = await prisma.staffProfile.findUnique({
+      where: { id: staffId },
+      include: {
+        user: {
+          select: { id: true, email: true, name: true, role: true },
+        },
+      },
+    })
+    if (!profile?.user) {
+      return getActionState({
+        error: "This staff member doesn't have a portal account.",
+      })
+    }
+
+    const invite = await createAccountInviteToken({
+      userId: profile.user.id,
+      email: profile.user.email,
+      role: profile.user.role,
+      issuedByUserId: admin.id,
+    })
+    const inviteUrl = buildAppUrl(`/invite/${invite.rawToken}`)
+
+    await prisma.user.update({
+      where: { id: profile.user.id },
+      data: { mustSetPassword: true },
+    })
+
+    if (profile.user.role === "ADMIN" || profile.user.role === "TEACHER") {
+      await sendStaffInviteEmail({
+        to: profile.user.email,
+        name: profile.user.name,
+        role: profile.user.role,
+        inviteUrl,
+        inviterName: admin.name,
+      })
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.staff.invite-resend",
+        subjectType: "StaffProfile",
+        subjectId: profile.id,
+        details: { email: profile.user.email },
+      },
+    })
+
+    revalidatePaths(["/admin/staff"])
+
+    return getActionState({
+      success: true,
+      message: `Invite resent to ${profile.user.email}.`,
+    })
+  } catch (error) {
+    return getActionState({
+      error:
+        error instanceof Error
+          ? error.message
+          : "We could not resend that invite right now.",
+    })
+  }
+}
+
+export async function removeStaffMember(
+  _previousState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const parsed = removeStaffMemberSchema.safeParse({
+      staffId: getStringValue(formData, "staffId"),
+    })
+    if (!parsed.success) {
+      return getActionState({ error: "That staff member could not be removed." })
+    }
+
+    const profile = await prisma.staffProfile.findUnique({
+      where: { id: parsed.data.staffId },
+      select: { id: true, name: true },
+    })
+    if (!profile) {
+      return getActionState({ error: "Staff member not found." })
+    }
+
+    await prisma.staffProfile.delete({ where: { id: profile.id } })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.staff.remove",
+        subjectType: "StaffProfile",
+        subjectId: profile.id,
+        details: { name: profile.name },
+      },
+    })
+
+    revalidatePaths(["/admin", "/admin/staff", "/admin/classrooms"])
+
+    return getActionState({
+      success: true,
+      message: `${profile.name} removed from staff.`,
+    })
+  } catch {
+    return getActionState({
+      error: "We could not remove this staff member right now.",
+    })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Classrooms
+// ---------------------------------------------------------------------------
+
+function slugify(name: string) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-|-$/g, "")
+}
+
+async function getUniqueClassroomSlug(base: string, excludeId?: string) {
+  const candidate = base || "classroom"
+  let slug = candidate
+  let i = 2
+  // Try until we find a free slug. Max 25 attempts to avoid an infinite loop.
+  for (let attempt = 0; attempt < 25; attempt++) {
+    const existing = await prisma.classroom.findUnique({
+      where: { slug },
+      select: { id: true },
+    })
+    if (!existing || existing.id === excludeId) return slug
+    slug = `${candidate}-${i++}`
+  }
+  return `${candidate}-${Date.now()}`
+}
+
+function getClassroomFormValues(formData: FormData) {
+  return {
+    name: getStringValue(formData, "name"),
+    ageGroup: getStringValue(formData, "ageGroup"),
+    capacity: getStringValue(formData, "capacity"),
+    leadTeacherName: getStringValue(formData, "leadTeacherName") || undefined,
+    ratioLabel: getStringValue(formData, "ratioLabel") || undefined,
+    nextEvent: getStringValue(formData, "nextEvent") || undefined,
+    note: getStringValue(formData, "note") || undefined,
+    slug: getStringValue(formData, "slug") || undefined,
+  }
+}
+
+export async function createClassroom(
+  _previousState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const parsed = createClassroomSchema.safeParse(getClassroomFormValues(formData))
+    if (!parsed.success) {
+      return getActionState({
+        error: "Check the classroom details and try again.",
+        fieldErrors: getFieldErrors(parsed.error),
+      })
+    }
+
+    // Reject duplicate name early with a friendly message.
+    const existingByName = await prisma.classroom.findUnique({
+      where: { name: parsed.data.name },
+      select: { id: true },
+    })
+    if (existingByName) {
+      return getActionState({
+        error: "A classroom with that name already exists.",
+        fieldErrors: { name: "Name must be unique." },
+      })
+    }
+
+    const slug = await getUniqueClassroomSlug(
+      parsed.data.slug ?? slugify(parsed.data.name)
+    )
+
+    const created = await prisma.classroom.create({
+      data: {
+        name: parsed.data.name,
+        ageGroup: parsed.data.ageGroup,
+        capacity: parsed.data.capacity,
+        leadTeacherName: parsed.data.leadTeacherName ?? "",
+        ratioLabel: parsed.data.ratioLabel ?? "",
+        nextEvent: parsed.data.nextEvent ?? "",
+        note: parsed.data.note ?? "",
+        slug,
+      },
+      select: { id: true, name: true },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.classroom.create",
+        subjectType: "Classroom",
+        subjectId: created.id,
+        details: { name: created.name, slug },
+      },
+    })
+
+    revalidatePaths(["/admin", "/admin/classrooms", "/admin/staff", "/admin/attendance"])
+
+    return getActionState({
+      success: true,
+      message: `${created.name} added.`,
+      entityId: created.id,
+    })
+  } catch (error) {
+    return getActionState({
+      error:
+        error instanceof Error
+          ? error.message
+          : "We could not add this classroom right now.",
+    })
+  }
+}
+
+export async function updateClassroom(
+  _previousState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const parsed = updateClassroomSchema.safeParse({
+      classroomId: getStringValue(formData, "classroomId"),
+      ...getClassroomFormValues(formData),
+    })
+    if (!parsed.success) {
+      return getActionState({
+        error: "Check the classroom details and try again.",
+        fieldErrors: getFieldErrors(parsed.error),
+      })
+    }
+
+    const { classroomId, ...data } = parsed.data
+    const existing = await prisma.classroom.findUnique({
+      where: { id: classroomId },
+      select: { id: true, name: true, slug: true },
+    })
+    if (!existing) {
+      return getActionState({ error: "That classroom could not be found." })
+    }
+
+    // If name changed, ensure no other classroom owns that name.
+    if (data.name !== existing.name) {
+      const collision = await prisma.classroom.findUnique({
+        where: { name: data.name },
+        select: { id: true },
+      })
+      if (collision && collision.id !== existing.id) {
+        return getActionState({
+          error: "Another classroom already uses that name.",
+          fieldErrors: { name: "Name must be unique." },
+        })
+      }
+    }
+
+    const slug = await getUniqueClassroomSlug(
+      data.slug ?? (data.name !== existing.name ? slugify(data.name) : existing.slug),
+      existing.id
+    )
+
+    const updated = await prisma.classroom.update({
+      where: { id: existing.id },
+      data: {
+        name: data.name,
+        ageGroup: data.ageGroup,
+        capacity: data.capacity,
+        leadTeacherName: data.leadTeacherName ?? "",
+        ratioLabel: data.ratioLabel ?? "",
+        nextEvent: data.nextEvent ?? "",
+        note: data.note ?? "",
+        slug,
+      },
+      select: { id: true, name: true },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.classroom.update",
+        subjectType: "Classroom",
+        subjectId: updated.id,
+        details: { name: updated.name },
+      },
+    })
+
+    revalidatePaths(["/admin", "/admin/classrooms", "/admin/staff", "/admin/attendance"])
+
+    return getActionState({
+      success: true,
+      message: `${updated.name} saved.`,
+      entityId: updated.id,
+    })
+  } catch (error) {
+    return getActionState({
+      error:
+        error instanceof Error
+          ? error.message
+          : "We could not save this classroom right now.",
+    })
+  }
+}
+
+export async function removeClassroom(
+  _previousState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const parsed = removeClassroomSchema.safeParse({
+      classroomId: getStringValue(formData, "classroomId"),
+    })
+    if (!parsed.success) {
+      return getActionState({ error: "That classroom could not be removed." })
+    }
+
+    const classroom = await prisma.classroom.findUnique({
+      where: { id: parsed.data.classroomId },
+      select: {
+        id: true,
+        name: true,
+        _count: { select: { children: true, staffProfiles: true } },
+      },
+    })
+    if (!classroom) {
+      return getActionState({ error: "Classroom not found." })
+    }
+
+    if (classroom._count.children > 0 || classroom._count.staffProfiles > 0) {
+      return getActionState({
+        error:
+          "Re-assign every child and staff member out of this classroom before removing it.",
+      })
+    }
+
+    await prisma.classroom.delete({ where: { id: classroom.id } })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.classroom.remove",
+        subjectType: "Classroom",
+        subjectId: classroom.id,
+        details: { name: classroom.name },
+      },
+    })
+
+    revalidatePaths(["/admin", "/admin/classrooms", "/admin/staff", "/admin/attendance"])
+
+    return getActionState({
+      success: true,
+      message: `${classroom.name} removed.`,
+    })
+  } catch {
+    return getActionState({
+      error: "We could not remove this classroom right now.",
+    })
   }
 }

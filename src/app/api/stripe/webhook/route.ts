@@ -1,6 +1,12 @@
 import Stripe from "stripe"
 
-import { syncPaymentIntent, syncSetupIntent } from "@/lib/billing"
+import {
+  deleteStripeSubscriptionMapping,
+  syncCheckoutSession,
+  syncPaymentIntent,
+  syncSetupIntent,
+  syncStripeSubscription,
+} from "@/lib/billing"
 import { appEnv } from "@/lib/env"
 import { getStripeClient } from "@/lib/stripe"
 
@@ -37,10 +43,29 @@ export async function POST(request: Request) {
     case "setup_intent.succeeded":
       await syncSetupIntent(event.data.object.id)
       break
+    case "checkout.session.completed":
+    case "checkout.session.async_payment_succeeded":
+    case "checkout.session.async_payment_failed":
+      await syncCheckoutSession(event.data.object.id)
+      break
     case "payment_intent.succeeded":
     case "payment_intent.processing":
     case "payment_intent.payment_failed":
       await syncPaymentIntent(event.data.object.id)
+      break
+    case "invoice.paid":
+    case "invoice.payment_failed":
+      // Forward-compat for Stripe Subscription invoices. We don't currently
+      // create Stripe-managed invoices ourselves, so this is a logging no-op
+      // until subscriptions ship; the handler is here so events don't 4xx.
+      console.info(`[stripe-webhook] received ${event.type}`)
+      break
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+      await syncStripeSubscription(event.data.object.id)
+      break
+    case "customer.subscription.deleted":
+      await deleteStripeSubscriptionMapping(event.data.object.id)
       break
     default:
       break

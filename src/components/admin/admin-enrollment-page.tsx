@@ -34,6 +34,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { parseDashboardApplicationNote } from "@/lib/parent-enrollment"
 import {
   adminEnrollmentLeads,
   adminEnrollmentPageContent,
@@ -82,7 +83,7 @@ function getEnrollmentRows(leads: EnrollmentLeadPreview[]): AdminTableRow[] {
     },
     assignedTo: {
       primary: lead.assignedTo,
-      secondary: lead.note,
+      secondary: parseDashboardApplicationNote(lead.note).freeformNote,
     },
   }))
 }
