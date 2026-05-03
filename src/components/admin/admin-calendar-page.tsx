@@ -5,11 +5,10 @@ import { CalendarDaysIcon } from "lucide-react"
 import { useState } from "react"
 
 import { AdminCalendarEventEditor } from "@/components/admin/admin-calendar-event-editor"
-import { AdminDataTable } from "@/components/admin/admin-data-table"
+import { AdminCalendarWorkspace } from "@/components/admin/admin-calendar-workspace"
 import {
   formatAdminLabel,
   getBillingReminderVariant,
-  getCalendarEventVariant,
 } from "@/components/admin/admin-status"
 import { EmptyState } from "@/components/shared/empty-state"
 import { PageShell } from "@/components/shared/page-shell"
@@ -23,6 +22,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   adminBillingReminders,
@@ -33,60 +39,12 @@ import {
 import type {
   AdminBillingReminderPreview,
   AdminCalendarEventPreview,
-  AdminTableColumn,
-  AdminTableRow,
   ClassroomSummaryPreview,
 } from "@/types/app"
 
-const columns: AdminTableColumn[] = [
-  { key: "event", header: "Event" },
-  { key: "target", header: "Target" },
-  { key: "date", header: "Date" },
-  { key: "category", header: "Category" },
-  { key: "actions", header: "Actions", align: "end" },
-]
-
-function getRows(
-  events: AdminCalendarEventPreview[],
-  selectedEventId: string | null,
-  onSelectEvent: (eventId: string | null) => void
-): AdminTableRow[] {
-  return events.map((event) => ({
-    event: {
-      primary: event.title,
-      secondary:
-        event.description.length > 88 ? `${event.description.slice(0, 85).trimEnd()}...` : event.description,
-    },
-    target: {
-      primary: event.targetLabel,
-      secondary: event.targetScope === "classroom" ? "Classroom-targeted" : undefined,
-    },
-    date: {
-      primary: event.dateLabel,
-      secondary: event.timeLabel,
-    },
-    category: {
-      label: formatAdminLabel(event.category),
-      variant: getCalendarEventVariant(event.category),
-    },
-    actions: {
-      type: "custom",
-      searchValue: selectedEventId === event.id ? "Editing" : `Edit ${event.title}`,
-      content: (
-        <button
-          type="button"
-          onClick={() => onSelectEvent(event.id)}
-          className={buttonVariants({
-            variant: selectedEventId === event.id ? "secondary" : "outline",
-            size: "sm",
-          })}
-        >
-          {selectedEventId === event.id ? "Editing" : "Edit"}
-        </button>
-      ),
-    },
-  }))
-}
+type EditorMode =
+  | { kind: "create" }
+  | { kind: "edit"; eventId: string }
 
 function BillingReminderPanel({
   reminders,
@@ -184,11 +142,27 @@ export function AdminCalendarPageView({
   billingReminders?: AdminBillingReminderPreview[]
   classrooms?: ClassroomSummaryPreview[]
 }) {
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(events[0]?.id ?? null)
-  const selectedEvent = events.find((event) => event.id === selectedEventId) ?? null
-  const rows = getRows(events, selectedEventId, setSelectedEventId)
+  const [editorMode, setEditorMode] = useState<EditorMode | null>(null)
+  const editingEvent =
+    editorMode?.kind === "edit"
+      ? events.find((event) => event.id === editorMode.eventId) ?? null
+      : null
+  const isEditorOpen = editorMode !== null
+
   const schoolWideCount = events.filter((event) => event.targetScope === "school").length
   const classroomCount = events.filter((event) => event.targetScope === "classroom").length
+
+  function handleEditEvent(eventId: string) {
+    setEditorMode({ kind: "edit", eventId })
+  }
+
+  function handleCreateEvent() {
+    setEditorMode({ kind: "create" })
+  }
+
+  function handleCloseEditor() {
+    setEditorMode(null)
+  }
 
   return (
     <PageShell variant="portal" className="gap-6 pb-10">
@@ -203,7 +177,7 @@ export function AdminCalendarPageView({
             <Link href="/admin/billing" className={buttonVariants({ variant: "outline" })}>
               Review billing
             </Link>
-            <Button type="button" onClick={() => setSelectedEventId(null)}>
+            <Button type="button" onClick={handleCreateEvent}>
               New event
             </Button>
           </div>
@@ -230,45 +204,65 @@ export function AdminCalendarPageView({
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="events" className="gap-4">
-        <Card className="gap-4 px-5 py-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-            <p className="text-sm leading-6 text-muted-foreground">
-              {selectedEvent
-                ? `Editing ${selectedEvent.title}. Changes go live immediately for ${selectedEvent.targetLabel}.`
-                : "Manual events publish live to parent calendars. Use the billing tab only for invoice-derived reminders."}
-            </p>
-            <TabsList variant="line" className="self-start">
-              <TabsTrigger value="events">Events</TabsTrigger>
-              <TabsTrigger value="billing">Billing reminders</TabsTrigger>
-            </TabsList>
-          </div>
-        </Card>
+      <Tabs defaultValue="calendar" className="gap-5">
+        <TabsList className="h-auto w-full justify-start gap-2 rounded-[1rem] bg-muted/40 p-1.5">
+          <TabsTrigger value="calendar" className="min-w-32 flex-none px-3 py-2">
+            <CalendarDaysIcon data-icon="inline-start" />
+            Calendar
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="min-w-32 flex-none px-3 py-2">
+            Billing reminders
+          </TabsTrigger>
+        </TabsList>
 
-        <TabsContent value="events" className="mt-0">
-          <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.08fr)_23.5rem]">
-            <AdminDataTable
-              title="Manual parent calendar events"
-              description="Search title, target, date, or category. Use the table to pick an event, then update details in the side editor."
-              columns={columns}
-              rows={rows}
-              searchPlaceholder="Search title, target, or category"
-              searchKeys={["event", "target", "date", "category", "actions"]}
-            />
-
-            <AdminCalendarEventEditor
-              key={selectedEvent?.id ?? "new-calendar-event"}
-              event={selectedEvent ?? undefined}
-              classrooms={classrooms}
-              onClear={() => setSelectedEventId(null)}
-            />
-          </div>
+        <TabsContent value="calendar" className="pt-1">
+          <AdminCalendarWorkspace
+            events={events}
+            onEditEvent={handleEditEvent}
+            onCreateEvent={handleCreateEvent}
+          />
         </TabsContent>
 
-        <TabsContent value="billing" className="mt-0">
+        <TabsContent value="billing" className="pt-1">
           <BillingReminderPanel reminders={billingReminders} />
         </TabsContent>
       </Tabs>
+
+      <Sheet
+        open={isEditorOpen}
+        onOpenChange={(open) => {
+          if (!open) handleCloseEditor()
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="flex w-full flex-col gap-0 p-0 sm:max-w-xl"
+        >
+          <SheetHeader className="gap-1 border-b border-border/60 bg-muted/20 px-5 pb-4 pt-5">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Calendar event
+            </p>
+            <SheetTitle className="font-heading text-2xl tracking-tight text-foreground">
+              {editingEvent ? editingEvent.title : "Create new event"}
+            </SheetTitle>
+            <SheetDescription>
+              {editingEvent
+                ? `Editing ${editingEvent.title}. Changes go live immediately for ${editingEvent.targetLabel}.`
+                : "Manual events publish live to parent calendars in the targeted scope."}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            {isEditorOpen && (
+              <AdminCalendarEventEditor
+                key={editingEvent?.id ?? "new-calendar-event"}
+                event={editingEvent ?? undefined}
+                classrooms={classrooms}
+                onClear={handleCloseEditor}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </PageShell>
   )
 }
