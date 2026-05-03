@@ -8,9 +8,11 @@ import {
   isResendConfigured,
 } from "@/lib/env"
 import { requireRole, createAccountInviteToken, createUserWithInvite } from "@/lib/auth"
+import { getEnrollmentLeadDetail } from "@/lib/dal/admin"
 import { prisma } from "@/lib/db"
 import { sendTransactionalEmail } from "@/lib/email"
 import {
+  acceptEnrollmentApplicationSchema,
   approveEnrollmentApplicationSchema,
   assignStaffClassroomSchema,
   createClassroomSchema,
@@ -26,6 +28,7 @@ import {
   createInvoiceSchema,
   deleteCalendarEventSchema,
   reviewDocumentSchema,
+  createAdminThreadSchema,
   sendAdminReplySchema,
   updateCalendarEventSchema,
   updateAnnouncementSchema,
@@ -442,6 +445,241 @@ export async function approveEnrollmentApplication(
     message: lead.familyId
       ? "Enrollment approved and invoice created."
       : "Enrollment approved.",
+  })
+}
+
+/**
+ * Server-action wrapper around `getEnrollmentLeadDetail` so the admin
+ * enrollment drawer can lazy-load the rich application detail + classrooms
+ * on open without forcing the list page to fetch everything up front.
+ */
+export async function loadEnrollmentLeadDetail(leadId: string) {
+  await requireRole("ADMIN")
+  return getEnrollmentLeadDetail(leadId)
+}
+
+function slugifyName(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
+function randomSlugSuffix() {
+  return Math.random().toString(36).slice(2, 6)
+}
+
+/**
+ * Atomic enrollment acceptance: approves the lead AND creates a `Child` row
+ * placed in the chosen classroom AND posts the registration invoice. The
+ * admin no longer has to re-enter the child's details on /admin/children
+ * after approving — this is the single-action conversion.
+ */
+export async function acceptEnrollmentApplication(
+  _previousState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  const admin = await requireRole("ADMIN")
+
+  const parsed = acceptEnrollmentApplicationSchema.safeParse({
+    leadId: getStringValue(formData, "leadId"),
+    classroomId: getStringValue(formData, "classroomId"),
+    childFirstName: getStringValue(formData, "childFirstName"),
+    childLastName: getStringValue(formData, "childLastName"),
+    birthday: getStringValue(formData, "birthday"),
+    ageLabel: getStringValue(formData, "ageLabel"),
+    startDate: getStringValue(formData, "startDate"),
+    summary: getStringValue(formData, "summary"),
+  })
+
+  if (!parsed.success) {
+    return getActionState({
+      error: "Check the highlighted fields and try again.",
+      fieldErrors: getFieldErrors(parsed.error),
+    })
+  }
+
+  const lead = await prisma.enrollmentLead.findUnique({
+    where: { id: parsed.data.leadId },
+    select: {
+      id: true,
+      familyId: true,
+      familyName: true,
+      childName: true,
+      note: true,
+    },
+  })
+
+  if (!lead) {
+    return getActionState({
+      error: "That enrollment record could not be found.",
+    })
+  }
+
+  if (!lead.familyId) {
+    return getActionState({
+      error:
+        "Family record is missing — invite the parent or link a family before approving.",
+    })
+  }
+
+  const classroom = await prisma.classroom.findUnique({
+    where: { id: parsed.data.classroomId },
+    include: { _count: { select: { children: true } } },
+  })
+
+  if (!classroom) {
+    return getActionState({
+      error: "The selected classroom could not be found.",
+    })
+  }
+
+  const capacityOverride = classroom._count.children >= classroom.capacity
+
+  // Generate a unique slug; one collision retry is enough in practice.
+  const baseSlug = slugifyName(
+    `${parsed.data.childFirstName} ${parsed.data.childLastName}`
+  )
+  let slug = `${baseSlug}-${randomSlugSuffix()}`
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const collision = await prisma.child.findUnique({ where: { slug } })
+    if (!collision) break
+    slug = `${baseSlug}-${randomSlugSuffix()}`
+  }
+
+  // Best-effort: pull a matching application for any health notes to seed.
+  const matchingApp = lead.familyId
+    ? await prisma.enrollmentApplication.findFirst({
+        where: {
+          familyId: lead.familyId,
+          childFirstName: parsed.data.childFirstName,
+          childLastName: parsed.data.childLastName,
+        },
+        orderBy: { updatedAt: "desc" },
+      })
+    : null
+
+  const registrationFee = await prisma.feeRule.findFirst({
+    where: { kind: "REGISTRATION", isActive: true },
+    orderBy: { createdAt: "desc" },
+  })
+
+  const childSummary =
+    parsed.data.summary && parsed.data.summary.length > 0
+      ? parsed.data.summary
+      : "Recently enrolled — update care notes when ready."
+
+  const allergiesSeed: string[] = []
+  const medicalNotesSeed: string[] = matchingApp?.healthNotes
+    ? [matchingApp.healthNotes]
+    : []
+
+  let createdChildId: string | null = null
+
+  await prisma.$transaction(async (tx) => {
+    const child = await tx.child.create({
+      data: {
+        slug,
+        familyId: lead.familyId!,
+        classroomId: classroom.id,
+        firstName: parsed.data.childFirstName,
+        lastName: parsed.data.childLastName,
+        ageLabel: parsed.data.ageLabel,
+        birthday: new Date(parsed.data.birthday),
+        teacherLabel: classroom.leadTeacherName || "Lead teacher",
+        summary: childSummary,
+        allergies: allergiesSeed,
+        medicalNotes: medicalNotesSeed,
+        comfortNotes: [],
+      },
+      select: { id: true, firstName: true },
+    })
+    createdChildId = child.id
+
+    const enrollmentNote = `${lead.note ? lead.note + "\n" : ""}Enrolled in ${classroom.name} by ${admin.name}.`
+    await tx.enrollmentLead.update({
+      where: { id: lead.id },
+      data: {
+        stage: "ACCEPTED",
+        assignedTo: admin.name,
+        note: enrollmentNote,
+      },
+    })
+
+    await tx.enrollmentApplication.updateMany({
+      where: {
+        familyId: lead.familyId!,
+        status: { in: ["DRAFT", "SUBMITTED", "UNDER_REVIEW"] },
+        childFirstName: parsed.data.childFirstName,
+        childLastName: parsed.data.childLastName,
+      },
+      data: {
+        status: "APPROVED",
+        decidedAt: new Date(),
+        decidedByUserId: admin.id,
+      },
+    })
+
+    await tx.family.update({
+      where: { id: lead.familyId! },
+      data: { enrollmentStage: "Approved" },
+    })
+
+    const dueDate = new Date()
+    dueDate.setDate(dueDate.getDate() + 30)
+
+    const childFullName = `${parsed.data.childFirstName} ${parsed.data.childLastName}`.trim()
+    await tx.invoice.create({
+      data: {
+        familyId: lead.familyId!,
+        label: registrationFee
+          ? `${registrationFee.label} – ${childFullName}`
+          : `Registration fee – ${childFullName}`,
+        description:
+          registrationFee?.description ??
+          "Registration fee posted automatically when the family was approved.",
+        amountCents: registrationFee?.amountCents ?? 15000,
+        dueDate,
+        status: "OPEN",
+        feeRuleId: registrationFee?.id ?? null,
+      },
+    })
+
+    await tx.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.enrollment.accept_and_enroll",
+        subjectType: "EnrollmentLead",
+        subjectId: lead.id,
+        details: {
+          childId: child.id,
+          classroomId: classroom.id,
+          classroomName: classroom.name,
+          familyId: lead.familyId,
+          familyName: lead.familyName,
+          capacityOverride,
+        },
+      },
+    })
+  })
+
+  revalidatePaths([
+    "/admin",
+    "/admin/enrollment",
+    `/admin/enrollment/${lead.id}`,
+    "/admin/children",
+    "/admin/classrooms",
+    "/admin/billing",
+    "/parent",
+  ])
+
+  void createdChildId
+  return getActionState({
+    success: true,
+    message: capacityOverride
+      ? `${parsed.data.childFirstName} enrolled in ${classroom.name} (over capacity). Registration fee posted.`
+      : `${parsed.data.childFirstName} enrolled in ${classroom.name}. Registration fee posted.`,
   })
 }
 
@@ -1465,10 +1703,23 @@ export async function createDocumentRequest(
   try {
     const user = await requireRole("ADMIN")
 
+    const templateRaw = getStringValue(formData, "template")
+    let templateInput: unknown = undefined
+    if (templateRaw) {
+      try {
+        templateInput = JSON.parse(templateRaw)
+      } catch {
+        return getActionState({
+          error: "The uploaded template was not parseable. Try again.",
+        })
+      }
+    }
+
     const parsed = createDocumentRequestSchema.safeParse({
       familyId: getStringValue(formData, "familyId"),
       title: getStringValue(formData, "title"),
       note: getStringValue(formData, "note"),
+      template: templateInput,
     })
 
     if (!parsed.success) {
@@ -1486,6 +1737,8 @@ export async function createDocumentRequest(
       return getActionState({ error: "Family not found." })
     }
 
+    const template = parsed.data.template
+
     await prisma.$transaction([
       prisma.document.create({
         data: {
@@ -1495,6 +1748,12 @@ export async function createDocumentRequest(
           owner: "Staff",
           status: "REQUIRED",
           note: parsed.data.note ?? "",
+          templateBlobPathname: template?.blobPathname,
+          templateBlobUrl: template?.blobUrl,
+          templateDownloadUrl: template?.blobDownloadUrl,
+          templateFileName: template?.fileName,
+          templateContentType: template?.contentType,
+          templateSizeBytes: template?.sizeBytes,
         },
       }),
       prisma.auditLog.create({
@@ -1505,6 +1764,8 @@ export async function createDocumentRequest(
           details: {
             familyName: family.familyName,
             title: parsed.data.title,
+            hasTemplate: Boolean(template),
+            templateFileName: template?.fileName ?? null,
           },
         },
       }),
@@ -1764,7 +2025,13 @@ export async function sendAdminReply(
       }),
     ])
 
-    revalidatePaths(["/admin", "/admin/messages", "/parent"])
+    revalidatePaths([
+      "/admin",
+      "/admin/messages",
+      "/admin/communications",
+      "/parent",
+      "/parent/messages",
+    ])
 
     return getActionState({
       success: true,
@@ -1773,6 +2040,107 @@ export async function sendAdminReply(
   } catch {
     return getActionState({
       error: "We could not send this reply right now.",
+    })
+  }
+}
+
+export async function createAdminThread(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  try {
+    const user = await requireRole("ADMIN")
+
+    const parsed = createAdminThreadSchema.safeParse({
+      familyId: getStringValue(formData, "familyId"),
+      subject: getStringValue(formData, "subject"),
+      classroomLabel: getStringValue(formData, "classroomLabel"),
+      body: getStringValue(formData, "body"),
+    })
+
+    if (!parsed.success) {
+      return getActionState({
+        error: "Check the highlighted message details and try again.",
+        fieldErrors: getFieldErrors(parsed.error),
+      })
+    }
+
+    const family = await prisma.family.findUnique({
+      where: { id: parsed.data.familyId },
+      select: {
+        id: true,
+        familyName: true,
+        parents: {
+          select: { user: { select: { name: true } } },
+        },
+      },
+    })
+
+    if (!family) {
+      return getActionState({ error: "Family record not found." })
+    }
+
+    const parentNames = family.parents
+      .map((p) => p.user.name)
+      .filter((name): name is string => Boolean(name))
+    const participants = Array.from(
+      new Set([user.name, ...parentNames])
+    ).filter(Boolean)
+
+    const now = new Date()
+    const thread = await prisma.messageThread.create({
+      data: {
+        familyId: family.id,
+        subject: parsed.data.subject,
+        classroomLabel: parsed.data.classroomLabel,
+        status: "ACTIVE",
+        participants,
+        lastMessageAt: now,
+        messages: {
+          create: {
+            authorUserId: user.id,
+            senderName: user.name,
+            role: "STAFF",
+            body: parsed.data.body,
+            sentAt: now,
+          },
+        },
+      },
+      select: { id: true },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: user.id,
+        action: "admin.messages.thread.create",
+        subjectType: "MessageThread",
+        subjectId: thread.id,
+        details: {
+          subject: parsed.data.subject,
+          classroomLabel: parsed.data.classroomLabel,
+          familyId: family.id,
+        },
+      },
+    })
+
+    revalidatePaths([
+      "/admin",
+      "/admin/messages",
+      "/admin/communications",
+      "/parent",
+      "/parent/messages",
+    ])
+
+    return getActionState({
+      success: true,
+      message: "Message sent to the family.",
+    })
+  } catch (error) {
+    return getActionState({
+      error:
+        error instanceof Error
+          ? error.message
+          : "We could not send this message right now.",
     })
   }
 }

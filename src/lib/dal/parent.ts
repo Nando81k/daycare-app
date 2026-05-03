@@ -911,6 +911,15 @@ export async function getParentDocuments(): Promise<ParentDocumentPreview[]> {
     contentType: document.contentType ?? undefined,
     submittedAt: document.submittedAt ? formatMonthDay(document.submittedAt) : undefined,
     sizeLabel: document.sizeBytes ? formatFileSize(document.sizeBytes) : undefined,
+    templateUrl: document.templateBlobUrl ?? undefined,
+    templateDownloadUrl:
+      document.templateDownloadUrl ?? document.templateBlobUrl ?? undefined,
+    templateFileName: document.templateFileName ?? undefined,
+    templateContentType: document.templateContentType ?? undefined,
+    signedName: document.signedName ?? undefined,
+    signedAt: document.signedAt
+      ? formatRelativeDateTime(document.signedAt)
+      : undefined,
   }))
 }
 

@@ -1,11 +1,13 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
 
 import { requireRole } from "@/lib/auth"
 import { getFieldErrors, getMutationState, getStringListValue, getStringValue } from "@/lib/action-state"
 import { deleteBlobIfConfigured } from "@/lib/blob"
 import { prisma } from "@/lib/db"
+import { BILLING_THREAD_LABEL } from "@/lib/messaging"
 import {
   combineChildName,
   getDraftPlaceholder,
@@ -24,6 +26,7 @@ import {
   saveEnrollmentApplicationDraftSchema,
   sendParentReplySchema,
   submitEnrollmentApplicationSchema,
+  submitDocumentTypedSignatureSchema,
   submitDocumentUploadSchema,
   updateParentSettingsSchema,
   upsertAuthorizedPickupSchema,
@@ -231,7 +234,7 @@ export async function createParentThread(
   }
 
   const participantLabel =
-    parsed.data.classroomLabel === "Billing"
+    parsed.data.classroomLabel === BILLING_THREAD_LABEL
       ? "Billing Office"
       : primaryChild?.teacherLabel ?? "Classroom team"
 
@@ -1187,5 +1190,83 @@ export async function submitParentDocumentUpload(
   return getMutationState({
     success: true,
     message: "Document uploaded and sent for review.",
+  })
+}
+
+export async function submitParentDocumentTypedSignature(
+  _previousState: ParentActionState,
+  formData: FormData
+): Promise<ParentActionState> {
+  const { user, profile } = await getParentActionContext()
+
+  const parsed = submitDocumentTypedSignatureSchema.safeParse({
+    documentId: getStringValue(formData, "documentId"),
+    signerName: getStringValue(formData, "signerName"),
+    acknowledged: getStringValue(formData, "acknowledged"),
+  })
+
+  if (!parsed.success) {
+    return getMutationState({
+      error: "Type your name and confirm the acknowledgement to sign.",
+      fieldErrors: getFieldErrors(parsed.error),
+    })
+  }
+
+  const document = await prisma.document.findFirst({
+    where: {
+      id: parsed.data.documentId,
+      familyId: profile.familyId,
+    },
+    select: { id: true, title: true },
+  })
+
+  if (!document) {
+    return getMutationState({
+      error: "That document request could not be found.",
+    })
+  }
+
+  const headerStore = await headers()
+  const ipAddress =
+    headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    headerStore.get("x-real-ip") ??
+    null
+
+  await prisma.document.update({
+    where: { id: document.id },
+    data: {
+      status: "SUBMITTED",
+      submittedAt: new Date(),
+      signedName: parsed.data.signerName,
+      signedAt: new Date(),
+      signedIp: ipAddress,
+      note: "Signed in-portal by the family — ready for school review.",
+    },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      actorUserId: user.id,
+      action: "parent.documents.signed",
+      subjectType: "Document",
+      subjectId: document.id,
+      details: {
+        title: document.title,
+        signerName: parsed.data.signerName,
+      },
+    },
+  })
+
+  revalidatePaths([
+    "/parent",
+    "/parent/forms",
+    "/parent/documents",
+    "/admin/documents",
+    "/admin/children",
+  ])
+
+  return getMutationState({
+    success: true,
+    message: "Signed and sent to the school for review.",
   })
 }

@@ -3,11 +3,17 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LogOut, Menu } from "lucide-react"
+import { ChevronDown, LogOut, Menu } from "lucide-react"
 
 import { brandConfig } from "@/config/brand"
 import { parentNav } from "@/config/navigation"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Sheet,
   SheetClose,
@@ -18,13 +24,19 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
+import type { PortalNavItem } from "@/types/app"
 
-const items = parentNav.flatMap((group) => group.items)
+const allItems: PortalNavItem[] = parentNav.flatMap((group) => group.items)
+const primaryItems = allItems.filter((item) => item.placement !== "account")
+const accountItems = allItems.filter((item) => item.placement === "account")
 
 function isActive(pathname: string, href: string) {
   if (href === "/parent") return pathname === "/parent"
   return pathname === href || pathname.startsWith(`${href}/`)
 }
+
+const accountActive = (pathname: string) =>
+  accountItems.some((item) => isActive(pathname, item.href))
 
 export function ParentTopbar() {
   const pathname = usePathname()
@@ -60,7 +72,7 @@ export function ParentTopbar() {
           aria-label="Parent portal"
           className="ml-2 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto md:flex"
         >
-          {items.map((item) => {
+          {primaryItems.map((item) => {
             const Icon = item.icon
             const active = isActive(pathname, item.href)
             return (
@@ -80,6 +92,54 @@ export function ParentTopbar() {
               </Link>
             )
           })}
+
+          {accountItems.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
+                    accountActive(pathname)
+                      ? "bg-primary text-primary-foreground shadow-(--shadow-soft)"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )}
+                  aria-label="Account menu"
+                >
+                  Account
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {accountItems.map((item) => {
+                  const Icon = item.icon
+                  const active = isActive(pathname, item.href)
+                  return (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "flex items-start gap-3",
+                          active && "bg-secondary text-foreground"
+                        )}
+                      >
+                        <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span className="flex flex-col">
+                          <span className="text-sm font-medium">{item.title}</span>
+                          {item.summary ? (
+                            <span className="text-xs text-muted-foreground">
+                              {item.summary}
+                            </span>
+                          ) : null}
+                        </span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
         </nav>
 
         {/* Right side — sign out (desktop) + mobile drawer trigger */}
@@ -95,18 +155,11 @@ export function ParentTopbar() {
           {/* Mobile hamburger */}
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild className="md:hidden">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Open navigation"
-              >
+              <Button variant="ghost" size="icon" aria-label="Open navigation">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="w-[18rem] flex-col gap-0 p-0"
-            >
+            <SheetContent side="right" className="w-[18rem] flex-col gap-0 p-0">
               <SheetHeader className="border-b border-border/60 px-5 py-4">
                 <SheetTitle
                   className="text-base font-heading"
@@ -118,45 +171,50 @@ export function ParentTopbar() {
               </SheetHeader>
               <nav
                 aria-label="Parent portal mobile"
-                className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
+                className="flex flex-1 flex-col gap-4 overflow-y-auto px-3 py-4"
               >
-                {items.map((item) => {
-                  const Icon = item.icon
-                  const active = isActive(pathname, item.href)
-                  return (
-                    <SheetClose asChild key={item.href}>
-                      <Link
-                        href={item.href}
-                        aria-current={active ? "page" : undefined}
-                        className={cn(
-                          "flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors",
-                          active
-                            ? "bg-primary text-primary-foreground"
-                            : "text-foreground hover:bg-secondary"
-                        )}
-                      >
-                        <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-                        <span className="flex flex-col">
-                          <span className="text-sm font-medium">
-                            {item.title}
-                          </span>
-                          {item.summary && (
-                            <span
-                              className={cn(
-                                "text-xs",
-                                active
-                                  ? "text-primary-foreground/85"
-                                  : "text-muted-foreground"
-                              )}
-                            >
-                              {item.summary}
+                {parentNav.map((group) => (
+                  <div key={group.title} className="space-y-1">
+                    <p className="px-3 pt-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                      {group.title}
+                    </p>
+                    {group.items.map((item) => {
+                      const Icon = item.icon
+                      const active = isActive(pathname, item.href)
+                      return (
+                        <SheetClose asChild key={item.href}>
+                          <Link
+                            href={item.href}
+                            aria-current={active ? "page" : undefined}
+                            className={cn(
+                              "flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors",
+                              active
+                                ? "bg-primary text-primary-foreground"
+                                : "text-foreground hover:bg-secondary"
+                            )}
+                          >
+                            <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span className="flex flex-col">
+                              <span className="text-sm font-medium">{item.title}</span>
+                              {item.summary ? (
+                                <span
+                                  className={cn(
+                                    "text-xs",
+                                    active
+                                      ? "text-primary-foreground/85"
+                                      : "text-muted-foreground"
+                                  )}
+                                >
+                                  {item.summary}
+                                </span>
+                              ) : null}
                             </span>
-                          )}
-                        </span>
-                      </Link>
-                    </SheetClose>
-                  )
-                })}
+                          </Link>
+                        </SheetClose>
+                      )
+                    })}
+                  </div>
+                ))}
               </nav>
               <div className="border-t border-border/60 px-3 py-3">
                 <SheetClose asChild>

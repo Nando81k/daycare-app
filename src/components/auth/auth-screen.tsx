@@ -18,6 +18,12 @@ type AuthScreenProps = {
   description: string
   children: ReactNode
   footer?: ReactNode
+  /**
+   * Override the vertical padding on the inner content wrapper. Defaults to
+   * `py-16`; pass e.g. `py-8` to compress dense forms (signup) so they fit
+   * on a 1366×768 laptop without scroll.
+   */
+  contentClassName?: string
 }
 
 export function AuthScreen({
@@ -31,6 +37,7 @@ export function AuthScreen({
   description,
   children,
   footer,
+  contentClassName,
 }: AuthScreenProps) {
   const imageOnLeft = imagePosition === "left"
 
@@ -78,7 +85,12 @@ export function AuthScreen({
           </Link>
         </header>
 
-        <div className="flex flex-1 items-center justify-center py-16">
+        <div
+          className={cn(
+            "flex flex-1 items-center justify-center py-16",
+            contentClassName
+          )}
+        >
           <div className="w-full max-w-md">
             <Reveal>
               <div className="mb-10">

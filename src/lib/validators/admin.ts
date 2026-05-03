@@ -100,7 +100,7 @@ export const upsertAttendanceRecordSchema = z
     status: z.enum(["PRESENT", "ABSENT", "SCHEDULED"]),
     checkInAt: attendanceTimeSchema,
     checkOutAt: attendanceTimeSchema,
-    note: requiredString,
+    note: z.string().trim().default(""),
   })
   .superRefine((value, context) => {
     if (!value.checkInAt || !value.checkOutAt) {
@@ -207,10 +207,23 @@ export const reviewDocumentSchema = z.object({
   note: requiredString,
 })
 
+// Optional template blob attached when admin sends a blank form to a family.
+const documentTemplateBlobSchema = z
+  .object({
+    fileName: requiredString,
+    blobPathname: requiredString,
+    blobUrl: requiredString,
+    blobDownloadUrl: requiredString,
+    contentType: requiredString,
+    sizeBytes: z.coerce.number().int().positive(),
+  })
+  .optional()
+
 export const createDocumentRequestSchema = z.object({
   familyId: requiredString,
   title: requiredString,
   note: optionalTrimmedString,
+  template: documentTemplateBlobSchema,
 })
 
 export const createInvoiceSchema = z.object({
@@ -229,6 +242,22 @@ export const approveEnrollmentApplicationSchema = z.object({
   leadId: requiredString,
 })
 
+const isoDateSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid date.")
+
+export const acceptEnrollmentApplicationSchema = z.object({
+  leadId: requiredString,
+  classroomId: requiredString,
+  childFirstName: z.string().trim().min(1, "Add a first name."),
+  childLastName: z.string().trim().min(1, "Add a last name."),
+  birthday: isoDateSchema,
+  ageLabel: z.string().trim().min(1, "Add an age label."),
+  startDate: isoDateSchema.optional().or(z.literal("")),
+  summary: z.string().trim().optional().or(z.literal("")),
+})
+
 export const declineEnrollmentApplicationSchema = z.object({
   leadId: requiredString,
   note: optionalTrimmedString,
@@ -237,6 +266,19 @@ export const declineEnrollmentApplicationSchema = z.object({
 export const sendAdminReplySchema = z.object({
   threadId: requiredString,
   body: requiredString,
+})
+
+export const createAdminThreadSchema = z.object({
+  familyId: requiredString,
+  subject: z.string().trim().min(4, "Add a clearer subject."),
+  classroomLabel: z
+    .string()
+    .trim()
+    .min(2, "Choose where this thread should be tagged."),
+  body: z
+    .string()
+    .trim()
+    .min(12, "Add a little more detail so the family has context."),
 })
 
 export const updateChildProfileSchema = z.object({

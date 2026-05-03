@@ -76,8 +76,8 @@ export function SiteHeader({ currentUserRole = null }: SiteHeaderProps = {}) {
           ) : (
             <>
               <Link
-                href="/login/parent"
-                aria-current={isActive("/login/parent") ? "page" : undefined}
+                href="/login"
+                aria-current={isActive("/login") ? "page" : undefined}
                 className={cn(navLinkClasses, "hidden sm:inline-flex")}
               >
                 Sign in

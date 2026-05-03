@@ -12,6 +12,15 @@ import {
 } from "@/lib/format"
 import type { StatusBadgeVariant } from "@/types/app"
 
+export type DashboardDailyReport = {
+  dateLabel: string
+  arrivalMood: string
+  summary: string
+  mealsCount: number
+  restCount: number
+  activitiesCount: number
+}
+
 export type DashboardChild = {
   id: string
   slug: string
@@ -21,6 +30,16 @@ export type DashboardChild = {
   ageLabel: string
   classroomName: string | null
   teacherLabel: string | null
+  todayReport: DashboardDailyReport | null
+}
+
+export type DashboardMessageThread = {
+  id: string
+  subject: string
+  classroom: string | null
+  preview: string
+  isUnread: boolean
+  lastMessageAt: string
 }
 
 export type DashboardInvoice = {
@@ -66,6 +85,7 @@ export type ParentOverviewData = {
   applications: DashboardApplication[]
   unreadMessageCount: number
   pendingDocumentCount: number
+  recentMessageThreads: DashboardMessageThread[]
   upcomingPaymentReminder: DashboardReminder
   stripeConfigured: boolean
 }
@@ -106,8 +126,19 @@ function mapApplicationStage(stage: string | null | undefined): {
   }
 }
 
+function startOfTodayUtc() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function jsonArrayLength(value: unknown) {
+  return Array.isArray(value) ? value.length : 0
+}
+
 export async function getParentOverviewData(): Promise<ParentOverviewData | null> {
   const user = await requireRole("PARENT")
+  const today = startOfTodayUtc()
 
   const profile = await prisma.parentProfile.findUnique({
     where: { userId: user.id },
@@ -118,11 +149,31 @@ export async function getParentOverviewData(): Promise<ParentOverviewData | null
           familyName: true,
           children: {
             orderBy: { firstName: "asc" },
-            include: { classroom: { select: { name: true } } },
+            include: {
+              classroom: { select: { name: true } },
+              dailyReports: {
+                where: { date: { gte: today } },
+                orderBy: { date: "desc" },
+                take: 1,
+              },
+            },
           },
           invoices: { orderBy: { dueDate: "asc" } },
           messageThreads: {
-            select: { id: true, status: true },
+            orderBy: { lastMessageAt: "desc" },
+            take: 4,
+            select: {
+              id: true,
+              subject: true,
+              status: true,
+              classroomLabel: true,
+              lastMessageAt: true,
+              messages: {
+                orderBy: { sentAt: "desc" },
+                take: 1,
+                select: { body: true, role: true },
+              },
+            },
           },
           documents: {
             where: { status: { in: ["REQUIRED", "EXPIRED"] } },
@@ -139,16 +190,30 @@ export async function getParentOverviewData(): Promise<ParentOverviewData | null
 
   if (!profile) return null
 
-  const children: DashboardChild[] = profile.family.children.map((child) => ({
-    id: child.id,
-    slug: child.slug,
-    firstName: child.firstName,
-    lastName: child.lastName,
-    fullName: `${child.firstName} ${child.lastName}`.trim(),
-    ageLabel: child.ageLabel,
-    classroomName: child.classroom?.name ?? null,
-    teacherLabel: child.teacherLabel ?? null,
-  }))
+  const children: DashboardChild[] = profile.family.children.map((child) => {
+    const report = child.dailyReports[0] ?? null
+    const todayReport: DashboardDailyReport | null = report
+      ? {
+          dateLabel: formatMonthDay(report.date),
+          arrivalMood: report.arrivalMood,
+          summary: report.summary,
+          mealsCount: jsonArrayLength(report.meals),
+          restCount: jsonArrayLength(report.rest),
+          activitiesCount: jsonArrayLength(report.activities),
+        }
+      : null
+    return {
+      id: child.id,
+      slug: child.slug,
+      firstName: child.firstName,
+      lastName: child.lastName,
+      fullName: `${child.firstName} ${child.lastName}`.trim(),
+      ageLabel: child.ageLabel,
+      classroomName: child.classroom?.name ?? null,
+      teacherLabel: child.teacherLabel ?? null,
+      todayReport,
+    }
+  })
 
   const currentInvoiceRow =
     profile.family.invoices.find((invoice) => invoice.status === "OPEN") ??
@@ -211,6 +276,19 @@ export async function getParentOverviewData(): Promise<ParentOverviewData | null
   const unreadMessageCount = profile.family.messageThreads.filter(
     (t) => t.status === "RESPONSE_NEEDED"
   ).length
+  const recentMessageThreads: DashboardMessageThread[] =
+    profile.family.messageThreads.slice(0, 2).map((thread) => {
+      const lastMessage = thread.messages[0]
+      return {
+        id: thread.id,
+        subject: thread.subject,
+        classroom: thread.classroomLabel ?? null,
+        preview: lastMessage?.body ?? "No messages yet.",
+        isUnread:
+          thread.status === "RESPONSE_NEEDED" && lastMessage?.role !== "PARENT",
+        lastMessageAt: formatRelativeDateTime(thread.lastMessageAt),
+      }
+    })
   const pendingDocumentCount = profile.family.documents.length
 
   const upcomingPaymentReminder: DashboardReminder = currentInvoice
@@ -244,6 +322,7 @@ export async function getParentOverviewData(): Promise<ParentOverviewData | null
     applications,
     unreadMessageCount,
     pendingDocumentCount,
+    recentMessageThreads,
     upcomingPaymentReminder,
     stripeConfigured: isStripeConfigured(),
   }

@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react"
 
@@ -50,6 +51,12 @@ const NAV: NavItem[] = [
     title: "Daily reports",
     icon: ClipboardList,
     summary: "Post today's report for each child",
+  },
+  {
+    href: "/teacher/messages",
+    title: "Messages",
+    icon: MessageSquare,
+    summary: "Chat with families in your classroom",
   },
 ]
 

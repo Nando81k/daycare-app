@@ -33,8 +33,8 @@ export const marketingNav: SiteNavLink[] = [
 ]
 
 export const authLinks: SiteNavLink[] = [
-  { label: "Parent Login", href: "/login/parent" },
-  { label: "Admin Login", href: "/login/admin" },
+  { label: "Parent Login", href: "/login" },
+  { label: "Admin Login", href: "/login?tab=admin" },
 ]
 
 export const footerNav = [
@@ -63,52 +63,65 @@ export const parentNav: PortalNavGroup[] = [
     title: "Family portal",
     items: [
       {
-        title: "Dashboard",
+        title: "Today",
         href: "/parent",
         icon: LayoutDashboardIcon,
-        summary: "Today's overview, balance, and quick links",
+        summary: "Today's report, balance, and messages",
+        placement: "primary",
       },
       {
         title: "Billing",
         href: "/parent/billing",
         icon: CreditCardIcon,
         summary: "Invoices, payments, and saved cards",
+        placement: "primary",
       },
       {
         title: "Messages",
         href: "/parent/messages",
         icon: MessageSquare,
         summary: "Conversations with the classroom team",
-      },
-      {
-        title: "Documents",
-        href: "/parent/documents",
-        icon: FileText,
-        summary: "Required forms, immunizations, and signed agreements",
+        placement: "primary",
       },
       {
         title: "Calendar",
         href: "/parent/calendar",
         icon: CalendarDays,
         summary: "Closures, family events, and tuition reminders",
+        placement: "primary",
+      },
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      {
+        title: "Documents",
+        href: "/parent/documents",
+        icon: FileText,
+        summary: "Required forms, immunizations, and signed agreements",
+        placement: "account",
       },
       {
         title: "Attendance",
         href: "/parent/attendance",
         icon: ClockIcon,
         summary: "Daily check-ins and absence history",
+        placement: "account",
       },
       {
         title: "Announcements",
         href: "/parent/announcements",
         icon: MegaphoneIcon,
         summary: "Updates from the school",
+        placement: "account",
       },
       {
         title: "Settings",
         href: "/parent/settings",
         icon: Settings,
         summary: "Notification preferences and contact info",
+        placement: "account",
       },
     ],
   },
@@ -116,7 +129,7 @@ export const parentNav: PortalNavGroup[] = [
 
 export const adminNav: PortalNavGroup[] = [
   {
-    title: "Overview",
+    title: "Today",
     items: [
       {
         title: "Dashboard",
@@ -127,13 +140,13 @@ export const adminNav: PortalNavGroup[] = [
     ],
   },
   {
-    title: "Enrollment",
+    title: "Enroll",
     items: [
       {
         title: "Applications",
         href: "/admin/enrollment",
         icon: ClipboardList,
-        summary: "Submitted applications and waitlist queue",
+        summary: "Submitted applications awaiting decision",
       },
       {
         title: "Waitlist",
@@ -144,7 +157,7 @@ export const adminNav: PortalNavGroup[] = [
     ],
   },
   {
-    title: "Families & children",
+    title: "Care",
     items: [
       {
         title: "Families",
@@ -164,11 +177,6 @@ export const adminNav: PortalNavGroup[] = [
         icon: School,
         summary: "Capacity, ratios, and classroom assignments",
       },
-    ],
-  },
-  {
-    title: "Daily operations",
-    items: [
       {
         title: "Attendance",
         href: "/admin/attendance",
@@ -187,39 +195,10 @@ export const adminNav: PortalNavGroup[] = [
         icon: FileText,
         summary: "Required forms, submissions to review, and expirations",
       },
-      {
-        title: "Staff",
-        href: "/admin/staff",
-        icon: UserCog,
-        summary: "Educator roster, coverage gaps, and certifications",
-      },
     ],
   },
   {
-    title: "Communications",
-    items: [
-      {
-        title: "Messages",
-        href: "/admin/messages",
-        icon: MessageSquare,
-        summary: "Family conversation threads",
-      },
-      {
-        title: "Communications hub",
-        href: "/admin/communications",
-        icon: MailOpen,
-        summary: "Threads + announcement drafts in one workspace",
-      },
-      {
-        title: "Announcements",
-        href: "/admin/announcements",
-        icon: MegaphoneIcon,
-        summary: "Publish updates to families and classrooms",
-      },
-    ],
-  },
-  {
-    title: "Finance",
+    title: "Money",
     items: [
       {
         title: "Billing",
@@ -242,8 +221,37 @@ export const adminNav: PortalNavGroup[] = [
     ],
   },
   {
-    title: "Settings",
+    title: "Communicate",
     items: [
+      {
+        title: "Messages",
+        href: "/admin/messages",
+        icon: MessageSquare,
+        summary: "Family conversation threads",
+      },
+      {
+        title: "Communications hub",
+        href: "/admin/communications",
+        icon: MailOpen,
+        summary: "Threads + announcement drafts in one workspace",
+      },
+      {
+        title: "Announcements",
+        href: "/admin/announcements",
+        icon: MegaphoneIcon,
+        summary: "Publish updates to families and classrooms",
+      },
+    ],
+  },
+  {
+    title: "Configure",
+    items: [
+      {
+        title: "Staff",
+        href: "/admin/staff",
+        icon: UserCog,
+        summary: "Educator roster, coverage gaps, and certifications",
+      },
       {
         title: "Settings",
         href: "/admin/settings",

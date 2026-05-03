@@ -7,7 +7,11 @@ import { useRouter } from "next/navigation"
 
 import { submitParentDocumentUpload } from "@/app/actions/parent"
 import { ParentSubmitButton } from "@/components/parent/parent-action-panel"
+import { ParentTypedSignatureDialog } from "@/components/parent/parent-typed-signature-dialog"
 import { AlertBanner } from "@/components/shared/alert-banner"
+import {
+  DocumentPreviewButton,
+} from "@/components/shared/document-preview-dialog"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { getDocumentUploadPath } from "@/lib/blob"
 import { uploadFile, isUploadEnabled } from "@/lib/upload"
@@ -25,8 +29,10 @@ type UploadedAsset = {
 
 export function ParentDocumentUploadCard({
   document,
+  parentName = "",
 }: {
   document: ParentDocumentPreview
+  parentName?: string
 }) {
   const router = useRouter()
   const [state, formAction] = useActionState(submitParentDocumentUpload, initialMutationState)
@@ -90,6 +96,48 @@ export function ParentDocumentUploadCard({
           {document.status}
         </StatusBadge>
       </div>
+
+      {document.templateUrl || document.signedName ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {document.templateUrl ? (
+            <DocumentPreviewButton
+              label="View blank form"
+              document={{
+                title: `${document.title} — blank form`,
+                fileName: document.templateFileName,
+                contentType: document.templateContentType,
+                previewUrl: document.templateUrl,
+                downloadUrl: document.templateDownloadUrl,
+                subtitle: "Blank template from the school",
+              }}
+            />
+          ) : null}
+          {document.status === "required" && document.signedName ? null : null}
+          {document.status !== "approved" && !document.signedName ? (
+            <ParentTypedSignatureDialog
+              documentId={document.id}
+              documentTitle={document.title}
+              defaultName={parentName}
+            />
+          ) : null}
+          {document.signedName ? (
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+              Signed by {document.signedName}
+              {document.signedAt ? ` · ${document.signedAt}` : ""}
+            </span>
+          ) : null}
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {document.status !== "approved" ? (
+            <ParentTypedSignatureDialog
+              documentId={document.id}
+              documentTitle={document.title}
+              defaultName={parentName}
+            />
+          ) : null}
+        </div>
+      )}
 
       <div className="mt-4 grid gap-3">
         {document.downloadUrl ? (

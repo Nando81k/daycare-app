@@ -44,8 +44,8 @@ export async function teacherUpsertAttendance(
     const parsed = upsertAttendanceRecordSchema.safeParse({
       childId: getStringValue(formData, "childId"),
       status: getStringValue(formData, "status"),
-      checkInAt: getStringValue(formData, "checkInAt") || undefined,
-      checkOutAt: getStringValue(formData, "checkOutAt") || undefined,
+      checkInAt: getStringValue(formData, "checkInAt"),
+      checkOutAt: getStringValue(formData, "checkOutAt"),
       note: getStringValue(formData, "note"),
     })
     if (!parsed.success) {

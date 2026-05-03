@@ -57,6 +57,20 @@ export const submitDocumentUploadSchema = z.object({
   ...blobAssetSchema.shape,
 })
 
+export const submitDocumentTypedSignatureSchema = z.object({
+  documentId: requiredString,
+  signerName: z
+    .string()
+    .trim()
+    .min(2, "Type your full name as it appears on the document."),
+  acknowledged: z
+    .string()
+    .trim()
+    .refine((value) => value === "on" || value === "true", {
+      message: "Confirm the legally binding acknowledgement to continue.",
+    }),
+})
+
 export const createDailyReportPhotoSchema = z.object({
   childSlug: requiredString,
   title: z.string().trim().min(2, "Add a short photo title."),

@@ -19,6 +19,7 @@ export default async function AdminOverviewPage() {
       classrooms={data.classrooms}
       waitlistEntries={data.waitlistEntries}
       staffProfiles={data.staffProfiles}
+      enrollmentLeads={data.enrollmentLeads}
     />
   )
 }

@@ -1,11 +1,13 @@
 "use client"
 
 import { ChevronLeftIcon, MessageSquareIcon, PlusIcon } from "lucide-react"
-import { useActionState, useEffect, useMemo, useState } from "react"
+import { useActionState, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
-import { createAdminThread, sendAdminReply } from "@/app/actions/admin"
-import { AdminPageHeader } from "@/components/admin/admin-page-header"
+import {
+  createTeacherThread,
+  sendTeacherReply,
+} from "@/app/actions/teacher-messages"
 import { PersonAvatar } from "@/components/parent/person-avatar"
 import { getThreadBadgeVariant } from "@/components/parent/parent-status"
 import { AlertBanner } from "@/components/shared/alert-banner"
@@ -41,26 +43,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { initialMutationState } from "@/lib/action-state"
-import { BILLING_THREAD_LABEL } from "@/lib/messaging"
 import { cn } from "@/lib/utils"
 import type {
-  AdminActionState,
-  AdminFamilyOption,
-  AdminMessageThreadDetail,
   ParentMessagePreview,
+  TeacherFamilyOption,
+  TeacherMessageThreadPreview,
 } from "@/types/app"
 
 type WorkspaceTab = "inbox" | "compose"
 type MobileInboxTab = "threads" | "conversation"
-
-const initialReplyState: AdminActionState = initialMutationState
 
 function ThreadListRow({
   thread,
   isActive,
   onSelect,
 }: {
-  thread: AdminMessageThreadDetail
+  thread: TeacherMessageThreadPreview
   isActive: boolean
   onSelect: () => void
 }) {
@@ -84,30 +82,30 @@ function ThreadListRow({
             {thread.subject}
           </p>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          {thread.isBilling ? (
-            <Badge variant="warning">Billing</Badge>
-          ) : null}
-          {thread.unreadCount ? (
-            <Badge variant="secondary">{thread.unreadCount} unread</Badge>
-          ) : (
-            <StatusBadge variant={getThreadBadgeVariant(thread.status)}>
-              {thread.status}
-            </StatusBadge>
-          )}
-        </div>
+        {thread.unreadCount ? (
+          <Badge variant="warning">{thread.unreadCount} unread</Badge>
+        ) : (
+          <StatusBadge variant={getThreadBadgeVariant(thread.status)}>
+            {thread.status}
+          </StatusBadge>
+        )}
       </div>
       <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
         {thread.preview}
       </p>
       <p className="mt-2 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-        {thread.classroomLabel} · {thread.lastMessageAt}
+        {thread.lastMessageAt}
       </p>
     </button>
   )
 }
 
-function MessageBubble({ sender, role, sentAt, body }: ParentMessagePreview) {
+function MessageBubble({
+  sender,
+  role,
+  sentAt,
+  body,
+}: ParentMessagePreview) {
   const isStaff = role === "staff" || role === "director"
 
   return (
@@ -134,14 +132,14 @@ function MessageBubble({ sender, role, sentAt, body }: ParentMessagePreview) {
   )
 }
 
-export function AdminMessagesPageView({
-  adminName,
+export function TeacherMessagesPageView({
+  classroomName,
   threads: initialThreads,
   families,
 }: {
-  adminName: string
-  threads: AdminMessageThreadDetail[]
-  families: AdminFamilyOption[]
+  classroomName: string | null
+  threads: TeacherMessageThreadPreview[]
+  families: TeacherFamilyOption[]
 }) {
   const router = useRouter()
   const isMobile = useIsMobile()
@@ -150,17 +148,15 @@ export function AdminMessagesPageView({
     initialThreads[0]?.id ?? ""
   )
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>("inbox")
-  const [mobileInboxTab, setMobileInboxTab] = useState<MobileInboxTab>(
-    "threads"
+  const [mobileInboxTab, setMobileInboxTab] = useState<MobileInboxTab>("threads")
+  const [replyState, replyAction] = useActionState(
+    sendTeacherReply,
+    initialMutationState
   )
-  const [replyState, replyAction] = useActionState<AdminActionState, FormData>(
-    sendAdminReply,
-    initialReplyState
+  const [newThreadState, newThreadAction] = useActionState(
+    createTeacherThread,
+    initialMutationState
   )
-  const [newThreadState, newThreadAction] = useActionState<
-    AdminActionState,
-    FormData
-  >(createAdminThread, initialReplyState)
 
   useEffect(() => {
     setThreads(initialThreads)
@@ -186,15 +182,18 @@ export function AdminMessagesPageView({
   const selectedThread =
     threads.find((thread) => thread.id === selectedThreadId) ?? threads[0]
   const unreadCount = threads.reduce((c, t) => c + t.unreadCount, 0)
-  const billingCount = threads.filter((t) => t.isBilling).length
 
-  const composerLabels = useMemo(() => {
-    const labels = new Set<string>([BILLING_THREAD_LABEL])
-    families.forEach((family) =>
-      family.classroomLabels.forEach((label) => labels.add(label))
+  if (!classroomName) {
+    return (
+      <PageShell variant="portal" className="gap-6 pb-10">
+        <EmptyState
+          title="No classroom assigned"
+          description="Ask the director to add you to a classroom from the Staff page so families can reach you here."
+          icon={MessageSquareIcon}
+        />
+      </PageShell>
     )
-    return Array.from(labels)
-  }, [families])
+  }
 
   const threadRail = (
     <div className="flex h-full min-w-0 flex-col">
@@ -202,7 +201,7 @@ export function AdminMessagesPageView({
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">Threads</p>
           <p className="text-sm leading-6 text-muted-foreground">
-            Every family conversation, billing inquiries included.
+            Conversations with families in {classroomName}.
           </p>
         </div>
         <Button
@@ -233,7 +232,7 @@ export function AdminMessagesPageView({
             <div className="p-5">
               <EmptyState
                 title="No conversations yet"
-                description="When a family posts a question or you start a thread, it will appear here."
+                description="Start a thread with a family from your classroom roster."
                 icon={MessageSquareIcon}
                 action={
                   <Button
@@ -268,24 +267,17 @@ export function AdminMessagesPageView({
         ) : null}
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="space-y-1.5">
-            <p className="editorial-kicker">
-              {selectedThread.familyName} · {selectedThread.classroomLabel}
-            </p>
+            <p className="editorial-kicker">{selectedThread.familyName}</p>
             <h2 className="text-balance text-[1.55rem] leading-tight text-foreground">
               {selectedThread.subject}
             </h2>
             <p className="text-sm leading-6 text-muted-foreground">
-              Participants: {selectedThread.participants.join(", ") || "—"}
+              Participants: {selectedThread.participants.join(", ")}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {selectedThread.isBilling ? (
-              <Badge variant="warning">Billing</Badge>
-            ) : null}
-            <StatusBadge variant={getThreadBadgeVariant(selectedThread.status)}>
-              {selectedThread.status}
-            </StatusBadge>
-          </div>
+          <StatusBadge variant={getThreadBadgeVariant(selectedThread.status)}>
+            {selectedThread.status}
+          </StatusBadge>
         </div>
       </div>
 
@@ -303,8 +295,7 @@ export function AdminMessagesPageView({
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">Reply</p>
           <p className="text-sm leading-6 text-muted-foreground">
-            You&apos;re replying as <strong>{adminName}</strong>. The family
-            sees this on their portal immediately.
+            Keep replies specific so the family has clear context.
           </p>
         </div>
 
@@ -326,14 +317,14 @@ export function AdminMessagesPageView({
         <form action={replyAction} className="flex flex-col gap-4">
           <input type="hidden" name="threadId" value={selectedThread.id} />
           <div className="space-y-1.5">
-            <Label htmlFor="admin-reply-body" className="text-xs">
+            <Label htmlFor="teacher-reply-body" className="text-xs">
               Reply
             </Label>
             <Textarea
-              id="admin-reply-body"
+              id="teacher-reply-body"
               name="body"
               rows={4}
-              placeholder="Answer the family directly. Cite an invoice number or due date if it's a billing thread."
+              placeholder="Write a calm, specific update for the family."
             />
             {replyState.fieldErrors?.body ? (
               <p className="text-xs text-red-700">
@@ -365,24 +356,14 @@ export function AdminMessagesPageView({
 
   return (
     <PageShell variant="portal" className="gap-6 pb-10">
-      <AdminPageHeader
-        eyebrow="Communications"
-        title="Family conversations"
-        description="Every family thread in one place. Billing inquiries route here automatically."
-      />
-
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-2xl border border-border/60 bg-card px-5 py-3 text-sm">
-        <Metric label="Threads" value={threads.length} />
-        <Metric
-          label="Unread"
-          value={unreadCount}
-          tone={unreadCount > 0 ? "text-amber-700" : "text-muted-foreground"}
-        />
-        <Metric
-          label="Billing"
-          value={billingCount}
-          tone={billingCount > 0 ? "text-amber-700" : "text-muted-foreground"}
-        />
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Today · {classroomName}
+        </p>
+        <h1 className="mt-1 text-3xl tracking-tight">Family messages</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Two-way chat with families whose children are in your classroom.
+        </p>
       </div>
 
       <Card className="gap-0 overflow-hidden p-0">
@@ -396,12 +377,19 @@ export function AdminMessagesPageView({
               <div className="space-y-1.5">
                 <p className="editorial-kicker">Messaging workspace</p>
                 <CardTitle className="text-[1.45rem] leading-tight text-foreground">
-                  Direct conversations with every family
+                  Direct conversations with classroom families
                 </CardTitle>
                 <CardDescription className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                  Reply to billing questions, share account updates, or start a
-                  new thread without leaving the admin portal.
+                  Reply to questions, share quick updates, or start a new
+                  thread without leaving the teacher portal.
                 </CardDescription>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <Badge variant="secondary">{threads.length} threads</Badge>
+                  <Badge variant={unreadCount ? "warning" : "secondary"}>
+                    {unreadCount} unread
+                  </Badge>
+                  <Badge variant="outline">{families.length} families</Badge>
+                </div>
               </div>
 
               <TabsList
@@ -472,8 +460,8 @@ export function AdminMessagesPageView({
                   Start a conversation with a family
                 </h2>
                 <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                  Pick a family, choose a tag, give the thread a short subject,
-                  and post the first update.
+                  Pick a family from your classroom roster, give the thread a
+                  short subject, and post the first update.
                 </p>
               </div>
 
@@ -494,8 +482,8 @@ export function AdminMessagesPageView({
 
               {families.length === 0 ? (
                 <EmptyState
-                  title="No families on file yet"
-                  description="Once enrollment lands a family, they'll appear here as a messaging option."
+                  title="No families in this classroom yet"
+                  description="Once a child is enrolled in your classroom, the family will appear here as a messaging option."
                   icon={MessageSquareIcon}
                 />
               ) : (
@@ -503,18 +491,15 @@ export function AdminMessagesPageView({
                   action={newThreadAction}
                   className="flex max-w-3xl flex-col gap-5"
                 >
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_15rem_15rem]">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
                     <div className="space-y-1.5">
-                      <Label
-                        htmlFor="admin-new-subject"
-                        className="text-xs"
-                      >
+                      <Label htmlFor="teacher-new-subject" className="text-xs">
                         Subject
                       </Label>
                       <Input
-                        id="admin-new-subject"
+                        id="teacher-new-subject"
                         name="subject"
-                        placeholder="April invoice posted"
+                        placeholder="A scrape at recess"
                       />
                       {newThreadState.fieldErrors?.subject ? (
                         <p className="text-xs text-red-700">
@@ -523,20 +508,22 @@ export function AdminMessagesPageView({
                       ) : null}
                     </div>
                     <div className="space-y-1.5">
-                      <Label
-                        htmlFor="admin-new-family"
-                        className="text-xs"
-                      >
+                      <Label htmlFor="teacher-new-family" className="text-xs">
                         Family
                       </Label>
                       <Select name="familyId" defaultValue={families[0]?.id}>
-                        <SelectTrigger id="admin-new-family">
+                        <SelectTrigger id="teacher-new-family">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {families.map((family) => (
                             <SelectItem key={family.id} value={family.id}>
                               {family.familyName}
+                              {family.children.length > 0
+                                ? ` · ${family.children
+                                    .map((c) => c.fullName.split(" ")[0])
+                                    .join(", ")}`
+                                : ""}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -547,38 +534,13 @@ export function AdminMessagesPageView({
                         </p>
                       ) : null}
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="admin-new-tag" className="text-xs">
-                        Tag
-                      </Label>
-                      <Select
-                        name="classroomLabel"
-                        defaultValue={BILLING_THREAD_LABEL}
-                      >
-                        <SelectTrigger id="admin-new-tag">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {composerLabels.map((label) => (
-                            <SelectItem key={label} value={label}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {newThreadState.fieldErrors?.classroomLabel ? (
-                        <p className="text-xs text-red-700">
-                          {newThreadState.fieldErrors.classroomLabel}
-                        </p>
-                      ) : null}
-                    </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="admin-new-body" className="text-xs">
+                    <Label htmlFor="teacher-new-body" className="text-xs">
                       Message
                     </Label>
                     <Textarea
-                      id="admin-new-body"
+                      id="teacher-new-body"
                       name="body"
                       rows={6}
                       placeholder="Share the update or question the family needs to know about."
@@ -599,26 +561,5 @@ export function AdminMessagesPageView({
         </Tabs>
       </Card>
     </PageShell>
-  )
-}
-
-function Metric({
-  label,
-  value,
-  tone = "text-foreground",
-}: {
-  label: string
-  value: number | string
-  tone?: string
-}) {
-  return (
-    <div className="flex items-baseline gap-2">
-      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-        {label}
-      </span>
-      <span className={`text-base font-semibold tabular-nums ${tone}`}>
-        {value}
-      </span>
-    </div>
   )
 }

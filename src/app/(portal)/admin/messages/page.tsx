@@ -1,7 +1,13 @@
 import { AdminMessagesPageView } from "@/components/admin/admin-messages-page"
-import { getAdminPortalData } from "@/lib/dal/admin"
+import { getAdminMessagesData } from "@/lib/dal/admin"
 
 export default async function AdminMessagesPage() {
-  const { messageThreads } = await getAdminPortalData()
-  return <AdminMessagesPageView threads={messageThreads} />
+  const data = await getAdminMessagesData()
+  return (
+    <AdminMessagesPageView
+      adminName={data.adminName}
+      threads={data.threads}
+      families={data.families}
+    />
+  )
 }

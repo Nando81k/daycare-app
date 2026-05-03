@@ -1,13 +1,13 @@
 "use client"
 
 import { useActionState } from "react"
-import { CheckCircle2, ListChecks, MessageCircleWarning, XCircle } from "lucide-react"
+import { ListChecks, MessageCircleWarning, XCircle } from "lucide-react"
 
 import {
-  approveEnrollmentApplication,
   declineEnrollmentApplication,
   updateEnrollmentLead,
 } from "@/app/actions/admin"
+import { EnrollmentApproveDialog } from "@/components/admin/enrollment/enrollment-approve-dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { initialMutationState } from "@/lib/action-state"
+import type { EnrollmentLeadDetail } from "@/lib/dal/admin"
 import type { AdminActionState } from "@/types/app"
 
 const STAGE_OPTIONS = [
@@ -43,31 +44,26 @@ type Props = {
     assignedTo: string
     note: string
   }
+  detail: EnrollmentLeadDetail
 }
 
-export function EnrollmentActionPanel({ lead }: Props) {
+export function EnrollmentActionPanel({ lead, detail }: Props) {
   const [updateState, updateAction, isUpdating] = useActionState<
     AdminActionState,
     FormData
   >(updateEnrollmentLead, initialMutationState)
-  const [approveState, approveAction, isApproving] = useActionState<
-    AdminActionState,
-    FormData
-  >(approveEnrollmentApplication, initialMutationState)
   const [declineState, declineAction, isDeclining] = useActionState<
     AdminActionState,
     FormData
   >(declineEnrollmentApplication, initialMutationState)
 
-  const isPending = isUpdating || isApproving || isDeclining
+  const isPending = isUpdating || isDeclining
   const feedback =
-    approveState.message ||
     declineState.message ||
     updateState.message ||
-    approveState.error ||
     declineState.error ||
     updateState.error
-  const feedbackTone = approveState.error || declineState.error || updateState.error
+  const feedbackTone = declineState.error || updateState.error
     ? "error"
     : "success"
 
@@ -78,24 +74,28 @@ export function EnrollmentActionPanel({ lead }: Props) {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           Decisions
         </p>
-        <form action={approveAction} className="space-y-2">
-          <input type="hidden" name="leadId" value={lead.id} />
-          <Button
-            type="submit"
-            disabled={isPending || lead.stage === "ACCEPTED"}
-            className="w-full justify-center bg-emerald-600 hover:bg-emerald-700"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Approve & create invoice
-          </Button>
-        </form>
+        {lead.stage === "ACCEPTED" || lead.stage === "DENIED" ? null : (
+          <EnrollmentApproveDialog
+            lead={detail.lead}
+            application={detail.application}
+            classrooms={detail.classrooms}
+            trigger={
+              <Button
+                type="button"
+                className="w-full justify-center bg-emerald-600 hover:bg-emerald-700"
+              >
+                Approve &amp; enroll
+              </Button>
+            }
+          />
+        )}
         <form action={declineAction} className="space-y-2">
           <input type="hidden" name="leadId" value={lead.id} />
           <input type="hidden" name="note" value="Declined from admin enrollment detail." />
           <Button
             type="submit"
             variant="outline"
-            disabled={isPending || lead.stage === "DENIED"}
+            disabled={isPending || lead.stage === "DENIED" || lead.stage === "ACCEPTED"}
             className="w-full justify-center"
           >
             <XCircle className="h-4 w-4" />

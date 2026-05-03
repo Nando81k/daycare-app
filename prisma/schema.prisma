@@ -408,6 +408,21 @@ model Document {
   submittedAt     DateTime?
   approvedAt      DateTime?
   reviewedByName  String?
+
+  // admin-uploaded blank template (separate from the parent's submission blob fields)
+  templateBlobPathname String?
+  templateBlobUrl      String?
+  templateDownloadUrl  String?
+  templateFileName     String?
+  templateContentType  String?
+  templateSizeBytes    Int?
+
+  // typed-signature record (no blob). signedName + signedAt populated when a
+  // parent uses the in-app type-to-sign flow instead of uploading a scan.
+  signedName String?
+  signedAt   DateTime?
+  signedIp   String?
+
   family          Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
   child           Child?         @relation(fields: [childId], references: [id], onDelete: SetNull)
   createdAt       DateTime       @default(now())

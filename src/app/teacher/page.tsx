@@ -1,39 +1,11 @@
 import Link from "next/link"
-import {
-  AlertTriangle,
-  CalendarCheck,
-  ClipboardList,
-  HeartPulse,
-  Sparkles,
-  Users,
-} from "lucide-react"
+import { ClipboardList, Sparkles, Users } from "lucide-react"
 
 import { PageShell } from "@/components/shared/page-shell"
-import { StatusBadge } from "@/components/shared/status-badge"
 import { SurfaceCard } from "@/components/shared/surface-card"
+import { TeacherRosterRow } from "@/components/teacher/teacher-roster-row"
 import { buttonVariants } from "@/components/ui/button"
 import { getTeacherDashboardData } from "@/lib/dal/teacher"
-import type { StatusBadgeVariant } from "@/types/app"
-
-function statusTone(
-  status: "PRESENT" | "ABSENT" | "SCHEDULED" | null
-): StatusBadgeVariant {
-  switch (status) {
-    case "PRESENT":
-      return "success"
-    case "ABSENT":
-      return "destructive"
-    case "SCHEDULED":
-      return "info"
-    default:
-      return "secondary"
-  }
-}
-
-function statusLabel(status: "PRESENT" | "ABSENT" | "SCHEDULED" | null) {
-  if (!status) return "Not marked"
-  return status.charAt(0) + status.slice(1).toLowerCase()
-}
 
 export default async function TeacherDashboardPage() {
   const data = await getTeacherDashboardData()
@@ -57,7 +29,14 @@ export default async function TeacherDashboardPage() {
     )
   }
 
-  const { classroom, children, presentCount, absentCount, scheduledCount, reportsPostedToday } = data
+  const {
+    classroom,
+    children,
+    presentCount,
+    absentCount,
+    scheduledCount,
+    reportsPostedToday,
+  } = data
 
   return (
     <PageShell variant="portal" className="gap-6 pb-10">
@@ -70,40 +49,44 @@ export default async function TeacherDashboardPage() {
             Hi, {data.teacher.name.split(" ")[0]}.
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {classroom.ageGroup} · {classroom.enrolled}/{classroom.capacity} enrolled
+            {classroom.ageGroup} · {classroom.enrolled}/{classroom.capacity}{" "}
+            enrolled
             {classroom.ratio ? ` · ${classroom.ratio}` : ""}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/teacher/attendance"
-            className={buttonVariants({ variant: "outline" })}
-          >
-            <CalendarCheck className="h-4 w-4" />
-            Mark attendance
-          </Link>
-          <Link
-            href="/teacher/daily-reports"
-            className={buttonVariants()}
-          >
-            <ClipboardList className="h-4 w-4" />
-            Post daily reports
-          </Link>
-        </div>
+        <Link
+          href="/teacher/daily-reports"
+          className={buttonVariants({ variant: "outline" })}
+        >
+          <ClipboardList className="h-4 w-4" />
+          Bulk reports view
+        </Link>
       </header>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Present" value={presentCount} tone="success" />
-        <Stat label="Absent" value={absentCount} tone="destructive" />
-        <Stat label="Scheduled" value={scheduledCount} tone="info" />
-        <Stat
-          label="Reports posted"
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-2xl border border-border/60 bg-card px-5 py-3 text-sm">
+        <Metric
+          label="Present"
+          value={presentCount}
+          tone="text-emerald-700"
+        />
+        <Metric label="Absent" value={absentCount} tone="text-red-700" />
+        <Metric
+          label="Scheduled"
+          value={scheduledCount}
+          tone="text-sky-700"
+        />
+        <Metric
+          label="Reports"
           value={`${reportsPostedToday} / ${children.length}`}
-          tone={reportsPostedToday === children.length ? "success" : "secondary"}
+          tone={
+            reportsPostedToday === children.length && children.length > 0
+              ? "text-emerald-700"
+              : "text-muted-foreground"
+          }
         />
       </div>
 
-      <SurfaceCard className="space-y-4 p-6">
+      <SurfaceCard className="space-y-4 p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -112,7 +95,7 @@ export default async function TeacherDashboardPage() {
             <h2 className="mt-1 text-xl">Today&apos;s roster</h2>
           </div>
           <span className="text-sm text-muted-foreground">
-            {children.length} children
+            {children.length} {children.length === 1 ? "child" : "children"}
           </span>
         </div>
 
@@ -124,74 +107,10 @@ export default async function TeacherDashboardPage() {
             </p>
           </div>
         ) : (
-          <ul className="space-y-2">
-            {children.map((child) => {
-              const hasReport = !!child.todayReportSummary
-              const tone = statusTone(child.todayStatus)
-              return (
-                <li
-                  key={child.id}
-                  className="rounded-xl border border-border/60 bg-background/80 p-3"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-primary">
-                          {child.firstName.charAt(0)}
-                          {child.lastName.charAt(0)}
-                        </span>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {child.fullName}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {child.ageLabel}
-                            {child.checkInAt
-                              ? ` · arrived ${child.checkInAt}`
-                              : ""}
-                            {child.checkOutAt
-                              ? ` · picked up ${child.checkOutAt}`
-                              : ""}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <StatusBadge variant={tone}>
-                        {statusLabel(child.todayStatus)}
-                      </StatusBadge>
-                      <StatusBadge variant={hasReport ? "success" : "secondary"}>
-                        {hasReport ? "Report posted" : "No report"}
-                      </StatusBadge>
-                      {child.allergies.length > 0 && (
-                        <StatusBadge variant="warning">
-                          <HeartPulse className="h-3 w-3" />
-                          Allergy
-                        </StatusBadge>
-                      )}
-                    </div>
-                  </div>
-                  {(child.allergies.length > 0 ||
-                    child.medicalNotes.length > 0) && (
-                    <p className="mt-2 flex items-start gap-1.5 text-xs leading-5 text-muted-foreground">
-                      <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" />
-                      <span>
-                        {[
-                          child.allergies.length > 0
-                            ? `Allergies: ${child.allergies.join(", ")}`
-                            : null,
-                          child.medicalNotes.length > 0
-                            ? `Medical: ${child.medicalNotes.join(", ")}`
-                            : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
-                    </p>
-                  )}
-                </li>
-              )
-            })}
+          <ul className="space-y-3">
+            {children.map((child) => (
+              <TeacherRosterRow key={child.id} child={child} />
+            ))}
           </ul>
         )}
       </SurfaceCard>
@@ -199,26 +118,23 @@ export default async function TeacherDashboardPage() {
   )
 }
 
-function Stat({
+function Metric({
   label,
   value,
-  tone = "secondary",
+  tone,
 }: {
   label: string
   value: number | string
-  tone?: StatusBadgeVariant
+  tone: string
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-card px-4 py-3.5">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          {label}
-        </p>
-        <StatusBadge variant={tone}>·</StatusBadge>
-      </div>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+    <div className="flex items-baseline gap-2">
+      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </span>
+      <span className={`text-base font-semibold tabular-nums ${tone}`}>
         {value}
-      </p>
+      </span>
     </div>
   )
 }

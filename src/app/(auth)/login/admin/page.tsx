@@ -1,9 +1,5 @@
-import { AdminLoginScreen } from "@/components/auth/admin-login-screen"
-import { loginPageContent } from "@/data/marketing"
-import { createPageMetadata } from "@/lib/metadata"
-
-export const metadata = createPageMetadata(loginPageContent.admin.metadata)
+import { redirect } from "next/navigation"
 
 export default function AdminLoginPage() {
-  return <AdminLoginScreen />
+  redirect("/login?tab=admin")
 }

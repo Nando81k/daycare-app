@@ -231,9 +231,9 @@ export function AdminEnrollmentPageView({
           if (!open) setSelectedLeadId(null)
         }}
       >
-        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-lg">
+        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-3xl">
           <SheetHeader className="border-b border-border/60 px-5 py-3">
-            <SheetTitle className="text-base">Update enrollment lead</SheetTitle>
+            <SheetTitle className="text-base">Review application</SheetTitle>
           </SheetHeader>
           {selectedLead && (
             <DrawerBody>

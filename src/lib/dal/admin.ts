@@ -7,8 +7,12 @@ import type {
   AdminChildHubRecord,
   AdminChildRecordPreview,
   AdminDashboardPreview,
+  AdminFamilyOption,
+  AdminMessageThreadDetail,
   AdminMessageThreadPreview,
+  AdminMessagesData,
   AdminMetricPreview,
+  ParentMessagePreview,
   AdminProgramPreview,
   AdminProgramRatePreview,
   AdminSchedulePreview,
@@ -31,6 +35,7 @@ import type {
 import { requireRole } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { formatCurrencyFromCents, formatFileSize, formatFullDate, formatMonthDay, formatRelativeDateTime, formatTime } from "@/lib/format"
+import { BILLING_THREAD_LABEL } from "@/lib/messaging"
 
 const SCHOOL_TIME_ZONE = "America/New_York"
 
@@ -595,6 +600,18 @@ export async function getAdminPortalData(): Promise<{
           sizeLabel: document.sizeBytes ? formatFileSize(document.sizeBytes) : undefined,
           submittedAt: document.submittedAt ? formatMonthDay(document.submittedAt) : undefined,
           reviewedByName: document.reviewedByName ?? undefined,
+          templateUrl: document.templateBlobUrl ?? undefined,
+          templateDownloadUrl:
+            document.templateDownloadUrl ??
+            document.templateBlobUrl ??
+            undefined,
+          templateFileName: document.templateFileName ?? undefined,
+          templateContentType: document.templateContentType ?? undefined,
+          signedName: document.signedName ?? undefined,
+          signedAt: document.signedAt
+            ? formatRelativeDateTime(document.signedAt)
+            : undefined,
+          signedIp: document.signedIp ?? undefined,
         }
       })
     )
@@ -1098,5 +1115,255 @@ export async function getAdminProgramsData() {
     schedules: schedulePreviews,
     rates: ratePreviews,
     pricingMatrix,
+  }
+}
+
+function mapAdminThreadStatus(
+  status: "ACTIVE" | "RESPONSE_NEEDED" | "CLOSED"
+): AdminMessageThreadDetail["status"] {
+  switch (status) {
+    case "ACTIVE":
+      return "active"
+    case "RESPONSE_NEEDED":
+      return "response-needed"
+    case "CLOSED":
+      return "closed"
+  }
+}
+
+function mapAdminMessageRole(
+  role: "STAFF" | "PARENT" | "DIRECTOR"
+): ParentMessagePreview["role"] {
+  switch (role) {
+    case "STAFF":
+      return "staff"
+    case "PARENT":
+      return "parent"
+    case "DIRECTOR":
+      return "director"
+  }
+}
+
+function asAdminStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.map(String) : []
+}
+
+/**
+ * Loads the admin chat workspace dataset — every thread with full message
+ * history (no `take: 1`), plus a family directory for the new-thread compose.
+ * Distinct from the slim `messageThreads` slice on `getAdminPortalData()`,
+ * which is shaped for the dashboard triage card.
+ */
+export async function getAdminMessagesData(): Promise<AdminMessagesData> {
+  const user = await requireRole("ADMIN")
+
+  const [threadRows, familyRows] = await Promise.all([
+    prisma.messageThread.findMany({
+      orderBy: { lastMessageAt: "desc" },
+      include: {
+        family: { select: { id: true, familyName: true } },
+        messages: { orderBy: { sentAt: "asc" } },
+      },
+    }),
+    prisma.family.findMany({
+      orderBy: { familyName: "asc" },
+      select: {
+        id: true,
+        familyName: true,
+        parents: {
+          select: { user: { select: { name: true } } },
+        },
+        children: {
+          orderBy: { firstName: "asc" },
+          select: {
+            classroom: { select: { name: true } },
+          },
+        },
+      },
+    }),
+  ])
+
+  const threads: AdminMessageThreadDetail[] = threadRows.map((thread) => {
+    const lastMessage = thread.messages[thread.messages.length - 1]
+    const unreadCount =
+      thread.status === "RESPONSE_NEEDED" && lastMessage?.role === "PARENT"
+        ? 1
+        : 0
+    return {
+      id: thread.id,
+      familyId: thread.familyId,
+      familyName: thread.family.familyName,
+      subject: thread.subject,
+      classroomLabel: thread.classroomLabel,
+      isBilling: thread.classroomLabel === BILLING_THREAD_LABEL,
+      lastMessageAt: formatRelativeDateTime(thread.lastMessageAt),
+      preview: lastMessage?.body ?? "No messages yet.",
+      unreadCount,
+      status: mapAdminThreadStatus(thread.status),
+      participants: asAdminStringArray(thread.participants),
+      messages: thread.messages.map((message) => ({
+        id: message.id,
+        sender: message.senderName,
+        role: mapAdminMessageRole(message.role),
+        sentAt: formatRelativeDateTime(message.sentAt),
+        body: message.body,
+      })),
+    }
+  })
+
+  const families: AdminFamilyOption[] = familyRows.map((family) => {
+    const classrooms = Array.from(
+      new Set(
+        family.children
+          .map((child) => child.classroom?.name)
+          .filter((value): value is string => Boolean(value))
+      )
+    )
+    return {
+      id: family.id,
+      familyName: family.familyName,
+      parentNames: family.parents
+        .map((p) => p.user.name)
+        .filter((name): name is string => Boolean(name)),
+      classroomLabels: classrooms,
+    }
+  })
+
+  return {
+    adminName: user.name,
+    threads,
+    families,
+  }
+}
+
+export type EnrollmentClassroomOption = {
+  id: string
+  name: string
+  ageGroup: string
+  capacity: number
+  enrolled: number
+  leadTeacherName: string
+}
+
+export type EnrollmentLeadDetail = {
+  lead: {
+    id: string
+    familyId: string | null
+    familyName: string
+    childName: string
+    childAgeLabel: string
+    requestedStart: string
+    programInterest: string
+    note: string
+    stage: string
+    priority: string
+    assignedTo: string
+    source: string
+  }
+  application: {
+    id: string
+    childFirstName: string
+    childLastName: string
+    dateOfBirth: string
+    childAgeLabel: string
+    parentName: string
+    parentEmail: string
+    parentPhone: string
+    relationshipToChild: string
+    homeAddress: string
+    primaryLanguage: string
+    emergencyContactName: string
+    emergencyContactPhone: string
+    programSlug: string
+    scheduleSlug: string
+    preferredStartDate: string
+    pediatricianName: string
+    pediatricianPhone: string
+    healthNotes: string
+  } | null
+  classrooms: EnrollmentClassroomOption[]
+}
+
+/**
+ * Loads the data needed to review + approve a single enrollment lead in one
+ * round trip: the lead row itself, the best-match `EnrollmentApplication` from
+ * the parent wizard (when present), and every classroom with current enrollment
+ * counts so the admin can pick a placement at approval time.
+ */
+export async function getEnrollmentLeadDetail(
+  leadId: string
+): Promise<EnrollmentLeadDetail | null> {
+  await requireRole("ADMIN")
+
+  const lead = await prisma.enrollmentLead.findUnique({
+    where: { id: leadId },
+  })
+  if (!lead) return null
+
+  // Best-effort match the matching application by familyId + name match.
+  // Multiple apps per family are possible (siblings); we prefer the most
+  // recently updated non-decided one.
+  const [appRow, classroomRows] = await Promise.all([
+    lead.familyId
+      ? prisma.enrollmentApplication.findFirst({
+          where: {
+            familyId: lead.familyId,
+            status: { in: ["DRAFT", "SUBMITTED", "UNDER_REVIEW"] },
+          },
+          orderBy: { updatedAt: "desc" },
+        })
+      : Promise.resolve(null),
+    prisma.classroom.findMany({
+      orderBy: { name: "asc" },
+      include: { _count: { select: { children: true } } },
+    }),
+  ])
+
+  return {
+    lead: {
+      id: lead.id,
+      familyId: lead.familyId,
+      familyName: lead.familyName,
+      childName: lead.childName,
+      childAgeLabel: lead.childAgeLabel,
+      requestedStart: lead.requestedStart,
+      programInterest: lead.programInterest,
+      note: lead.note,
+      stage: lead.stage,
+      priority: lead.priority,
+      assignedTo: lead.assignedTo,
+      source: lead.source,
+    },
+    application: appRow
+      ? {
+          id: appRow.id,
+          childFirstName: appRow.childFirstName,
+          childLastName: appRow.childLastName,
+          dateOfBirth: appRow.dateOfBirth,
+          childAgeLabel: appRow.childAgeLabel,
+          parentName: appRow.parentName,
+          parentEmail: appRow.parentEmail,
+          parentPhone: appRow.parentPhone,
+          relationshipToChild: appRow.relationshipToChild,
+          homeAddress: appRow.homeAddress,
+          primaryLanguage: appRow.primaryLanguage,
+          emergencyContactName: appRow.emergencyContactName,
+          emergencyContactPhone: appRow.emergencyContactPhone,
+          programSlug: appRow.programSlug,
+          scheduleSlug: appRow.scheduleSlug,
+          preferredStartDate: appRow.preferredStartDate,
+          pediatricianName: appRow.pediatricianName,
+          pediatricianPhone: appRow.pediatricianPhone,
+          healthNotes: appRow.healthNotes,
+        }
+      : null,
+    classrooms: classroomRows.map((room) => ({
+      id: room.id,
+      name: room.name,
+      ageGroup: room.ageGroup,
+      capacity: room.capacity,
+      enrolled: room._count.children,
+      leadTeacherName: room.leadTeacherName,
+    })),
   }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 import { useFormStatus } from "react-dom"
 import { ArrowRight } from "lucide-react"
 
@@ -12,6 +12,7 @@ import {
   EditorialFieldGroup,
   EditorialLabel,
 } from "@/components/auth/editorial-field"
+import { PasswordChecklist } from "@/components/auth/password-checklist"
 import { AlertBanner } from "@/components/shared/alert-banner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -47,6 +48,8 @@ function SubmitButton() {
 
 export function ParentSignUpForm() {
   const [state, formAction] = useActionState(registerParentAccount, initialState)
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
 
   return (
     <form action={formAction} className="flex flex-col gap-8">
@@ -118,6 +121,8 @@ export function ParentSignUpForm() {
               type="password"
               autoComplete="new-password"
               required
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               className={cn(editorialInput)}
             />
             <EditorialError>{state.fieldErrors.password}</EditorialError>
@@ -131,11 +136,18 @@ export function ParentSignUpForm() {
               type="password"
               autoComplete="new-password"
               required
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
               className={cn(editorialInput)}
             />
             <EditorialError>{state.fieldErrors.confirmPassword}</EditorialError>
           </EditorialField>
         </div>
+
+        <PasswordChecklist
+          password={password}
+          confirmPassword={confirmPassword}
+        />
 
         <SubmitButton />
       </EditorialFieldGroup>

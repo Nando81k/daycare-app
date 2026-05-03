@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useEffect } from "react"
 import { Loader2 } from "lucide-react"
 
 import { teacherUpsertDailyReport } from "@/app/actions/teacher"
@@ -25,13 +25,19 @@ export type TeacherDailyReportInput = {
 
 export function TeacherDailyReportForm({
   initial,
+  onSuccess,
 }: {
   initial: TeacherDailyReportInput
+  onSuccess?: () => void
 }) {
   const [state, action, isPending] = useActionState<AdminActionState, FormData>(
     teacherUpsertDailyReport,
     initialMutationState
   )
+
+  useEffect(() => {
+    if (state.success) onSuccess?.()
+  }, [state, onSuccess])
 
   return (
     <form

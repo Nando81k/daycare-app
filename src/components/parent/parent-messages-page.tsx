@@ -45,6 +45,7 @@ import {
 } from "@/data/parent"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { initialMutationState } from "@/lib/action-state"
+import { BILLING_THREAD_LABEL } from "@/lib/messaging"
 import type { ParentAnnouncementPreview, ParentMessageThreadPreview } from "@/types/app"
 import { cn } from "@/lib/utils"
 
@@ -173,8 +174,8 @@ export function ParentMessagesPageView({
   const composerTargets = useMemo(() => {
     const labels = Array.from(new Set(threads.map((thread) => thread.classroom)))
 
-    if (!labels.includes("Billing")) {
-      labels.push("Billing")
+    if (!labels.includes(BILLING_THREAD_LABEL)) {
+      labels.push(BILLING_THREAD_LABEL)
     }
 
     return labels.length
@@ -184,7 +185,7 @@ export function ParentMessagesPageView({
         }))
       : [
           { label: "Classroom", value: "Classroom" },
-          { label: "Billing", value: "Billing" },
+          { label: BILLING_THREAD_LABEL, value: BILLING_THREAD_LABEL },
         ]
   }, [threads])
 

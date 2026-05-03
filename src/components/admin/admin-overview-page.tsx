@@ -35,11 +35,21 @@ import type {
   ClassroomSummaryPreview,
   DashboardDomainKey,
   DocumentQueuePreview,
+  EnrollmentLeadPreview,
   FamilyBalancePreview,
   FamilyHubRecord,
   StaffProfilePreview,
   WaitlistEntryPreview,
 } from "@/types/app"
+import {
+  ArrowRight,
+  ClipboardList,
+  Inbox,
+  ReceiptText,
+  ShieldCheck,
+  Users as UsersIcon,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
 
 function SummaryTile({
   label,
@@ -87,6 +97,7 @@ export function AdminOverviewPageView({
   classrooms = [],
   waitlistEntries = [],
   staffProfiles = [],
+  enrollmentLeads = [],
 }: {
   dashboard?: AdminDashboardPreview
   attendanceBoard?: ClassroomAttendancePreview[]
@@ -97,6 +108,7 @@ export function AdminOverviewPageView({
   classrooms?: ClassroomSummaryPreview[]
   waitlistEntries?: WaitlistEntryPreview[]
   staffProfiles?: StaffProfilePreview[]
+  enrollmentLeads?: EnrollmentLeadPreview[]
 }) {
   const checkedInCount = attendanceBoard.reduce((sum, room) => sum + room.present, 0)
   const absentCount = attendanceBoard.reduce((sum, room) => sum + room.absent, 0)
@@ -122,6 +134,15 @@ export function AdminOverviewPageView({
   const calendarDomain = getDomain(dashboard.domains, "calendar")
   const settingsDomain = getDomain(dashboard.domains, "settings")
 
+  const applicationsWaiting = enrollmentLeads.filter(
+    (lead) => lead.stage === "application-sent"
+  )
+  const submittedDocuments = documents.filter((doc) => doc.status === "submitted")
+  const expectedToday = attendanceBoard.reduce(
+    (sum, room) => sum + room.expected,
+    0
+  )
+
   return (
     <PageShell variant="portal" className="gap-6 pb-10">
       <AdminPageHeader
@@ -142,6 +163,128 @@ export function AdminOverviewPageView({
           </>
         }
       />
+
+      <section aria-label="Today's triage">
+        <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
+          <TriageCard
+            href="/admin/billing"
+            label="Overdue balances"
+            count={overdueBalances.length}
+            tone={overdueBalances.length > 0 ? "warning" : "ok"}
+            icon={ReceiptText}
+            detail={
+              overdueBalances.length > 0
+                ? `${overdueBalances.length} famil${overdueBalances.length === 1 ? "y" : "ies"} past due${dueSoonBalances.length > 0 ? ` · ${dueSoonBalances.length} due soon` : ""}`
+                : "No families are past due right now."
+            }
+            topItem={overdueBalances[0]?.familyName ?? null}
+            topItemDetail={overdueBalances[0]?.totalDue ?? null}
+            cta="Open billing"
+          />
+          <TriageCard
+            href="/admin/enrollment"
+            label="Applications waiting"
+            count={applicationsWaiting.length}
+            tone={applicationsWaiting.length > 0 ? "info" : "ok"}
+            icon={ClipboardList}
+            detail={
+              applicationsWaiting.length > 0
+                ? "Submitted by families · need an admissions decision"
+                : "No applications are awaiting your decision."
+            }
+            topItem={applicationsWaiting[0]?.familyName ?? null}
+            topItemDetail={applicationsWaiting[0]?.programInterest ?? null}
+            cta="Review applications"
+          />
+          <TriageCard
+            href="/admin/communications"
+            label="Unanswered messages"
+            count={unreadMessages}
+            tone={unreadMessages > 0 ? "info" : "ok"}
+            icon={Inbox}
+            detail={
+              unreadMessages > 0
+                ? `${openThreads} open thread${openThreads === 1 ? "" : "s"} from families`
+                : "Family inbox is caught up."
+            }
+            topItem={
+              latestThread && latestThread.unreadCount > 0
+                ? latestThread.subject
+                : null
+            }
+            topItemDetail={
+              latestThread && latestThread.unreadCount > 0
+                ? latestThread.familyName
+                : null
+            }
+            cta="Open inbox"
+          />
+          <TriageCard
+            href="/admin/documents"
+            label="Documents to review"
+            count={submittedDocuments.length}
+            tone={submittedDocuments.length > 0 ? "warning" : "ok"}
+            icon={ShieldCheck}
+            detail={
+              submittedDocuments.length > 0
+                ? `${requiredDocuments.length} required · ${expiringDocuments.length} expired`
+                : "No new submissions to approve."
+            }
+            topItem={submittedDocuments[0]?.title ?? null}
+            topItemDetail={submittedDocuments[0]?.familyName ?? null}
+            cta="Open document queue"
+          />
+        </div>
+
+        {attendanceBoard.length > 0 ? (
+          <Card className="mt-3 border-border/65">
+            <CardContent className="flex flex-wrap items-center gap-4 p-4">
+              <div className="flex items-center gap-3">
+                <span
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-full",
+                    absentCount > 0
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-emerald-50 text-emerald-700"
+                  )}
+                >
+                  <UsersIcon className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Today&apos;s attendance
+                  </p>
+                  <p className="mt-0.5 text-sm font-medium text-foreground">
+                    {checkedInCount} of {expectedToday} children checked in
+                    {absentCount > 0 ? ` · ${absentCount} absent` : ""}
+                  </p>
+                </div>
+              </div>
+              <ul className="ml-auto flex flex-wrap items-center gap-2 text-xs">
+                {attendanceBoard.map((room) => (
+                  <li
+                    key={room.classroom}
+                    className="rounded-full border border-border/60 bg-background/80 px-3 py-1"
+                  >
+                    <span className="font-medium text-foreground">
+                      {room.classroom}
+                    </span>{" "}
+                    <span className="text-muted-foreground">
+                      {room.present}/{room.expected}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/admin/attendance"
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                Open attendance
+              </Link>
+            </CardContent>
+          </Card>
+        ) : null}
+      </section>
 
       <Card className="border-border/65">
         <CardHeader className="gap-2 p-5 md:p-6">
@@ -479,5 +622,85 @@ export function AdminOverviewPageView({
         </CardContent>
       </Card>
     </PageShell>
+  )
+}
+
+function TriageCard({
+  href,
+  label,
+  count,
+  tone,
+  icon: Icon,
+  detail,
+  topItem,
+  topItemDetail,
+  cta,
+}: {
+  href: string
+  label: string
+  count: number
+  tone: "warning" | "info" | "ok"
+  icon: React.ComponentType<{ className?: string }>
+  detail: string
+  topItem: string | null
+  topItemDetail: string | null
+  cta: string
+}) {
+  const isClear = count === 0
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group flex h-full flex-col gap-3 rounded-2xl border bg-card p-4 transition-colors hover:bg-muted/30",
+        tone === "warning" && !isClear
+          ? "border-amber-200/80"
+          : tone === "info" && !isClear
+            ? "border-sky-200/80"
+            : "border-border/65"
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span
+          className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-full",
+            tone === "warning" && !isClear
+              ? "bg-amber-50 text-amber-700"
+              : tone === "info" && !isClear
+                ? "bg-sky-50 text-sky-700"
+                : "bg-emerald-50 text-emerald-700"
+          )}
+        >
+          {isClear ? <ShieldCheck className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+        </span>
+        <StatusBadge variant={isClear ? "success" : tone === "warning" ? "warning" : "info"}>
+          {isClear ? "All clear" : count}
+        </StatusBadge>
+      </div>
+
+      <div>
+        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          {label}
+        </p>
+        <p className="mt-1 text-sm leading-6 text-foreground">{detail}</p>
+      </div>
+
+      {topItem ? (
+        <div className="rounded-xl border border-border/55 bg-background/85 px-3 py-2">
+          <p className="line-clamp-1 text-sm font-medium text-foreground">
+            {topItem}
+          </p>
+          {topItemDetail ? (
+            <p className="line-clamp-1 text-xs text-muted-foreground">
+              {topItemDetail}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <span className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-foreground/80 group-hover:text-foreground">
+        {cta}
+        <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+      </span>
+    </Link>
   )
 }

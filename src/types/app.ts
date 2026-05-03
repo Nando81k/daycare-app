@@ -34,6 +34,11 @@ export type PortalNavItem = {
   icon: LucideIcon
   badge?: string
   summary?: string
+  /**
+   * Where the item appears in the topbar. `primary` items render inline; `account`
+   * items collapse into the Account dropdown. Defaults to `primary` when omitted.
+   */
+  placement?: "primary" | "account"
 }
 
 export type PortalNavGroup = {
@@ -342,6 +347,18 @@ export type ParentMessageThreadPreview = {
   messages: ParentMessagePreview[]
 }
 
+export type TeacherMessageThreadPreview = ParentMessageThreadPreview & {
+  familyId: string
+  familyName: string
+}
+
+export type TeacherFamilyOption = {
+  id: string
+  familyName: string
+  parentNames: string[]
+  children: { id: string; fullName: string }[]
+}
+
 export type ParentDocumentPreview = {
   id: string
   title: string
@@ -357,6 +374,14 @@ export type ParentDocumentPreview = {
   contentType?: string
   submittedAt?: string
   sizeLabel?: string
+  /** Admin-uploaded blank template for the parent to download and sign. */
+  templateUrl?: string
+  templateDownloadUrl?: string
+  templateFileName?: string
+  templateContentType?: string
+  /** Set when the parent used the in-app type-to-sign flow. */
+  signedName?: string
+  signedAt?: string
 }
 
 export type ParentEventPreview = {
@@ -706,6 +731,15 @@ export type DocumentQueuePreview = {
   sizeLabel?: string
   submittedAt?: string
   reviewedByName?: string
+  /** Admin-uploaded blank template attached to this document request. */
+  templateUrl?: string
+  templateDownloadUrl?: string
+  templateFileName?: string
+  templateContentType?: string
+  /** Typed-signature record set when the parent used the in-app sign flow. */
+  signedName?: string
+  signedAt?: string
+  signedIp?: string
 }
 
 export type AdminAnnouncementPreview = {
@@ -1057,6 +1091,34 @@ export type AdminMessageThreadPreview = {
   preview: string
   unreadCount: number
   status: "open" | "closed"
+}
+
+export type AdminMessageThreadDetail = {
+  id: string
+  familyId: string
+  familyName: string
+  subject: string
+  classroomLabel: string
+  isBilling: boolean
+  lastMessageAt: string
+  preview: string
+  unreadCount: number
+  status: "active" | "response-needed" | "closed"
+  participants: string[]
+  messages: ParentMessagePreview[]
+}
+
+export type AdminFamilyOption = {
+  id: string
+  familyName: string
+  parentNames: string[]
+  classroomLabels: string[]
+}
+
+export type AdminMessagesData = {
+  adminName: string
+  threads: AdminMessageThreadDetail[]
+  families: AdminFamilyOption[]
 }
 
 export type ParentAnnouncementPreview = {

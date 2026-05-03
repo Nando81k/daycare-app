@@ -67,6 +67,41 @@ export function AdminDocumentReviewEditor({
         />
       </div>
 
+      {document.signedName ? (
+        <div className="mt-4 rounded-2xl border border-emerald-200/70 bg-emerald-50/60 px-4 py-3 text-sm">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-emerald-800">
+            Typed signature on file
+          </p>
+          <p className="mt-1 font-medium text-foreground">
+            {document.signedName}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Signed {document.signedAt ?? ""}
+            {document.signedIp ? ` · IP ${document.signedIp}` : ""} ·
+            Verified at submission
+          </p>
+        </div>
+      ) : null}
+
+      {document.templateUrl ? (
+        <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-sm">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Blank template sent
+          </p>
+          <DocumentPreviewButton
+            label="View template"
+            document={{
+              title: `${document.title} — blank template`,
+              fileName: document.templateFileName,
+              contentType: document.templateContentType,
+              previewUrl: document.templateUrl,
+              downloadUrl: document.templateDownloadUrl,
+              subtitle: `${document.familyName} · template attached at request`,
+            }}
+          />
+        </div>
+      ) : null}
+
       {(document.previewUrl || document.downloadUrl) && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <DocumentPreviewButton
