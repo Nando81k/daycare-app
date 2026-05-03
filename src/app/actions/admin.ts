@@ -1725,6 +1725,7 @@ export async function createDocumentRequest(
 
     const parsed = createDocumentRequestSchema.safeParse({
       familyId: getStringValue(formData, "familyId"),
+      childId: getStringValue(formData, "childId") || undefined,
       title: getStringValue(formData, "title"),
       note: getStringValue(formData, "note"),
       template: templateInput,
@@ -1739,10 +1740,24 @@ export async function createDocumentRequest(
 
     const family = await prisma.family.findUnique({
       where: { id: parsed.data.familyId },
+      include: { children: { select: { id: true, firstName: true, lastName: true } } },
     })
 
     if (!family) {
       return getActionState({ error: "Family not found." })
+    }
+
+    let scopedChildId: string | undefined
+    let scopedChildName: string | null = null
+    if (parsed.data.childId) {
+      const child = family.children.find((c) => c.id === parsed.data.childId)
+      if (!child) {
+        return getActionState({
+          error: "That child is not part of the selected family.",
+        })
+      }
+      scopedChildId = child.id
+      scopedChildName = `${child.firstName} ${child.lastName}`.trim()
     }
 
     const template = parsed.data.template
@@ -1751,6 +1766,7 @@ export async function createDocumentRequest(
       prisma.document.create({
         data: {
           familyId: family.id,
+          childId: scopedChildId,
           title: parsed.data.title,
           category: "Request",
           owner: "Staff",
@@ -1771,6 +1787,8 @@ export async function createDocumentRequest(
           subjectType: "Document",
           details: {
             familyName: family.familyName,
+            childId: scopedChildId ?? null,
+            childName: scopedChildName,
             title: parsed.data.title,
             hasTemplate: Boolean(template),
             templateFileName: template?.fileName ?? null,

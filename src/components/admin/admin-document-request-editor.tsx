@@ -10,6 +10,7 @@ import {
 } from "@/components/admin/admin-action-panel"
 import {
   AdminFieldGroup,
+  AdminSelectField,
   AdminTextField,
   AdminTextareaField,
 } from "@/components/admin/admin-form-fields"
@@ -39,15 +40,27 @@ export function AdminDocumentRequestEditor({
   familyId,
   familyName,
   onClear,
+  roster = [],
+  defaultChildId,
 }: {
   familyId: string
   familyName: string
   onClear?: () => void
+  /** Optional roster — when present, the admin can scope the request to one
+   * child or leave it as a household-wide request. */
+  roster?: Array<{ id: string; name: string }>
+  /** Pre-select a child when the editor is opened from a child-specific row. */
+  defaultChildId?: string
 }) {
   const [state, formAction] = useActionState(createDocumentRequest, initialState)
   const [template, setTemplate] = useState<TemplateAsset | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const childOptions = [
+    { label: "Household (all parents)", value: "" },
+    ...roster.map((child) => ({ label: child.name, value: child.id })),
+  ]
+  const showChildPicker = roster.length > 0
 
   async function handleTemplateChange(file: File | null) {
     setUploadError(null)
@@ -115,6 +128,16 @@ export function AdminDocumentRequestEditor({
         }
       >
         <AdminFieldGroup className="gap-4">
+          {showChildPicker ? (
+            <AdminSelectField
+              name="childId"
+              label="Scope"
+              description="Pick a single child to request the document independently of siblings, or leave on Household for parent-facing forms."
+              defaultValue={defaultChildId ?? ""}
+              options={childOptions}
+              error={state.fieldErrors.childId}
+            />
+          ) : null}
           <AdminTextField
             name="title"
             label="Document title"

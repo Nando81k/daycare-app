@@ -746,7 +746,9 @@ export type StaffProfilePreview = {
 export type DocumentQueuePreview = {
   id: string
   title: string
+  familyId: string
   familyName: string
+  childId?: string
   childName: string
   dueDate: string
   status: "required" | "submitted" | "approved" | "expired"

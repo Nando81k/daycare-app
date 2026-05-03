@@ -230,6 +230,12 @@ const documentTemplateBlobSchema = z
 
 export const createDocumentRequestSchema = z.object({
   familyId: requiredString,
+  /**
+   * Optional — when present, the request is scoped to a single child rather
+   * than the household. Lets admins request the same document independently
+   * for siblings (e.g. immunization records).
+   */
+  childId: z.string().trim().min(1).optional(),
   title: requiredString,
   note: optionalTrimmedString,
   template: documentTemplateBlobSchema,

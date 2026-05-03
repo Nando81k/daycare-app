@@ -597,7 +597,9 @@ export async function getAdminPortalData(): Promise<{
         return {
           id: document.id,
           title: document.title,
+          familyId: family.id,
           familyName: family.familyName,
+          childId: child?.id,
           childName: child ? `${child.firstName} ${child.lastName}` : "Family record",
           dueDate: document.dueDate ? formatMonthDay(document.dueDate) : "—",
           status: toLabel(document.status).toLowerCase() as DocumentQueuePreview["status"],

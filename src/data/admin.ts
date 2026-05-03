@@ -703,7 +703,9 @@ export const adminDocuments: DocumentQueuePreview[] = [
   {
     id: "doc-801",
     title: "Field trip waiver",
+    familyId: "fam-401",
     familyName: "Harper Family",
+    childId: "child-301",
     childName: "Ellie Harper",
     dueDate: "Apr 7",
     status: "required",
@@ -713,7 +715,9 @@ export const adminDocuments: DocumentQueuePreview[] = [
   {
     id: "doc-802",
     title: "Emergency contact update",
+    familyId: "fam-404",
     familyName: "Brooks Family",
+    childId: "child-304",
     childName: "Mason Brooks",
     dueDate: "Apr 5",
     status: "submitted",
@@ -723,6 +727,7 @@ export const adminDocuments: DocumentQueuePreview[] = [
   {
     id: "doc-803",
     title: "Allergy action plan",
+    familyId: "fam-405",
     familyName: "Sullivan Family",
     childName: "Ava Sullivan",
     dueDate: "—",
@@ -733,6 +738,7 @@ export const adminDocuments: DocumentQueuePreview[] = [
   {
     id: "doc-804",
     title: "Medication authorization",
+    familyId: "fam-406",
     familyName: "Reed Family",
     childName: "Jonah Reed",
     dueDate: "Mar 22",
