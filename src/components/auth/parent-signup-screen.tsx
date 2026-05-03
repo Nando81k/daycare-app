@@ -15,6 +15,7 @@ export function ParentSignUpScreen() {
       title="Create your family account."
       description="One short form. Once your account is set, the enrollment wizard handles the rest at your pace."
       contentClassName="py-8"
+      compact
       footer={
         <>
           Already have an account?{" "}

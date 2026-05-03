@@ -26,7 +26,7 @@ const initialState: AuthMutationActionState = {
 }
 
 const editorialInput =
-  "h-12 rounded-none border-0 border-b border-border bg-transparent px-0 py-2 text-base text-foreground placeholder:text-muted-foreground/60 focus-visible:border-accent focus-visible:ring-0 focus-visible:ring-offset-0 aria-invalid:border-destructive"
+  "h-10 rounded-none border-0 border-b border-border bg-transparent px-0 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus-visible:border-accent focus-visible:ring-0 focus-visible:ring-offset-0 aria-invalid:border-destructive"
 
 function SubmitButton() {
   const { pending } = useFormStatus()
@@ -34,7 +34,7 @@ function SubmitButton() {
     <Button
       type="submit"
       disabled={pending}
-      className="mt-2 h-12 w-full rounded-none bg-primary px-6 text-sm font-medium uppercase tracking-[0.18em] text-primary-foreground hover:bg-primary/90"
+      className="mt-1 h-11 w-full rounded-none bg-primary px-6 text-sm font-medium uppercase tracking-[0.18em] text-primary-foreground hover:bg-primary/90"
     >
       {pending ? "Creating account…" : (
         <>
@@ -52,13 +52,13 @@ export function ParentSignUpForm() {
   const [confirmPassword, setConfirmPassword] = useState("")
 
   return (
-    <form action={formAction} className="flex flex-col gap-8">
+    <form action={formAction} className="flex flex-col gap-5">
       {state.error ? (
         <AlertBanner tone="destructive" title="Could not create account" description={state.error} />
       ) : null}
 
-      <EditorialFieldGroup>
-        <div className="grid gap-6 sm:grid-cols-2">
+      <EditorialFieldGroup className="gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <EditorialField invalid={Boolean(state.fieldErrors.parentName)}>
             <EditorialLabel htmlFor="signup-parent-name">Your name</EditorialLabel>
             <Input
@@ -112,7 +112,7 @@ export function ParentSignUpForm() {
           <EditorialError>{state.fieldErrors.phone}</EditorialError>
         </EditorialField>
 
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <EditorialField invalid={Boolean(state.fieldErrors.password)}>
             <EditorialLabel htmlFor="signup-password">Password</EditorialLabel>
             <Input

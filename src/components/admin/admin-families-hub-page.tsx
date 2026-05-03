@@ -1,25 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { ArrowRightIcon, XIcon } from "lucide-react"
 
 import { AdminChildrenEditor } from "@/components/admin/admin-children-editor"
 import { AdminDataTable } from "@/components/admin/admin-data-table"
-import {
-  DrawerBody,
-  DrawerSummary,
-} from "@/components/admin/admin-detail-drawer"
-import { AdminDocumentReviewEditor } from "@/components/admin/admin-document-review-editor"
 import { AdminFamilyDetailPanel } from "@/components/admin/admin-family-detail-panel"
-import {
-  formatAdminLabel,
-  getDocumentVariant,
-  getFamilyBalanceVariant,
-} from "@/components/admin/admin-status"
-import { AlertBanner } from "@/components/shared/alert-banner"
+import { getFamilyBalanceVariant } from "@/components/admin/admin-status"
 import { PageShell } from "@/components/shared/page-shell"
-import { StatusBadge } from "@/components/shared/status-badge"
-import { buttonVariants } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -35,18 +24,28 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { StatusBadge } from "@/components/shared/status-badge"
+import { formatAdminLabel } from "@/components/admin/admin-status"
 import {
   adminClassrooms,
   adminDocuments,
   adminFamilyHub,
   adminFamilyHubPageContent,
 } from "@/data/admin"
+import { cn } from "@/lib/utils"
 import type {
   AdminTableColumn,
   AdminTableRow,
@@ -86,33 +85,12 @@ function getFamilyRows(families: FamilyHubRecord[]): AdminTableRow[] {
   }))
 }
 
-/* ── Document columns & row mapper ──────────────────────── */
+/* ── Quick-view chip & filter helpers ───────────────────── */
 
-const documentColumns: AdminTableColumn[] = [
-  { key: "document", header: "Document" },
-  { key: "family", header: "Family" },
-  { key: "dueDate", header: "Due date" },
-  { key: "owner", header: "Owner" },
-  { key: "status", header: "Status" },
-  { key: "note", header: "Note" },
-]
+type QuickView = "all" | "balance" | "documents" | "onboarding"
 
-function getDocumentRows(documents: DocumentQueuePreview[]): AdminTableRow[] {
-  return documents.map((document) => ({
-    _id: document.id,
-    document: {
-      primary: document.title,
-      secondary: document.childName,
-    },
-    family: document.familyName,
-    dueDate: document.dueDate,
-    owner: document.owner,
-    status: {
-      label: formatAdminLabel(document.status),
-      variant: getDocumentVariant(document.status),
-    },
-    note: document.note,
-  }))
+function isOnboarding(stage: string) {
+  return stage.toLowerCase() !== "enrolled"
 }
 
 /* ── Unified family hub view ────────────────────────────── */
@@ -128,19 +106,13 @@ export function AdminFamiliesHubPageView({
 }) {
   const [selectedFamily, setSelectedFamily] = useState<FamilyHubRecord | null>(null)
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
-  const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
-
-  const familyRows = getFamilyRows(familyRecords)
-  const documentRows = getDocumentRows(documents)
+  const [view, setView] = useState<QuickView>("all")
+  const [stageFilter, setStageFilter] = useState<string>("all")
+  const [balanceFilter, setBalanceFilter] = useState<string>("all")
 
   const selectedChild =
     selectedFamily?.childRecords.find((c) => c.id === selectedChildId) ?? null
-  const selectedDoc = documents.find((d) => d.id === selectedDocId) ?? null
 
-  const totalChildren = familyRecords.reduce(
-    (sum, f) => sum + f.childRecords.length,
-    0,
-  )
   const balanceFollowUpCount = familyRecords.filter(
     (f) => f.balanceStatus !== "current",
   ).length
@@ -148,89 +120,183 @@ export function AdminFamiliesHubPageView({
     (sum, f) => sum + f.documentsDue,
     0,
   )
+  const onboardingCount = familyRecords.filter((f) =>
+    isOnboarding(f.enrollmentStage),
+  ).length
+
+  const stageOptions = useMemo(() => {
+    const seen = new Set<string>()
+    for (const f of familyRecords) {
+      if (f.enrollmentStage) seen.add(f.enrollmentStage)
+    }
+    return Array.from(seen).sort((a, b) => a.localeCompare(b))
+  }, [familyRecords])
+
+  const filteredFamilies = useMemo(() => {
+    return familyRecords.filter((f) => {
+      if (view === "balance" && f.balanceStatus === "current") return false
+      if (view === "documents" && f.documentsDue === 0) return false
+      if (view === "onboarding" && !isOnboarding(f.enrollmentStage)) return false
+      if (stageFilter !== "all" && f.enrollmentStage !== stageFilter) return false
+      if (balanceFilter !== "all" && f.balanceStatus !== balanceFilter) return false
+      return true
+    })
+  }, [familyRecords, view, stageFilter, balanceFilter])
+
+  const familyRows = getFamilyRows(filteredFamilies)
+
+  const hasActiveFilters =
+    view !== "all" || stageFilter !== "all" || balanceFilter !== "all"
+
+  const clearFilters = () => {
+    setView("all")
+    setStageFilter("all")
+    setBalanceFilter("all")
+  }
+
+  const QUICK_VIEWS: { key: QuickView; label: string; value: number }[] = [
+    { key: "all", label: "Households", value: familyRecords.length },
+    { key: "balance", label: "Balance follow-up", value: balanceFollowUpCount },
+    { key: "documents", label: "Documents due", value: documentsDueCount },
+    { key: "onboarding", label: "In onboarding", value: onboardingCount },
+  ]
 
   return (
     <PageShell variant="portal" className="gap-6 pb-10">
       <Card>
-        <CardHeader>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-            {adminFamilyHubPageContent.eyebrow}
-          </p>
-          <CardTitle>{adminFamilyHubPageContent.title}</CardTitle>
-          <CardDescription>{adminFamilyHubPageContent.description}</CardDescription>
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Link href="/admin/enrollment" className={buttonVariants({ variant: "outline" })}>
-              Open enrollment pipeline
-            </Link>
-            <Link href="/admin/children" className={buttonVariants({ variant: "outline" })}>
-              Open child directory
-            </Link>
+        <CardHeader className="gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                {adminFamilyHubPageContent.eyebrow}
+              </p>
+              <CardTitle>{adminFamilyHubPageContent.title}</CardTitle>
+              <CardDescription>{adminFamilyHubPageContent.description}</CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              <Link
+                href="/admin/enrollment"
+                className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+              >
+                Enrollment pipeline
+                <ArrowRightIcon className="h-3 w-3" />
+              </Link>
+              <Link
+                href="/admin/children"
+                className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+              >
+                Child directory
+                <ArrowRightIcon className="h-3 w-3" />
+              </Link>
+              <Link
+                href="/admin/documents"
+                className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+              >
+                Document queue
+                <ArrowRightIcon className="h-3 w-3" />
+              </Link>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-            <div className="metric-chip">
-              <p className="text-sm font-medium text-muted-foreground">Households</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">{familyRecords.length}</p>
-            </div>
-            <div className="metric-chip">
-              <p className="text-sm font-medium text-muted-foreground">Children</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">{totalChildren}</p>
-            </div>
-            <div className="metric-chip">
-              <p className="text-sm font-medium text-muted-foreground">Balance follow-up</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">{balanceFollowUpCount}</p>
-            </div>
-            <div className="metric-chip">
-              <p className="text-sm font-medium text-muted-foreground">Documents due</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">{documentsDueCount}</p>
-            </div>
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            {QUICK_VIEWS.map((item) => {
+              const active = view === item.key
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setView(item.key)}
+                  aria-pressed={active}
+                  className={cn(
+                    "metric-chip flex flex-col items-start text-left transition-all",
+                    "hover:border-primary/40 hover:bg-background",
+                    active &&
+                      "border-primary/70 bg-primary/4 shadow-[0_1px_0_rgba(0,0,0,0.02)] ring-1 ring-primary/20",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "text-sm font-medium",
+                      active ? "text-primary" : "text-muted-foreground",
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                  <span className="mt-1 text-lg font-semibold text-foreground">
+                    {item.value}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </CardContent>
       </Card>
 
-      <AlertBanner
-        tone="info"
-        title="Family hub"
-        description="Click any row to view children, billing, documents, and enrollment for that household."
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+        <span className="font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Filter
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground">Stage</span>
+          <Select value={stageFilter} onValueChange={setStageFilter}>
+            <SelectTrigger size="sm" className="h-8 min-w-32 rounded-md text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All stages</SelectItem>
+              {stageOptions.map((stage) => (
+                <SelectItem key={stage} value={stage}>
+                  {stage}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground">Balance</span>
+          <Select value={balanceFilter} onValueChange={setBalanceFilter}>
+            <SelectTrigger size="sm" className="h-8 min-w-28 rounded-md text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All balances</SelectItem>
+              <SelectItem value="current">Current</SelectItem>
+              <SelectItem value="due">Due soon</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {hasActiveFilters ? (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+          >
+            <XIcon className="h-3 w-3" />
+            Clear filters
+          </button>
+        ) : null}
+        <span className="ml-auto text-muted-foreground">
+          {filteredFamilies.length} of {familyRecords.length} households
+        </span>
+      </div>
+
+      <AdminDataTable
+        title="Family directory"
+        description="All households, children, and billing in one place."
+        columns={familyColumns}
+        rows={familyRows}
+        searchPlaceholder="Search family, guardian, or email"
+        searchKeys={["family", "children", "email", "stage"]}
+        onRowClick={(row) => {
+          const fam = familyRecords.find((f) => f.id === row._id)
+          if (fam) {
+            setSelectedFamily(fam)
+            setSelectedChildId(null)
+          }
+        }}
       />
-
-      <Tabs defaultValue="families">
-        <TabsList>
-          <TabsTrigger value="families">Families ({familyRecords.length})</TabsTrigger>
-          <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="families" className="mt-4">
-          <AdminDataTable
-            title="Family directory"
-            description="All households, children, and billing in one place."
-            columns={familyColumns}
-            rows={familyRows}
-            searchPlaceholder="Search family, guardian, or email"
-            searchKeys={["family", "children", "email", "stage"]}
-            onRowClick={(row) => {
-              const fam = familyRecords.find((f) => f.id === row._id)
-              if (fam) {
-                setSelectedFamily(fam)
-                setSelectedChildId(null)
-              }
-            }}
-          />
-        </TabsContent>
-
-        <TabsContent value="documents" className="mt-4">
-          <AdminDataTable
-            title="Document queue"
-            description="Search by document title, family, child, owner, or status."
-            columns={documentColumns}
-            rows={documentRows}
-            searchPlaceholder="Search document, family, or owner"
-            searchKeys={["document", "family", "owner", "status", "note"]}
-            onRowClick={(row) => setSelectedDocId(row._id as string)}
-          />
-        </TabsContent>
-      </Tabs>
 
       {/* Family detail sheet */}
       <Sheet
@@ -243,54 +309,47 @@ export function AdminFamiliesHubPageView({
         }}
       >
         <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-2xl">
-          <SheetHeader className="border-b border-border/60 px-5 py-3">
-            <SheetTitle className="text-base">Family details</SheetTitle>
-          </SheetHeader>
           {selectedFamily && (
-            <AdminFamilyDetailPanel
-              family={selectedFamily}
-              documents={documents.filter(
-                (d) => d.familyName === selectedFamily.familyName,
-              )}
-              onChildSelect={(childId) => setSelectedChildId(childId)}
-            />
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {/* Document review sheet */}
-      <Sheet
-        open={!!selectedDoc}
-        onOpenChange={(open) => {
-          if (!open) setSelectedDocId(null)
-        }}
-      >
-        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-lg">
-          <SheetHeader className="border-b border-border/60 px-5 py-3">
-            <SheetTitle className="text-base">Review document</SheetTitle>
-          </SheetHeader>
-          {selectedDoc && (
-            <DrawerBody>
-              <DrawerSummary
-                title={selectedDoc.title}
-                subtitle={`${selectedDoc.childName} · ${selectedDoc.familyName}`}
-                badges={
-                  <StatusBadge variant={getDocumentVariant(selectedDoc.status)}>
-                    {formatAdminLabel(selectedDoc.status)}
-                  </StatusBadge>
-                }
-                meta={
-                  <>
-                    <span>Due {selectedDoc.dueDate}</span>
-                    <span>Owner · {selectedDoc.owner}</span>
-                  </>
-                }
+            <>
+              <SheetHeader className="gap-2 border-b border-border/60 px-5 pb-4 pt-5">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Household
+                </p>
+                <div className="flex flex-wrap items-start justify-between gap-3 pr-8">
+                  <SheetTitle className="font-heading text-2xl tracking-tight text-foreground">
+                    {selectedFamily.familyName}
+                  </SheetTitle>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <StatusBadge variant={getFamilyBalanceVariant(selectedFamily.balanceStatus)}>
+                      {formatAdminLabel(selectedFamily.balanceStatus)}
+                    </StatusBadge>
+                    <StatusBadge variant="info">
+                      {selectedFamily.childRecords.length} child
+                      {selectedFamily.childRecords.length === 1 ? "" : "ren"}
+                    </StatusBadge>
+                    {selectedFamily.documentsDue > 0 ? (
+                      <StatusBadge variant="warning">
+                        {selectedFamily.documentsDue} docs due
+                      </StatusBadge>
+                    ) : null}
+                  </div>
+                </div>
+                <SheetDescription className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  <span>{selectedFamily.guardians.join(" · ")}</span>
+                  <span aria-hidden>•</span>
+                  <span>{selectedFamily.primaryEmail}</span>
+                  <span aria-hidden>•</span>
+                  <span>Stage · {formatAdminLabel(selectedFamily.enrollmentStage)}</span>
+                </SheetDescription>
+              </SheetHeader>
+              <AdminFamilyDetailPanel
+                family={selectedFamily}
+                documents={documents.filter(
+                  (d) => d.familyName === selectedFamily.familyName,
+                )}
+                onChildSelect={(childId) => setSelectedChildId(childId)}
               />
-              <AdminDocumentReviewEditor
-                key={selectedDoc.id}
-                document={selectedDoc}
-              />
-            </DrawerBody>
+            </>
           )}
         </SheetContent>
       </Sheet>

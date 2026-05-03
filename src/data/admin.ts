@@ -1070,10 +1070,9 @@ export const adminFamilyHubPageContent = {
       "Unified family hub with children, billing, and enrollment context in one view.",
     pathname: "/admin/families",
   } satisfies SiteMetadata,
-  eyebrow: "Families and child day",
-  title: "Family records, child updates, and follow-up in one place",
-  description:
-    "Select a family to review their children, billing status, documents, and parent-facing day updates without jumping between disconnected admin screens.",
+  eyebrow: "Families",
+  title: "Family directory",
+  description: "Households, billing, and enrollment — all in one place.",
 }
 
 export const adminClassroomsPageContent = {

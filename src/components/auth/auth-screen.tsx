@@ -24,6 +24,11 @@ type AuthScreenProps = {
    * on a 1366×768 laptop without scroll.
    */
   contentClassName?: string
+  /**
+   * Tighten the header (smaller title + reduced spacing) for dense forms
+   * like signup. Login screens keep the larger editorial title.
+   */
+  compact?: boolean
 }
 
 export function AuthScreen({
@@ -38,6 +43,7 @@ export function AuthScreen({
   children,
   footer,
   contentClassName,
+  compact = false,
 }: AuthScreenProps) {
   const imageOnLeft = imagePosition === "left"
 
@@ -93,18 +99,34 @@ export function AuthScreen({
         >
           <div className="w-full max-w-md">
             <Reveal>
-              <div className="mb-10">
+              <div className={cn(compact ? "mb-6" : "mb-10")}>
                 <p className="editorial-kicker">{eyebrow}</p>
-                <h1 className="mt-5 font-heading text-balance text-4xl leading-[1.05] tracking-[-0.02em] text-foreground md:text-5xl">
+                <h1
+                  className={cn(
+                    "font-heading text-balance leading-[1.05] tracking-[-0.02em] text-foreground",
+                    compact
+                      ? "mt-3 text-3xl md:text-4xl"
+                      : "mt-5 text-4xl md:text-5xl"
+                  )}
+                >
                   {title}
                 </h1>
-                <p className="mt-5 text-base leading-7 text-muted-foreground">
+                <p
+                  className={cn(
+                    "text-muted-foreground",
+                    compact
+                      ? "mt-3 text-sm leading-6"
+                      : "mt-5 text-base leading-7"
+                  )}
+                >
                   {description}
                 </p>
               </div>
               {children}
               {footer ? (
-                <p className="mt-10 text-sm text-muted-foreground">{footer}</p>
+                <p className={cn("text-sm text-muted-foreground", compact ? "mt-6" : "mt-10")}>
+                  {footer}
+                </p>
               ) : null}
             </Reveal>
           </div>
