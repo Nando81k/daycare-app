@@ -91,6 +91,13 @@ function getTodayRange() {
   return { start, end }
 }
 
+function getDayRange(isoDate: string) {
+  const [year, month, day] = isoDate.split("-").map((p) => Number(p))
+  const start = new Date(year, month - 1, day)
+  const end = new Date(year, month - 1, day + 1)
+  return { start, end }
+}
+
 function buildSchoolDateFromDateInput(value: string) {
   const [year, month, day] = value.split("-").map((part) => Number(part))
   return new TZDate(year, month - 1, day, 12, 0, 0, 0, SCHOOL_TIME_ZONE)
@@ -881,6 +888,7 @@ export async function upsertAttendanceRecord(
     checkInAt: getStringValue(formData, "checkInAt"),
     checkOutAt: getStringValue(formData, "checkOutAt"),
     note: getStringValue(formData, "note"),
+    date: getStringValue(formData, "date") || undefined,
   })
 
   if (!parsed.success) {
@@ -909,7 +917,9 @@ export async function upsertAttendanceRecord(
       })
     }
 
-    const { start, end } = getTodayRange()
+    const { start, end } = parsed.data.date
+      ? getDayRange(parsed.data.date)
+      : getTodayRange()
     const checkInAt = timeToDate(parsed.data.checkInAt, start)
     const checkOutAt = timeToDate(parsed.data.checkOutAt, start)
     const existingRecord = await prisma.attendanceRecord.findFirst({

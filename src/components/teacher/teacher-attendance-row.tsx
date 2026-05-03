@@ -4,6 +4,7 @@ import { useActionState } from "react"
 import { Loader2 } from "lucide-react"
 
 import { teacherUpsertAttendance } from "@/app/actions/teacher"
+import { AttendanceHistoryStrip } from "@/components/admin/attendance/attendance-history-strip"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { initialMutationState } from "@/lib/action-state"
+import type { AttendanceHistoryDot } from "@/lib/dal/attendance"
 import type { AdminActionState } from "@/types/app"
 
 type ChildRow = {
@@ -26,11 +28,19 @@ type ChildRow = {
   checkInAt: string | null
   checkOutAt: string | null
   todayNote: string
+  history: AttendanceHistoryDot[]
 }
 
 const STATUS = ["PRESENT", "ABSENT", "SCHEDULED"] as const
 
-export function TeacherAttendanceRow({ child }: { child: ChildRow }) {
+export function TeacherAttendanceRow({
+  child,
+  date,
+}: {
+  child: ChildRow
+  /** ISO YYYY-MM-DD — record will be saved against this day. */
+  date: string
+}) {
   const [state, action, isPending] = useActionState<AdminActionState, FormData>(
     teacherUpsertAttendance,
     initialMutationState
@@ -38,10 +48,12 @@ export function TeacherAttendanceRow({ child }: { child: ChildRow }) {
 
   return (
     <form
+      key={`${child.id}-${date}`}
       action={action}
       className="rounded-xl border border-border/60 bg-card p-4"
     >
       <input type="hidden" name="childId" value={child.id} />
+      <input type="hidden" name="date" value={date} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-foreground">{child.name}</p>
@@ -58,6 +70,8 @@ export function TeacherAttendanceRow({ child }: { child: ChildRow }) {
           </p>
         )}
       </div>
+
+      <AttendanceHistoryStrip history={child.history} className="mt-3" />
 
       <div className="mt-3 grid gap-3 md:grid-cols-[160px_minmax(0,1fr)_minmax(0,1fr)_auto]">
         <div className="space-y-1.5">

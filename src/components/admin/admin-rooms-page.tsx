@@ -1,15 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
 
-import { AdminAttendanceEditor } from "@/components/admin/admin-attendance-editor"
 import { AdminBarChart } from "@/components/admin/admin-bar-chart"
 import { AdminDataTable } from "@/components/admin/admin-data-table"
-import {
-  DrawerBody,
-  DrawerSummary,
-} from "@/components/admin/admin-detail-drawer"
 import {
   formatAdminLabel,
   getChildAttendanceVariant,
@@ -28,12 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   adminAttendanceBoard,
@@ -129,12 +117,8 @@ export function AdminRoomsPageView({
   childRecords?: AdminChildRecordPreview[]
   staffProfiles?: StaffProfilePreview[]
 }) {
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
-
   const attendanceRows = getAttendanceRows(childRecords)
   const staffRows = getStaffRows(staffProfiles)
-
-  const selectedChild = childRecords.find((c) => c.id === selectedChildId) ?? null
 
   const totalEnrolled = classrooms.reduce((sum, r) => sum + r.enrolled, 0)
   const totalCapacity = classrooms.reduce((sum, r) => sum + r.capacity, 0)
@@ -268,12 +252,11 @@ export function AdminRoomsPageView({
         <TabsContent value="attendance" className="mt-4">
           <AdminDataTable
             title="Child attendance"
-            description="Search the roster when a classroom board needs child-level follow-up."
+            description="Read-only snapshot — open the Attendance page to edit, switch dates, or review history."
             columns={attendanceColumns}
             rows={attendanceRows}
             searchPlaceholder="Search child, classroom, or status"
             searchKeys={["child", "classroom", "family", "status"]}
-            onRowClick={(row) => setSelectedChildId(row._id as string)}
           />
         </TabsContent>
 
@@ -321,38 +304,6 @@ export function AdminRoomsPageView({
         </TabsContent>
       </Tabs>
 
-      {/* Attendance editor sheet */}
-      <Sheet
-        open={!!selectedChild}
-        onOpenChange={(open) => {
-          if (!open) setSelectedChildId(null)
-        }}
-      >
-        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-lg">
-          <SheetHeader className="border-b border-border/60 px-5 py-3">
-            <SheetTitle className="text-base">Update attendance</SheetTitle>
-          </SheetHeader>
-          {selectedChild && (
-            <DrawerBody>
-              <DrawerSummary
-                title={selectedChild.name}
-                subtitle={`${selectedChild.ageLabel} · ${selectedChild.classroom}`}
-                badges={
-                  <StatusBadge variant={getChildAttendanceVariant(selectedChild.attendanceStatus)}>
-                    {formatAdminLabel(selectedChild.attendanceStatus)}
-                  </StatusBadge>
-                }
-                meta={<span>{selectedChild.familyName}</span>}
-              />
-              <AdminAttendanceEditor
-                key={selectedChild.id}
-                child={selectedChild}
-                onClear={() => setSelectedChildId(null)}
-              />
-            </DrawerBody>
-          )}
-        </SheetContent>
-      </Sheet>
     </PageShell>
   )
 }

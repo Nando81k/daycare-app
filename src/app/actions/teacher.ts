@@ -25,12 +25,16 @@ function startOfToday() {
   return d
 }
 
-function combineDateAndTime(time: string | undefined) {
+function startOfDayFromIso(isoDate: string) {
+  const [year, month, day] = isoDate.split("-").map((p) => Number(p))
+  return new Date(year, month - 1, day, 0, 0, 0, 0)
+}
+
+function combineDateAndTime(time: string | undefined, day: Date) {
   if (!time) return null
-  // time is "HH:MM" — combine with today's date.
   const [hh, mm] = time.split(":").map((v) => Number.parseInt(v, 10))
   if (Number.isNaN(hh) || Number.isNaN(mm)) return null
-  const d = new Date()
+  const d = new Date(day)
   d.setHours(hh, mm, 0, 0)
   return d
 }
@@ -47,6 +51,7 @@ export async function teacherUpsertAttendance(
       checkInAt: getStringValue(formData, "checkInAt"),
       checkOutAt: getStringValue(formData, "checkOutAt"),
       note: getStringValue(formData, "note"),
+      date: getStringValue(formData, "date") || undefined,
     })
     if (!parsed.success) {
       return getActionState({
@@ -57,13 +62,13 @@ export async function teacherUpsertAttendance(
 
     await assertTeacherCanEditChild(user.id, parsed.data.childId)
 
-    const today = startOfToday()
-    const checkInAt = combineDateAndTime(parsed.data.checkInAt)
-    const checkOutAt = combineDateAndTime(parsed.data.checkOutAt)
+    const day = parsed.data.date ? startOfDayFromIso(parsed.data.date) : startOfToday()
+    const checkInAt = combineDateAndTime(parsed.data.checkInAt, day)
+    const checkOutAt = combineDateAndTime(parsed.data.checkOutAt, day)
 
     await prisma.attendanceRecord.upsert({
       where: {
-        childId_date: { childId: parsed.data.childId, date: today },
+        childId_date: { childId: parsed.data.childId, date: day },
       },
       update: {
         status: parsed.data.status,
@@ -73,7 +78,7 @@ export async function teacherUpsertAttendance(
       },
       create: {
         childId: parsed.data.childId,
-        date: today,
+        date: day,
         status: parsed.data.status,
         checkInAt,
         checkOutAt,

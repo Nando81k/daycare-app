@@ -101,6 +101,15 @@ export const upsertAttendanceRecordSchema = z
     checkInAt: attendanceTimeSchema,
     checkOutAt: attendanceTimeSchema,
     note: z.string().trim().default(""),
+    /**
+     * Calendar date for the record in YYYY-MM-DD form. Optional — when omitted,
+     * the action defaults to today. Allows back-dating from the date picker.
+     */
+    date: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date.")
+      .optional(),
   })
   .superRefine((value, context) => {
     if (!value.checkInAt || !value.checkOutAt) {
