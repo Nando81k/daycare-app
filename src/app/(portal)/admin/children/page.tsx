@@ -1,11 +1,5 @@
-import { AdminChildrenPageView } from "@/components/admin/admin-children-page"
-import { getAdminPortalData } from "@/lib/dal/admin"
+import { redirect } from "next/navigation"
 
-export default async function AdminChildrenPage() {
-  const { familyHub, classrooms } = await getAdminPortalData()
-  const childRecords = familyHub.flatMap((family) => family.childRecords)
-
-  return (
-    <AdminChildrenPageView childRecords={childRecords} classrooms={classrooms} />
-  )
+export default function AdminChildrenLegacyPage() {
+  redirect("/admin/families")
 }

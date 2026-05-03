@@ -135,6 +135,7 @@ model User {
   issuedInvites             AccountInviteToken[]    @relation("InviteIssuer")
   passwordResetTokens       PasswordResetToken[]
   uploadedDailyReportPhotos DailyReportPhoto[]      @relation("DailyReportPhotoUploader")
+  authoredFamilyNotes       FamilyNote[]
   createdAt                 DateTime                @default(now())
   updatedAt                 DateTime                @updatedAt
 }
@@ -166,8 +167,22 @@ model Family {
   applications    EnrollmentApplication[]
   subscriptions   StripeSubscriptionMapping[]
   billingProfile  FamilyBillingProfile?
+  notes           FamilyNote[]
   createdAt       DateTime                    @default(now())
   updatedAt       DateTime                    @updatedAt
+}
+
+model FamilyNote {
+  id        String   @id @default(cuid())
+  familyId  String
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([familyId, createdAt])
 }
 
 model ParentProfile {

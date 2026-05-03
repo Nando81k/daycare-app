@@ -188,12 +188,6 @@ export function AdminDocumentsPageView({
             >
               Open families
             </Link>
-            <Link
-              href="/admin/children"
-              className={buttonVariants({ variant: "outline" })}
-            >
-              Open child directory
-            </Link>
           </>
         }
       >

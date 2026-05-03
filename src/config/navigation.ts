@@ -15,7 +15,6 @@ import {
   Settings,
   ShieldCheck,
   UserCog,
-  Users,
   UsersRound,
 } from "lucide-react"
 
@@ -163,13 +162,7 @@ export const adminNav: PortalNavGroup[] = [
         title: "Families",
         href: "/admin/families",
         icon: UsersRound,
-        summary: "Family directory with billing and child rosters",
-      },
-      {
-        title: "Children",
-        href: "/admin/children",
-        icon: Users,
-        summary: "Every enrolled child with health and classroom details",
+        summary: "Family directory with children, billing, and enrollment",
       },
       {
         title: "Classrooms",

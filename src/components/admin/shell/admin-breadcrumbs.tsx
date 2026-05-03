@@ -22,7 +22,6 @@ const NAV_LABEL_BY_HREF = new Map(
 
 const DYNAMIC_SEGMENT_LABEL: Record<string, string> = {
   "/admin/enrollment/[id]": "Application detail",
-  "/admin/children/[id]": "Child profile",
 }
 
 function titleCase(segment: string) {

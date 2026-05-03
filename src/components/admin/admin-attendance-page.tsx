@@ -141,8 +141,8 @@ export function AdminAttendancePageView({
         description={adminAttendancePageContent.description}
         actions={
           <>
-            <Link href="/admin/children" className={buttonVariants({ variant: "outline" })}>
-              Open child roster
+            <Link href="/admin/families" className={buttonVariants({ variant: "outline" })}>
+              Open families
             </Link>
             <Link href="/admin/classrooms" className={buttonVariants({ variant: "default" })}>
               Open classrooms

@@ -388,6 +388,9 @@ export const adminChildrenHub: AdminChildHubRecord[] = [
       ],
     },
     siblings: [],
+    emergencyContacts: [],
+    authorizedPickups: [],
+    recentAttendance: [],
   },
   {
     id: "child-302",
@@ -444,6 +447,9 @@ export const adminChildrenHub: AdminChildHubRecord[] = [
       ],
     },
     siblings: [],
+    emergencyContacts: [],
+    authorizedPickups: [],
+    recentAttendance: [],
   },
   {
     id: "child-303",
@@ -469,6 +475,9 @@ export const adminChildrenHub: AdminChildHubRecord[] = [
     latestPhotoCount: 0,
     latestDailyReport: null,
     siblings: [],
+    emergencyContacts: [],
+    authorizedPickups: [],
+    recentAttendance: [],
   },
   {
     id: "child-304",
@@ -520,6 +529,9 @@ export const adminChildrenHub: AdminChildHubRecord[] = [
     siblings: [
       { id: "child-305", name: "Lily Brooks", ageLabel: "2 years", classroom: "Meadow Toddlers" },
     ],
+    emergencyContacts: [],
+    authorizedPickups: [],
+    recentAttendance: [],
   },
   {
     id: "child-305",
@@ -578,6 +590,9 @@ export const adminChildrenHub: AdminChildHubRecord[] = [
     siblings: [
       { id: "child-304", name: "Mason Brooks", ageLabel: "4 years", classroom: "Sunrise Preschool" },
     ],
+    emergencyContacts: [],
+    authorizedPickups: [],
+    recentAttendance: [],
   },
 ]
 
@@ -642,6 +657,7 @@ export const adminFamilyHub: FamilyHubRecord[] = adminFamilies.map((family) => (
   ...family,
   childRecords: adminChildrenHub.filter((c) => c.familyId === family.id),
   balance: adminBalances.find((b) => b.familyName === family.familyName) ?? null,
+  notes: [],
 }))
 
 export const adminStaffProfiles: StaffProfilePreview[] = [
@@ -1035,19 +1051,6 @@ export const adminWaitlistPageContent = {
   title: "Placement timing and follow-up priorities",
   description:
     "The waitlist view helps the team compare requested start dates, schedule needs, and likely openings without turning the page into a spreadsheet dump.",
-}
-
-export const adminChildrenPageContent = {
-  metadata: {
-    title: "Children",
-    description:
-      "Child roster management with classroom assignment, attendance state, allergy visibility, and account context.",
-    pathname: "/admin/children",
-  } satisfies SiteMetadata,
-  eyebrow: "Children directory",
-  title: "Classroom roster and child status visibility",
-  description:
-    "Children are grouped in a way that keeps care context, attendance, and family follow-up visible at the same time.",
 }
 
 export const adminFamiliesPageContent = {

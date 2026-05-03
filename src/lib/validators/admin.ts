@@ -238,6 +238,19 @@ export const updateFamilyStageSchema = z.object({
   enrollmentStage: requiredString,
 })
 
+export const addFamilyNoteSchema = z.object({
+  familyId: requiredString,
+  body: z
+    .string()
+    .trim()
+    .min(1, "Add a short note before saving.")
+    .max(2000, "Notes are capped at 2000 characters."),
+})
+
+export const deleteFamilyNoteSchema = z.object({
+  noteId: requiredString,
+})
+
 export const approveEnrollmentApplicationSchema = z.object({
   leadId: requiredString,
 })

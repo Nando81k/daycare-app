@@ -134,7 +134,7 @@ export async function searchAdminEntities(
     name: `${child.firstName} ${child.lastName}`.trim(),
     ageLabel: child.ageLabel,
     classroomName: child.classroom?.name ?? null,
-    href: `/admin/children/${child.slug}`,
+    href: "/admin/families",
   }))
 
   const applications: AdminSearchApplication[] = applicationRows.map((app) => {

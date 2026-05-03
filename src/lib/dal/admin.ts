@@ -432,12 +432,22 @@ export async function getAdminPortalData(): Promise<{
               },
             },
             documents: true,
+            emergencyContacts: {
+              orderBy: { priority: "asc" },
+            },
+            authorizedPickups: true,
           },
         },
         invoices: true,
         payments: true,
         documents: true,
         leads: true,
+        notes: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            author: { select: { name: true } },
+          },
+        },
         billingProfile: true,
       },
       orderBy: {
@@ -702,6 +712,26 @@ export async function getAdminPortalData(): Promise<{
       siblings: family.children
         .filter((c) => c.id !== child.id)
         .map((c) => ({ id: c.id, name: `${c.firstName} ${c.lastName}`, ageLabel: c.ageLabel, classroom: c.classroom.name })),
+      emergencyContacts: child.emergencyContacts.map((contact) => ({
+        id: contact.id,
+        name: contact.name,
+        relationship: contact.relationship,
+        phone: contact.phone,
+        priority: contact.priority,
+      })),
+      authorizedPickups: child.authorizedPickups.map((pickup) => ({
+        id: pickup.id,
+        name: pickup.name,
+        relationship: pickup.relationship,
+        phone: pickup.phone,
+        note: pickup.note ?? undefined,
+      })),
+      recentAttendance: child.attendanceRecords.slice(0, 5).map((record) => ({
+        id: record.id,
+        dateLabel: formatRelativeDateTime(record.date),
+        status: mapAttendanceStatus(record.status),
+        note: record.note || undefined,
+      })),
     }
   })
 
@@ -753,10 +783,24 @@ export async function getAdminPortalData(): Promise<{
     }
   })
 
+  const familyNotesById = new Map(
+    families.map((family) => [
+      family.id,
+      family.notes.map((note) => ({
+        id: note.id,
+        body: note.body,
+        authorName: note.author?.name ?? "Admin",
+        createdAtLabel: formatRelativeDateTime(note.createdAt),
+        createdAtIso: note.createdAt.toISOString(),
+      })),
+    ]),
+  )
+
   const familyHub: FamilyHubRecord[] = familyDirectory.map((dir) => ({
     ...dir,
     childRecords: enrichedChildren.filter((c) => c.familyId === dir.id),
     balance: balances.find((b) => b.familyName === dir.familyName) ?? null,
+    notes: familyNotesById.get(dir.id) ?? [],
   }))
 
   const classroomSummaries = classrooms.map((classroom) => ({

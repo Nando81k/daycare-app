@@ -652,6 +652,26 @@ export type AdminChildHubRecord = {
     staffNotes: string[]
   } | null
   siblings: Array<{ id: string; name: string; ageLabel: string; classroom: string }>
+  emergencyContacts: Array<{
+    id: string
+    name: string
+    relationship: string
+    phone: string
+    priority: string
+  }>
+  authorizedPickups: Array<{
+    id: string
+    name: string
+    relationship: string
+    phone: string
+    note?: string
+  }>
+  recentAttendance: Array<{
+    id: string
+    dateLabel: string
+    status: "present" | "absent" | "scheduled"
+    note?: string
+  }>
 }
 
 export type FamilyDirectoryPreview = {
@@ -699,9 +719,18 @@ export type FamilyBalancePreview = {
   lastPaymentDate?: string
 }
 
+export type FamilyNotePreview = {
+  id: string
+  body: string
+  authorName: string
+  createdAtLabel: string
+  createdAtIso: string
+}
+
 export type FamilyHubRecord = FamilyDirectoryPreview & {
   childRecords: AdminChildHubRecord[]
   balance: FamilyBalancePreview | null
+  notes: FamilyNotePreview[]
 }
 
 export type StaffProfilePreview = {

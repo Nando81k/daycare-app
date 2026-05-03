@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useMemo, useState } from "react"
 import { ArrowRightIcon, XIcon } from "lucide-react"
 
-import { AdminChildrenEditor } from "@/components/admin/admin-children-editor"
 import { AdminDataTable } from "@/components/admin/admin-data-table"
 import { AdminFamilyDetailPanel } from "@/components/admin/admin-family-detail-panel"
 import { getFamilyBalanceVariant } from "@/components/admin/admin-status"
@@ -16,13 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
@@ -104,14 +96,12 @@ export function AdminFamiliesHubPageView({
   classrooms?: ClassroomSummaryPreview[]
   documents?: DocumentQueuePreview[]
 }) {
-  const [selectedFamily, setSelectedFamily] = useState<FamilyHubRecord | null>(null)
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
+  const [selectedFamilyId, setSelectedFamilyId] = useState<string | null>(null)
+  const selectedFamily =
+    familyRecords.find((f) => f.id === selectedFamilyId) ?? null
   const [view, setView] = useState<QuickView>("all")
   const [stageFilter, setStageFilter] = useState<string>("all")
   const [balanceFilter, setBalanceFilter] = useState<string>("all")
-
-  const selectedChild =
-    selectedFamily?.childRecords.find((c) => c.id === selectedChildId) ?? null
 
   const balanceFollowUpCount = familyRecords.filter(
     (f) => f.balanceStatus !== "current",
@@ -179,13 +169,6 @@ export function AdminFamiliesHubPageView({
                 className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
               >
                 Enrollment pipeline
-                <ArrowRightIcon className="h-3 w-3" />
-              </Link>
-              <Link
-                href="/admin/children"
-                className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
-              >
-                Child directory
                 <ArrowRightIcon className="h-3 w-3" />
               </Link>
               <Link
@@ -290,25 +273,20 @@ export function AdminFamiliesHubPageView({
         searchPlaceholder="Search family, guardian, or email"
         searchKeys={["family", "children", "email", "stage"]}
         onRowClick={(row) => {
-          const fam = familyRecords.find((f) => f.id === row._id)
-          if (fam) {
-            setSelectedFamily(fam)
-            setSelectedChildId(null)
-          }
+          setSelectedFamilyId(String(row._id))
         }}
       />
 
       {/* Family detail sheet */}
       <Sheet
-        open={!!selectedFamily && !selectedChildId}
+        open={!!selectedFamily}
         onOpenChange={(open) => {
           if (!open) {
-            setSelectedFamily(null)
-            setSelectedChildId(null)
+            setSelectedFamilyId(null)
           }
         }}
       >
-        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-2xl">
+        <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-[min(1180px,95vw)]">
           {selectedFamily && (
             <>
               <SheetHeader className="gap-2 border-b border-border/60 px-5 pb-4 pt-5">
@@ -344,41 +322,15 @@ export function AdminFamiliesHubPageView({
               </SheetHeader>
               <AdminFamilyDetailPanel
                 family={selectedFamily}
+                classrooms={classrooms}
                 documents={documents.filter(
                   (d) => d.familyName === selectedFamily.familyName,
                 )}
-                onChildSelect={(childId) => setSelectedChildId(childId)}
               />
             </>
           )}
         </SheetContent>
       </Sheet>
-
-      {/* Child profile dialog (deep-dive from family sheet) */}
-      <Dialog
-        open={!!selectedChild}
-        onOpenChange={(open) => {
-          if (!open) setSelectedChildId(null)
-        }}
-      >
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-4xl">
-          {selectedChild && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedChild.name}</DialogTitle>
-                <DialogDescription>
-                  {selectedChild.ageLabel} · {selectedChild.classroom}
-                </DialogDescription>
-              </DialogHeader>
-              <AdminChildrenEditor
-                child={selectedChild}
-                classrooms={classrooms}
-                onClear={() => setSelectedChildId(null)}
-              />
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </PageShell>
   )
 }

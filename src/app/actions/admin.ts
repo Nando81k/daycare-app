@@ -13,7 +13,9 @@ import { prisma } from "@/lib/db"
 import { sendTransactionalEmail } from "@/lib/email"
 import {
   acceptEnrollmentApplicationSchema,
+  addFamilyNoteSchema,
   approveEnrollmentApplicationSchema,
+  deleteFamilyNoteSchema,
   assignStaffClassroomSchema,
   createClassroomSchema,
   createStaffMemberSchema,
@@ -473,7 +475,7 @@ function randomSlugSuffix() {
 /**
  * Atomic enrollment acceptance: approves the lead AND creates a `Child` row
  * placed in the chosen classroom AND posts the registration invoice. The
- * admin no longer has to re-enter the child's details on /admin/children
+ * admin no longer has to re-enter the child's details on a separate page
  * after approving — this is the single-action conversion.
  */
 export async function acceptEnrollmentApplication(
@@ -668,7 +670,6 @@ export async function acceptEnrollmentApplication(
     "/admin",
     "/admin/enrollment",
     `/admin/enrollment/${lead.id}`,
-    "/admin/children",
     "/admin/classrooms",
     "/admin/billing",
     "/parent",
@@ -966,8 +967,7 @@ export async function upsertAttendanceRecord(
     revalidatePaths([
       "/admin",
       "/admin/attendance",
-      "/admin/children",
-      "/admin/reports",
+        "/admin/reports",
       "/parent",
       "/parent/attendance",
       `/parent/child/${child.slug}`,
@@ -1549,8 +1549,7 @@ export async function reviewDocumentSubmission(
     revalidatePaths([
       "/admin",
       "/admin/documents",
-      "/admin/children",
-      "/parent",
+        "/parent",
       "/parent/forms",
       document.child?.slug ? `/parent/child/${document.child.slug}` : "/parent",
     ])
@@ -1676,8 +1675,7 @@ export async function uploadChildDailyReportPhoto(
 
     revalidatePaths([
       "/admin",
-      "/admin/children",
-      "/parent",
+        "/parent",
       `/parent/child/${child.slug}`,
     ])
 
@@ -1965,6 +1963,113 @@ export async function updateFamilyStage(
 }
 
 // ---------------------------------------------------------------------------
+// Family notes (admin-internal)
+// ---------------------------------------------------------------------------
+
+export async function addFamilyNote(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  try {
+    const user = await requireRole("ADMIN")
+
+    const parsed = addFamilyNoteSchema.safeParse({
+      familyId: getStringValue(formData, "familyId"),
+      body: getStringValue(formData, "body"),
+    })
+
+    if (!parsed.success) {
+      return getActionState({
+        error: "Please add a short note before saving.",
+        fieldErrors: getFieldErrors(parsed.error),
+      })
+    }
+
+    const family = await prisma.family.findUnique({
+      where: { id: parsed.data.familyId },
+      select: { id: true, familyName: true },
+    })
+
+    if (!family) {
+      return getActionState({ error: "Family not found." })
+    }
+
+    await prisma.$transaction([
+      prisma.familyNote.create({
+        data: {
+          familyId: family.id,
+          authorId: user.id,
+          body: parsed.data.body,
+        },
+      }),
+      prisma.auditLog.create({
+        data: {
+          actorUserId: user.id,
+          action: "family.note_added",
+          subjectType: "Family",
+          subjectId: family.id,
+          details: { familyName: family.familyName },
+        },
+      }),
+    ])
+
+    revalidatePaths(["/admin/families"])
+
+    return getActionState({ success: true, message: "Note saved." })
+  } catch {
+    return getActionState({ error: "We could not save this note right now." })
+  }
+}
+
+export async function deleteFamilyNote(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  try {
+    const user = await requireRole("ADMIN")
+
+    const parsed = deleteFamilyNoteSchema.safeParse({
+      noteId: getStringValue(formData, "noteId"),
+    })
+
+    if (!parsed.success) {
+      return getActionState({
+        error: "We could not identify the note to delete.",
+        fieldErrors: getFieldErrors(parsed.error),
+      })
+    }
+
+    const note = await prisma.familyNote.findUnique({
+      where: { id: parsed.data.noteId },
+      select: { id: true, familyId: true },
+    })
+
+    if (!note) {
+      return getActionState({ error: "Note not found." })
+    }
+
+    await prisma.$transaction([
+      prisma.familyNote.delete({ where: { id: note.id } }),
+      prisma.auditLog.create({
+        data: {
+          actorUserId: user.id,
+          action: "family.note_deleted",
+          subjectType: "FamilyNote",
+          subjectId: note.id,
+          details: { familyId: note.familyId },
+        },
+      }),
+    ])
+
+    revalidatePaths(["/admin/families"])
+
+    return getActionState({ success: true, message: "Note deleted." })
+  } catch {
+    return getActionState({ error: "We could not delete this note right now." })
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Admin Message Reply
 // ---------------------------------------------------------------------------
 
@@ -2202,7 +2307,7 @@ export async function updateChildProfile(
       },
     })
 
-    revalidatePaths(["/admin", "/admin/children"])
+    revalidatePaths(["/admin", "/admin/families"])
 
     return getActionState({
       success: true,
@@ -2323,8 +2428,7 @@ export async function upsertChildDailyReport(
 
     revalidatePaths([
       "/admin",
-      "/admin/children",
-      "/admin/families",
+        "/admin/families",
       "/parent",
       `/parent/child/${child.slug}`,
     ])

@@ -1184,7 +1184,7 @@ export async function submitParentDocumentUpload(
     "/parent",
     "/parent/forms",
     "/admin/documents",
-    "/admin/children",
+    "/admin/families",
   ])
 
   return getMutationState({
@@ -1262,7 +1262,7 @@ export async function submitParentDocumentTypedSignature(
     "/parent/forms",
     "/parent/documents",
     "/admin/documents",
-    "/admin/children",
+    "/admin/families",
   ])
 
   return getMutationState({
