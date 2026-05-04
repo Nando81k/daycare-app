@@ -6,10 +6,12 @@ import { useActionState } from "react"
 import { type AuthMutationActionState, requestPasswordReset } from "@/app/actions/auth"
 import { AuthStandalonePage } from "@/components/auth/auth-standalone-page"
 import { AlertBanner } from "@/components/shared/alert-banner"
+import { TurnstileWidget } from "@/components/shared/turnstile-widget"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { initialMutationState } from "@/lib/action-state"
+import { publicAppEnv } from "@/lib/public-env"
 
 export function PasswordResetRequestPage() {
   const [state, formAction] = useActionState<AuthMutationActionState, FormData>(
@@ -44,6 +46,8 @@ export function PasswordResetRequestPage() {
             <FieldError>{state.fieldErrors.email}</FieldError>
           </Field>
         </FieldGroup>
+
+        <TurnstileWidget sitekey={publicAppEnv.turnstileSiteKey} />
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button type="submit" className="w-full sm:w-auto">

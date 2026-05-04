@@ -14,8 +14,10 @@ import {
 } from "@/components/auth/editorial-field"
 import { PasswordChecklist } from "@/components/auth/password-checklist"
 import { AlertBanner } from "@/components/shared/alert-banner"
+import { TurnstileWidget } from "@/components/shared/turnstile-widget"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { publicAppEnv } from "@/lib/public-env"
 import { cn } from "@/lib/utils"
 
 const initialState: AuthMutationActionState = {
@@ -148,6 +150,8 @@ export function ParentSignUpForm() {
           password={password}
           confirmPassword={confirmPassword}
         />
+
+        <TurnstileWidget sitekey={publicAppEnv.turnstileSiteKey} />
 
         <SubmitButton />
       </EditorialFieldGroup>

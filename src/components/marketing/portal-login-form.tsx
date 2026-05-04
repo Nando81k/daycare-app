@@ -13,8 +13,10 @@ import {
   EditorialLabel,
 } from "@/components/auth/editorial-field"
 import { AlertBanner } from "@/components/shared/alert-banner"
+import { TurnstileWidget } from "@/components/shared/turnstile-widget"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { publicAppEnv } from "@/lib/public-env"
 import { cn } from "@/lib/utils"
 
 const initialState: LoginActionState = {
@@ -115,6 +117,8 @@ export function PortalLoginForm({ portalRole }: { portalRole: "parent" | "admin"
             />
           </EditorialField>
         ) : null}
+
+        <TurnstileWidget sitekey={publicAppEnv.turnstileSiteKey} />
 
         <SubmitButton
           label={state.requiresTwoFactor ? "Verify code" : buttonLabel}

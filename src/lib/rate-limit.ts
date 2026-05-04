@@ -1,41 +1,44 @@
 import "server-only"
 
+import { Redis } from "@upstash/redis"
 import { headers } from "next/headers"
 
 /**
- * Lightweight in-memory rate limiter.
+ * Token-bucket rate limiter with two backends:
  *
- * Use as a baseline for /login/* and public-form endpoints. The store is a
- * Map keyed by a short scope + identifier, suitable for a single-instance
- * deployment. For multi-instance or multi-region deployments, swap the
- * `RateLimitStore` implementation for Upstash Redis or Vercel KV without
- * touching call sites.
+ *   • In-memory (default for dev / single-instance) — keyed Map, soft-evicts
+ *     when it grows past 5k entries.
+ *   • Upstash Redis (production) — used automatically when both
+ *     UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are set, so
+ *     buckets stay shared across every Vercel function instance and the
+ *     cap actually holds under horizontal scaling.
+ *
+ * Call sites use `consumeRateLimit({ scope, limit, windowSec }, identifier?)`
+ * unchanged regardless of backend.
  */
 
 type Bucket = {
-  /** Number of tokens currently available. */
+  /** Tokens remaining. */
   tokens: number
   /** Epoch ms when the bucket was last refilled. */
   updatedAt: number
 }
 
 interface RateLimitStore {
-  get(key: string): Bucket | undefined
-  set(key: string, value: Bucket): void
+  get(key: string): Promise<Bucket | undefined>
+  set(key: string, value: Bucket, ttlSec: number): Promise<void>
 }
 
 class InMemoryStore implements RateLimitStore {
   private map = new Map<string, Bucket>()
   private maxEntries = 5000
 
-  get(key: string) {
+  async get(key: string) {
     return this.map.get(key)
   }
 
-  set(key: string, value: Bucket) {
-    // Soft cap to prevent unbounded growth.
+  async set(key: string, value: Bucket) {
     if (this.map.size >= this.maxEntries) {
-      // Drop the oldest 10% of entries.
       const evictCount = Math.floor(this.maxEntries / 10)
       let i = 0
       for (const k of this.map.keys()) {
@@ -47,45 +50,62 @@ class InMemoryStore implements RateLimitStore {
   }
 }
 
-// Global singleton — survives hot reloads in dev.
+class RedisStore implements RateLimitStore {
+  constructor(private readonly redis: Redis) {}
+
+  async get(key: string) {
+    const stored = await this.redis.get<Bucket>(`rl:${key}`)
+    return stored ?? undefined
+  }
+
+  async set(key: string, value: Bucket, ttlSec: number) {
+    // ex = seconds. Reset on every write so an idle key naturally expires.
+    await this.redis.set(`rl:${key}`, value, { ex: Math.max(1, ttlSec) })
+  }
+}
+
+function buildStore(): RateLimitStore {
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim()
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
+  if (url && token) {
+    return new RedisStore(new Redis({ url, token }))
+  }
+  return new InMemoryStore()
+}
+
 declare global {
   // eslint-disable-next-line no-var
   var __rateLimitStore__: RateLimitStore | undefined
 }
-const store: RateLimitStore =
-  globalThis.__rateLimitStore__ ?? new InMemoryStore()
+const store: RateLimitStore = globalThis.__rateLimitStore__ ?? buildStore()
 if (process.env.NODE_ENV !== "production") {
   globalThis.__rateLimitStore__ = store
 }
 
+export function isPersistentRateLimitConfigured() {
+  return Boolean(
+    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
+  )
+}
+
 export type RateLimitOptions = {
-  /** Logical bucket name (e.g. "login", "waitlist", "contact"). */
   scope: string
-  /** Max requests allowed within the window. */
   limit: number
-  /** Window length in seconds. */
   windowSec: number
 }
 
 export type RateLimitResult = {
   ok: boolean
   remaining: number
-  /** Seconds until the next refill (for friendly "try again in N seconds" copy). */
   retryAfterSec: number
 }
 
-/**
- * Identify a caller by their first forwarded IP, falling back to the user-agent
- * hash so requests without a public IP still get bucketed (instead of all
- * sharing the same anonymous bucket).
- */
 async function getCallerIdentifier() {
   const h = await headers()
   const forwarded = h.get("x-forwarded-for")
   const ip = forwarded?.split(",")[0]?.trim() || h.get("x-real-ip") || ""
   if (ip) return ip
   const ua = h.get("user-agent") ?? "anonymous"
-  // Cheap deterministic hash so we don't write the full UA into the key.
   let hash = 0
   for (let i = 0; i < ua.length; i++) {
     hash = (hash * 31 + ua.charCodeAt(i)) | 0
@@ -93,31 +113,30 @@ async function getCallerIdentifier() {
   return `ua:${hash}`
 }
 
-/**
- * Token-bucket consume. Returns `{ ok: false }` when the caller is over limit.
- * Use the `identifier` override (e.g. an email being attempted) on top of the
- * IP key for endpoints that should also throttle per-account, not just per-IP.
- */
 export async function consumeRateLimit(
   options: RateLimitOptions,
-  identifier?: string
+  identifier?: string,
 ): Promise<RateLimitResult> {
   const { scope, limit, windowSec } = options
   const caller = await getCallerIdentifier()
   const key = `${scope}:${caller}${identifier ? `:${identifier.toLowerCase()}` : ""}`
   const now = Date.now()
   const refillRate = limit / (windowSec * 1000) // tokens per ms
-  const existing = store.get(key)
+  const existing = await store.get(key)
 
   const elapsed = existing ? now - existing.updatedAt : 0
   const refilled = existing
     ? Math.min(limit, existing.tokens + elapsed * refillRate)
     : limit
 
+  // TTL is the worst-case time to refill from empty back to full, plus a
+  // small grace so the key doesn't disappear right as a user tries again.
+  const ttlSec = Math.ceil(windowSec + 60)
+
   if (refilled < 1) {
     const tokensNeeded = 1 - refilled
     const retryAfterMs = tokensNeeded / refillRate
-    store.set(key, { tokens: refilled, updatedAt: now })
+    await store.set(key, { tokens: refilled, updatedAt: now }, ttlSec)
     return {
       ok: false,
       remaining: 0,
@@ -125,7 +144,7 @@ export async function consumeRateLimit(
     }
   }
 
-  store.set(key, { tokens: refilled - 1, updatedAt: now })
+  await store.set(key, { tokens: refilled - 1, updatedAt: now }, ttlSec)
   return {
     ok: true,
     remaining: Math.floor(refilled - 1),

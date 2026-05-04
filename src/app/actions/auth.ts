@@ -20,6 +20,7 @@ import { consumeRateLimit } from "@/lib/rate-limit"
 import { sendTransactionalEmail } from "@/lib/email"
 import { hashPassword } from "@/lib/password"
 import { verifyTotpCode } from "@/lib/totp"
+import { verifyTurnstileToken } from "@/lib/turnstile"
 import {
   acceptInviteSchema,
   issueInviteSchema,
@@ -66,6 +67,14 @@ export async function signInToPortal(
   }
 
   const totpCode = String(formData.get("totpCode") ?? "").trim()
+
+  // Captcha gate — no-op when Turnstile is not configured (dev), enforced in prod.
+  const captcha = await verifyTurnstileToken(
+    String(formData.get("turnstileToken") ?? "") || undefined,
+  )
+  if (!captcha.ok) {
+    return { error: "Captcha verification failed. Refresh the page and try again." }
+  }
 
   // 8 attempts per IP+email per 15 minutes — friendly to typos, slow to bruteforce.
   const limit = await consumeRateLimit(
@@ -176,6 +185,25 @@ export async function registerParentAccount(
     })
   }
 
+  const captcha = await verifyTurnstileToken(
+    getStringValue(formData, "turnstileToken") || undefined,
+  )
+  if (!captcha.ok) {
+    return getMutationState({
+      error: "Captcha verification failed. Refresh the page and try again.",
+    })
+  }
+
+  const limit = await consumeRateLimit(
+    { scope: "signup", limit: 5, windowSec: 60 * 60 },
+    parsed.data.email,
+  )
+  if (!limit.ok) {
+    return getMutationState({
+      error: `Too many signup attempts from this address. Try again in ${limit.retryAfterSec} seconds.`,
+    })
+  }
+
   const existingUser = await prisma.user.findUnique({
     where: {
       email: parsed.data.email.trim().toLowerCase(),
@@ -259,6 +287,18 @@ export async function requestPasswordReset(
     return getMutationState({
       error: "Check the highlighted email address and try again.",
       fieldErrors: getFieldErrors(parsed.error),
+    })
+  }
+
+  const captcha = await verifyTurnstileToken(
+    getStringValue(formData, "turnstileToken") || undefined,
+  )
+  if (!captcha.ok) {
+    // Preserve email-enumeration resistance on captcha failure too — return
+    // the same generic message rather than letting an attacker probe.
+    return getMutationState({
+      success: true,
+      message: "If that email is active, a password reset link is on its way.",
     })
   }
 
