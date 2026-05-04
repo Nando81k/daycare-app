@@ -1197,6 +1197,8 @@ export type AdminProgramPreview = {
   sortOrder: number
   isActive: boolean
   rateCount: number
+  /** Approved enrollment applications referencing this program. */
+  enrolledCount: number
 }
 
 export type AdminSchedulePreview = {
@@ -1225,6 +1227,8 @@ export type PricingMatrixCell = {
   rateCents: number | null
   billingLabel: string | null
   isActive: boolean
+  /** Approved enrollment applications matching this program × schedule. */
+  enrolledCount: number
 }
 
 export type PricingMatrixRow = {

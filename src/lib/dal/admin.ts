@@ -1084,7 +1084,7 @@ export async function getAdminPortalData(): Promise<{
 export async function getAdminProgramsData() {
   await requireRole("ADMIN")
 
-  const [programs, schedules, rates] = await Promise.all([
+  const [programs, schedules, rates, enrolledApps] = await Promise.all([
     prisma.program.findMany({
       orderBy: { sortOrder: "asc" },
       include: { _count: { select: { rates: true } } },
@@ -1100,7 +1100,28 @@ export async function getAdminProgramsData() {
       },
       orderBy: [{ program: { sortOrder: "asc" } }, { schedule: { sortOrder: "asc" } }],
     }),
+    prisma.enrollmentApplication.findMany({
+      where: { status: "APPROVED" },
+      select: { programId: true, scheduleId: true },
+    }),
   ])
+
+  // Build utilization maps: total approved apps per program, and per
+  // (programId, scheduleId) pair.
+  const enrolledByProgram = new Map<string, number>()
+  const enrolledByPair = new Map<string, number>()
+  for (const app of enrolledApps) {
+    if (app.programId) {
+      enrolledByProgram.set(
+        app.programId,
+        (enrolledByProgram.get(app.programId) ?? 0) + 1,
+      )
+    }
+    if (app.programId && app.scheduleId) {
+      const key = `${app.programId}::${app.scheduleId}`
+      enrolledByPair.set(key, (enrolledByPair.get(key) ?? 0) + 1)
+    }
+  }
 
   const programPreviews: AdminProgramPreview[] = programs.map((p) => ({
     id: p.id,
@@ -1111,6 +1132,7 @@ export async function getAdminProgramsData() {
     sortOrder: p.sortOrder,
     isActive: p.isActive,
     rateCount: p._count.rates,
+    enrolledCount: enrolledByProgram.get(p.id) ?? 0,
   }))
 
   const schedulePreviews: AdminSchedulePreview[] = schedules.map((s) => ({
@@ -1139,9 +1161,22 @@ export async function getAdminProgramsData() {
     const cells: Record<string, PricingMatrixCell> = {}
     for (const s of schedules) {
       const rate = rates.find((r) => r.programId === p.id && r.scheduleId === s.id)
+      const enrolledCount = enrolledByPair.get(`${p.id}::${s.id}`) ?? 0
       cells[s.id] = rate
-        ? { rateId: rate.id, rateCents: rate.rateCents, billingLabel: rate.billingLabel, isActive: rate.isActive }
-        : { rateId: null, rateCents: null, billingLabel: null, isActive: false }
+        ? {
+            rateId: rate.id,
+            rateCents: rate.rateCents,
+            billingLabel: rate.billingLabel,
+            isActive: rate.isActive,
+            enrolledCount,
+          }
+        : {
+            rateId: null,
+            rateCents: null,
+            billingLabel: null,
+            isActive: false,
+            enrolledCount,
+          }
     }
     return {
       programId: p.id,
