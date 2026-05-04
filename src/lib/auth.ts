@@ -248,8 +248,12 @@ export async function createPasswordResetToken(userId: string) {
   }
 }
 
-export async function getPasswordResetTokenRecord(token: string) {
-  const resetToken = await prisma.passwordResetToken.findUnique({
+export type PasswordResetLookupResult =
+  | { ok: true; token: NonNullable<Awaited<ReturnType<typeof loadResetToken>>> }
+  | { ok: false; reason: "not-found" | "used" | "expired" }
+
+async function loadResetToken(token: string) {
+  return prisma.passwordResetToken.findUnique({
     where: {
       tokenHash: hashOpaqueToken(token),
     },
@@ -264,12 +268,28 @@ export async function getPasswordResetTokenRecord(token: string) {
       },
     },
   })
+}
 
-  if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
-    return null
+export async function getPasswordResetTokenRecord(token: string) {
+  const result = await lookupPasswordResetToken(token)
+  return result.ok ? result.token : null
+}
+
+export async function lookupPasswordResetToken(
+  token: string,
+): Promise<PasswordResetLookupResult> {
+  const resetToken = await loadResetToken(token)
+
+  if (!resetToken) {
+    return { ok: false, reason: "not-found" }
   }
-
-  return resetToken
+  if (resetToken.usedAt) {
+    return { ok: false, reason: "used" }
+  }
+  if (resetToken.expiresAt < new Date()) {
+    return { ok: false, reason: "expired" }
+  }
+  return { ok: true, token: resetToken }
 }
 
 export async function markPasswordResetTokenUsed(id: string) {

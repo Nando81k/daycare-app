@@ -1,11 +1,13 @@
 "use client"
 
-import { useActionState } from "react"
+import Link from "next/link"
+import { useActionState, useState } from "react"
 
 import type { AuthMutationActionState } from "@/app/actions/auth"
 import { AuthStandalonePage } from "@/components/auth/auth-standalone-page"
+import { PasswordChecklist } from "@/components/auth/password-checklist"
 import { AlertBanner } from "@/components/shared/alert-banner"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { initialMutationState } from "@/lib/action-state"
@@ -16,6 +18,7 @@ export function TokenPasswordPage({
   description,
   submitLabel,
   action,
+  showBackToLogin = true,
 }: {
   token: string
   title: string
@@ -25,8 +28,14 @@ export function TokenPasswordPage({
     previousState: AuthMutationActionState,
     formData: FormData
   ) => Promise<AuthMutationActionState>
+  /** Show the "Back to sign in" link beneath the form. Default true for the
+   * reset path; invite-acceptance can hide it since the recipient has no
+   * existing password to sign in with. */
+  showBackToLogin?: boolean
 }) {
   const [state, formAction] = useActionState<AuthMutationActionState, FormData>(action, initialMutationState)
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
 
   return (
     <AuthStandalonePage
@@ -50,6 +59,8 @@ export function TokenPasswordPage({
               autoComplete="new-password"
               placeholder="Choose a strong password"
               aria-invalid={Boolean(state.fieldErrors.password)}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
             />
             <FieldError>{state.fieldErrors.password}</FieldError>
           </Field>
@@ -62,15 +73,24 @@ export function TokenPasswordPage({
               autoComplete="new-password"
               placeholder="Repeat your password"
               aria-invalid={Boolean(state.fieldErrors.confirmPassword)}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
             />
             <FieldError>{state.fieldErrors.confirmPassword}</FieldError>
           </Field>
         </FieldGroup>
 
-        <div>
+        <PasswordChecklist password={password} confirmPassword={confirmPassword} />
+
+        <div className="flex flex-col gap-3 sm:flex-row">
           <Button type="submit" className="w-full sm:w-auto">
             {submitLabel}
           </Button>
+          {showBackToLogin ? (
+            <Link href="/login" className={buttonVariants({ variant: "outline" })}>
+              Back to sign in
+            </Link>
+          ) : null}
         </div>
       </form>
     </AuthStandalonePage>

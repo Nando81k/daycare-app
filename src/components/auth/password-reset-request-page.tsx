@@ -50,10 +50,10 @@ export function PasswordResetRequestPage() {
             Send reset link
           </Button>
           <Link
-            href="/login/parent"
+            href="/login"
             className={buttonVariants({ variant: "outline" })}
           >
-            Back to login
+            Back to sign in
           </Link>
         </div>
       </form>

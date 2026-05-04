@@ -10,6 +10,7 @@ import {
   createSession,
   getInviteTokenRecord,
   getPasswordResetTokenRecord,
+  lookupPasswordResetToken,
   updateUserPassword,
 } from "@/lib/auth"
 import { getFieldErrors, getMutationState, getStringValue, type MutationActionState } from "@/lib/action-state"
@@ -261,6 +262,21 @@ export async function requestPasswordReset(
     })
   }
 
+  // 5 reset emails per IP+email per hour. Generous enough for a real user
+  // who can't find the email, tight enough to stop mailbomb / inbox-spam
+  // abuse and to protect transactional email quota. Returning the same
+  // generic success message preserves email-enumeration resistance.
+  const limit = await consumeRateLimit(
+    { scope: "password-reset", limit: 5, windowSec: 60 * 60 },
+    parsed.data.email,
+  )
+  if (!limit.ok) {
+    return getMutationState({
+      success: true,
+      message: "If that email is active, a password reset link is on its way.",
+    })
+  }
+
   const user = await prisma.user.findUnique({
     where: {
       email: parsed.data.email.trim().toLowerCase(),
@@ -320,13 +336,17 @@ export async function resetPassword(
     })
   }
 
-  const tokenRecord = await getPasswordResetTokenRecord(parsed.data.token)
-
-  if (!tokenRecord) {
-    return getMutationState({
-      error: "This reset link is invalid or has expired.",
-    })
+  const lookup = await lookupPasswordResetToken(parsed.data.token)
+  if (!lookup.ok) {
+    const errorMessage =
+      lookup.reason === "expired"
+        ? "This reset link has expired. Request a new one to continue."
+        : lookup.reason === "used"
+          ? "This reset link has already been used. Request a new one if you still need to change your password."
+          : "This reset link is not valid. Double-check the URL or request a new one."
+    return getMutationState({ error: errorMessage })
   }
+  const tokenRecord = lookup.token
 
   await updateUserPassword({
     userId: tokenRecord.user.id,
