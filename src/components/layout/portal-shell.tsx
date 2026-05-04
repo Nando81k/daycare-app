@@ -5,13 +5,16 @@ import { usePathname } from "next/navigation"
 
 import { ParentTopbar } from "@/components/layout/parent-topbar"
 import { PortalTopbar } from "@/components/layout/portal-topbar"
+import type { ParentSidebarBadges } from "@/lib/dal/sidebar-badges"
 import type { PortalKind } from "@/types/app"
 
 export function PortalShell({
   kind,
+  parentBadges,
   children,
 }: {
   kind: PortalKind
+  parentBadges?: ParentSidebarBadges
   children: React.ReactNode
 }) {
   const shouldReduceMotion = useReducedMotion()
@@ -19,7 +22,7 @@ export function PortalShell({
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {kind === "parent" ? <ParentTopbar /> : <PortalTopbar kind={kind} />}
+      {kind === "parent" ? <ParentTopbar badges={parentBadges} /> : <PortalTopbar kind={kind} />}
 
       <AnimatePresence mode="wait">
         <motion.main

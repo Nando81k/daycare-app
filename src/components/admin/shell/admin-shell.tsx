@@ -9,12 +9,15 @@ import { AdminSidebar } from "@/components/admin/shell/admin-sidebar"
 import { AdminTopbar } from "@/components/admin/shell/admin-topbar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import type { AdminSidebarBadges } from "@/lib/dal/sidebar-badges"
 
 export function AdminShell({
   defaultSidebarOpen = true,
+  badges,
   children,
 }: {
   defaultSidebarOpen?: boolean
+  badges?: AdminSidebarBadges
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -24,7 +27,7 @@ export function AdminShell({
     <TooltipProvider delayDuration={300}>
       <AdminCommandPaletteProvider>
         <SidebarProvider defaultOpen={defaultSidebarOpen}>
-          <AdminSidebar />
+          <AdminSidebar badges={badges} />
           {/* min-w-0 keeps wide tables from pushing the inset past the viewport
               when the sidebar is expanded. Without it, flex children default to
               min-width:auto (= intrinsic content width) and clip on the right. */}

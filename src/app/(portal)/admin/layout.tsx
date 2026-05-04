@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 
 import { AdminShell } from "@/components/admin/shell/admin-shell"
 import { requireRole } from "@/lib/auth"
+import { getAdminSidebarBadges } from "@/lib/dal/sidebar-badges"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireRole("ADMIN")
@@ -13,5 +14,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const cookieValue = cookieStore.get("sidebar_state")?.value
   const defaultSidebarOpen = cookieValue === undefined ? true : cookieValue === "true"
 
-  return <AdminShell defaultSidebarOpen={defaultSidebarOpen}>{children}</AdminShell>
+  const badges = await getAdminSidebarBadges()
+
+  return (
+    <AdminShell defaultSidebarOpen={defaultSidebarOpen} badges={badges}>
+      {children}
+    </AdminShell>
+  )
 }

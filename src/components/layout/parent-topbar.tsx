@@ -24,6 +24,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
+import type { ParentSidebarBadges } from "@/lib/dal/sidebar-badges"
 import type { PortalNavItem } from "@/types/app"
 
 const allItems: PortalNavItem[] = parentNav.flatMap((group) => group.items)
@@ -38,9 +39,55 @@ function isActive(pathname: string, href: string) {
 const accountActive = (pathname: string) =>
   accountItems.some((item) => isActive(pathname, item.href))
 
-export function ParentTopbar() {
+const BADGED_PARENT_ROUTES = [
+  "/parent/messages",
+  "/parent/documents",
+  "/parent/billing",
+] as const
+
+function getBadge(href: string, badges: ParentSidebarBadges | undefined): number {
+  if (!badges) return 0
+  if (BADGED_PARENT_ROUTES.includes(href as (typeof BADGED_PARENT_ROUTES)[number])) {
+    return badges[href as keyof ParentSidebarBadges] ?? 0
+  }
+  return 0
+}
+
+function NavBadge({
+  count,
+  active = false,
+  className,
+}: {
+  count: number
+  active?: boolean
+  className?: string
+}) {
+  if (count <= 0) return null
+  return (
+    <span
+      aria-label={`${count} item${count === 1 ? " needs" : "s need"} attention`}
+      className={cn(
+        "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.65rem] font-semibold tabular-nums",
+        active ? "bg-primary-foreground/15 text-primary-foreground" : "bg-primary/12 text-primary",
+        className,
+      )}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  )
+}
+
+export function ParentTopbar({
+  badges,
+}: {
+  badges?: ParentSidebarBadges
+} = {}) {
   const pathname = usePathname()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const accountBadgeTotal = accountItems.reduce(
+    (sum, item) => sum + getBadge(item.href, badges),
+    0,
+  )
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
@@ -75,6 +122,7 @@ export function ParentTopbar() {
           {primaryItems.map((item) => {
             const Icon = item.icon
             const active = isActive(pathname, item.href)
+            const badgeCount = getBadge(item.href, badges)
             return (
               <Link
                 key={item.href}
@@ -89,6 +137,7 @@ export function ParentTopbar() {
               >
                 <Icon className="h-4 w-4" />
                 {item.title}
+                <NavBadge count={badgeCount} active={active} />
               </Link>
             )
           })}
@@ -107,6 +156,7 @@ export function ParentTopbar() {
                   aria-label="Account menu"
                 >
                   Account
+                  <NavBadge count={accountBadgeTotal} active={accountActive(pathname)} />
                   <ChevronDown className="h-3.5 w-3.5" />
                 </button>
               </DropdownMenuTrigger>
@@ -114,6 +164,7 @@ export function ParentTopbar() {
                 {accountItems.map((item) => {
                   const Icon = item.icon
                   const active = isActive(pathname, item.href)
+                  const badgeCount = getBadge(item.href, badges)
                   return (
                     <DropdownMenuItem key={item.href} asChild>
                       <Link
@@ -125,8 +176,11 @@ export function ParentTopbar() {
                         )}
                       >
                         <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-                        <span className="flex flex-col">
-                          <span className="text-sm font-medium">{item.title}</span>
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="flex items-center gap-2 text-sm font-medium">
+                            {item.title}
+                            <NavBadge count={badgeCount} className="ml-auto" />
+                          </span>
                           {item.summary ? (
                             <span className="text-xs text-muted-foreground">
                               {item.summary}
@@ -181,6 +235,7 @@ export function ParentTopbar() {
                     {group.items.map((item) => {
                       const Icon = item.icon
                       const active = isActive(pathname, item.href)
+                      const badgeCount = getBadge(item.href, badges)
                       return (
                         <SheetClose asChild key={item.href}>
                           <Link
@@ -194,8 +249,11 @@ export function ParentTopbar() {
                             )}
                           >
                             <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-                            <span className="flex flex-col">
-                              <span className="text-sm font-medium">{item.title}</span>
+                            <span className="flex min-w-0 flex-1 flex-col">
+                              <span className="flex items-center gap-2 text-sm font-medium">
+                                {item.title}
+                                <NavBadge count={badgeCount} active={active} className="ml-auto" />
+                              </span>
                               {item.summary ? (
                                 <span
                                   className={cn(
