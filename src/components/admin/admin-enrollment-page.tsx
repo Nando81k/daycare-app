@@ -188,16 +188,21 @@ export function AdminEnrollmentPageView({
         </CardContent>
       </Card>
 
-      <AlertBanner
-        tone="warning"
-        title="Two leads still need fast follow-up this week"
-        description="Families asking about May and June starts are close enough to capacity decisions that delays will weaken the enrollment experience."
-        action={
-          <Link href="/admin/rooms" className={buttonVariants({ variant: "outline", size: "sm" })}>
-            Check classroom capacity
-          </Link>
-        }
-      />
+      {highPriorityCount > 0 ? (
+        <AlertBanner
+          tone="warning"
+          title={`${highPriorityCount} high-priority ${highPriorityCount === 1 ? "lead needs" : "leads need"} fast follow-up`}
+          description="High-priority leads are flagged when their requested start dates are within reach of current capacity — delays here weaken the enrollment experience."
+          action={
+            <Link
+              href="/admin/classrooms"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              Check classroom capacity
+            </Link>
+          }
+        />
+      ) : null}
 
       <Tabs
         value={activeTab}
@@ -250,7 +255,9 @@ export function AdminEnrollmentPageView({
       >
         <SheetContent className="w-full gap-0 p-0 data-[side=right]:sm:max-w-3xl">
           <SheetHeader className="border-b border-border/60 px-5 py-3">
-            <SheetTitle className="text-base">Review application</SheetTitle>
+            <SheetTitle className="text-base">
+              {selectedLead ? `Review ${selectedLead.familyName}` : "Review lead"}
+            </SheetTitle>
           </SheetHeader>
           {selectedLead && (
             <DrawerBody>

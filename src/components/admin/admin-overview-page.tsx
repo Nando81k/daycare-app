@@ -667,30 +667,35 @@ export function AdminOverviewPageView({
           />
         </div>
 
-        {attendanceBoard.length > 0 ? (
-          <Card className="mt-3 border-border/65">
-            <CardContent className="flex flex-wrap items-center gap-4 p-4">
-              <div className="flex items-center gap-3">
-                <span
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full",
-                    absentCount > 0
+        <Card className="mt-3 border-border/65">
+          <CardContent className="flex flex-wrap items-center gap-4 p-4">
+            <div className="flex items-center gap-3">
+              <span
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full",
+                  attendanceBoard.length === 0
+                    ? "bg-muted/60 text-muted-foreground"
+                    : absentCount > 0
                       ? "bg-amber-50 text-amber-700"
                       : "bg-emerald-50 text-emerald-700",
-                  )}
-                >
-                  <UsersIcon className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Today&apos;s attendance
-                  </p>
-                  <p className="mt-0.5 text-sm font-medium text-foreground">
-                    {checkedInCount} of {expectedToday} children checked in
-                    {absentCount > 0 ? ` · ${absentCount} absent` : ""}
-                  </p>
-                </div>
+                )}
+              >
+                <UsersIcon className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Today&apos;s attendance
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-foreground">
+                  {attendanceBoard.length === 0
+                    ? "No attendance has been marked today yet."
+                    : `${checkedInCount} of ${expectedToday} children checked in${
+                        absentCount > 0 ? ` · ${absentCount} absent` : ""
+                      }`}
+                </p>
               </div>
+            </div>
+            {attendanceBoard.length > 0 ? (
               <ul className="ml-auto flex flex-wrap items-center gap-2 text-xs">
                 {attendanceBoard.map((room) => (
                   <li
@@ -704,15 +709,18 @@ export function AdminOverviewPageView({
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/admin/attendance"
-                className={buttonVariants({ variant: "outline", size: "sm" })}
-              >
-                Open attendance
-              </Link>
-            </CardContent>
-          </Card>
-        ) : null}
+            ) : null}
+            <Link
+              href="/admin/attendance"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                attendanceBoard.length === 0 ? "ml-auto" : "",
+              )}
+            >
+              {attendanceBoard.length === 0 ? "Mark attendance" : "Open attendance"}
+            </Link>
+          </CardContent>
+        </Card>
       </section>
 
       <section aria-label="Center overview" className="flex flex-col gap-3">

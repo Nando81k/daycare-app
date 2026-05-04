@@ -63,9 +63,9 @@ export function AdminSidebar() {
                       <SidebarMenuButton
                         asChild
                         isActive={active}
-                        tooltip={item.title}
+                        tooltip={item.summary ?? item.title}
                       >
-                        <Link href={item.href}>
+                        <Link href={item.href} title={item.summary ?? item.title}>
                           <Icon />
                           <span>{item.title}</span>
                         </Link>

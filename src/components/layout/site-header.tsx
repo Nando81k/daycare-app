@@ -27,7 +27,7 @@ export function SiteHeader({ currentUserRole = null }: SiteHeaderProps = {}) {
       : currentUserRole === "TEACHER"
         ? "/teacher"
         : currentUserRole === "PARENT"
-          ? "/parent/billing"
+          ? "/parent"
           : null
 
   const isActive = (href: string) =>

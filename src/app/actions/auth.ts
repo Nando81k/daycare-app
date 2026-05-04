@@ -43,7 +43,7 @@ function getPortalRole(role: "parent" | "admin"): UserRole | UserRole[] {
 }
 
 function getPortalDestination(role: UserRole) {
-  if (role === "PARENT") return "/parent/billing"
+  if (role === "PARENT") return "/parent"
   if (role === "TEACHER") return "/teacher"
   return "/admin"
 }
@@ -243,7 +243,7 @@ export async function registerParentAccount(
 
   await createSession(newUser.id)
 
-  redirect("/parent/billing")
+  redirect("/parent")
 }
 
 export async function requestPasswordReset(
