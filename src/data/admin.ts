@@ -941,7 +941,7 @@ export const adminDashboardPreview: AdminDashboardPreview = {
       ownerLabel: "Shared conversation ownership",
       recentLabel: "4 open threads · 2 broadcasts queued",
       actionLabel: "Open messages",
-      actionHref: "/admin/messages",
+      actionHref: "/admin/communications",
       statusLabel: "Open items",
       statusTone: "info",
       stats: [

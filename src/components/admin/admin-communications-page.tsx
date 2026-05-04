@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 import { AdminAnnouncementEditor } from "@/components/admin/admin-announcement-editor"
@@ -119,10 +120,14 @@ function getAnnouncementRows(
 export function AdminCommunicationsPageView({
   messageThreads,
   announcements,
+  initialTab = "inbox",
 }: {
   messageThreads: AdminMessageThreadPreview[]
   announcements: AdminAnnouncementPreview[]
+  initialTab?: "inbox" | "broadcasts"
 }) {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<"inbox" | "broadcasts">(initialTab)
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null)
 
   const firstEditableAnnouncement = announcements.find(
@@ -196,7 +201,19 @@ export function AdminCommunicationsPageView({
         />
       )}
 
-      <Tabs defaultValue="inbox">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          const next = value === "broadcasts" ? "broadcasts" : "inbox"
+          setActiveTab(next)
+          router.replace(
+            next === "broadcasts"
+              ? "/admin/communications?tab=broadcasts"
+              : "/admin/communications",
+            { scroll: false },
+          )
+        }}
+      >
         <TabsList>
           <TabsTrigger value="inbox">Inbox ({openCount})</TabsTrigger>
           <TabsTrigger value="broadcasts">

@@ -151,7 +151,7 @@ export function AdminOverviewPageView({
         description={adminOverviewPageContent.description}
         actions={
           <>
-            <Link href="/admin/messages" className={buttonVariants({ variant: "default" })}>
+            <Link href="/admin/communications?tab=broadcasts" className={buttonVariants({ variant: "default" })}>
               Send announcement
             </Link>
             <Link href="/admin/attendance" className={buttonVariants({ variant: "outline" })}>
@@ -467,7 +467,7 @@ export function AdminOverviewPageView({
                       ? latestThread.preview
                       : "Unread parent messages and urgent updates will surface here."
                   }
-                  action={<DashboardActionButton href="/admin/messages" label="Open messages" />}
+                  action={<DashboardActionButton href="/admin/communications" label="Open messages" />}
                 />
                 <DashboardInfoRow
                   label="Incident and health log"

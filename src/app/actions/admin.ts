@@ -862,7 +862,7 @@ export async function updateWaitlistEntry(
 
     revalidatePaths([
       "/admin",
-      "/admin/waitlist",
+      "/admin/enrollment",
     ])
 
     return getActionState({
@@ -1303,7 +1303,7 @@ export async function createAnnouncement(
 
     revalidatePaths([
       "/admin",
-      "/admin/announcements",
+      "/admin/communications",
     ])
 
     return getActionState({
@@ -1397,7 +1397,7 @@ export async function updateAnnouncement(
 
     revalidatePaths([
       "/admin",
-      "/admin/announcements",
+      "/admin/communications",
     ])
 
     return getActionState({
@@ -2160,7 +2160,6 @@ export async function sendAdminReply(
 
     revalidatePaths([
       "/admin",
-      "/admin/messages",
       "/admin/communications",
       "/parent",
       "/parent/messages",
@@ -2258,7 +2257,6 @@ export async function createAdminThread(
 
     revalidatePaths([
       "/admin",
-      "/admin/messages",
       "/admin/communications",
       "/parent",
       "/parent/messages",

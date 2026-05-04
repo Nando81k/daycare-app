@@ -81,7 +81,7 @@ export async function confirmTwoFactorEnrollment(
     },
   })
 
-  revalidatePath("/admin/security")
+  revalidatePath("/admin/settings")
 
   return getMutationState({
     success: true,
@@ -135,7 +135,7 @@ export async function disableTwoFactor(
     },
   })
 
-  revalidatePath("/admin/security")
+  revalidatePath("/admin/settings")
 
   return getMutationState({
     success: true,

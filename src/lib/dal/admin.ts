@@ -289,7 +289,7 @@ function buildAdminDashboardDomains(params: {
       ownerLabel: "Shared conversation ownership",
       recentLabel: `${openThreads} open threads · ${queuedAnnouncements} queued updates`,
       actionLabel: "Open messages",
-      actionHref: "/admin/messages",
+      actionHref: "/admin/communications",
       statusLabel: unreadCount ? "Unread activity" : "In sync",
       statusTone: unreadCount ? "info" : "secondary",
       stats: [

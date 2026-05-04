@@ -1,7 +1,5 @@
-import { AdminWaitlistPageView } from "@/components/admin/admin-waitlist-page"
-import { getAdminPortalData } from "@/lib/dal/admin"
+import { redirect } from "next/navigation"
 
-export default async function AdminWaitlistPage() {
-  const { waitlistEntries } = await getAdminPortalData()
-  return <AdminWaitlistPageView waitlistEntries={waitlistEntries} />
+export default function AdminWaitlistLegacyPage() {
+  redirect("/admin/enrollment?tab=waitlist")
 }

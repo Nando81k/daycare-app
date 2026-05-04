@@ -1,7 +1,5 @@
-import { AdminAnnouncementsPageView } from "@/components/admin/admin-announcements-page"
-import { getAdminPortalData } from "@/lib/dal/admin"
+import { redirect } from "next/navigation"
 
-export default async function AdminAnnouncementsPage() {
-  const { announcements } = await getAdminPortalData()
-  return <AdminAnnouncementsPageView announcements={announcements} />
+export default function AdminAnnouncementsLegacyPage() {
+  redirect("/admin/communications?tab=broadcasts")
 }

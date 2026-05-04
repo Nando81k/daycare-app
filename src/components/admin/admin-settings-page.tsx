@@ -1,6 +1,11 @@
+"use client"
+
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 import { AdminInvitePanel } from "@/components/admin/admin-invite-panel"
+import { AdminSecurityPage } from "@/components/admin/admin-security-page"
 import { AdminSettingEditor } from "@/components/admin/admin-setting-editor"
 import { AlertBanner } from "@/components/shared/alert-banner"
 import { FormSection } from "@/components/shared/form-section"
@@ -13,19 +18,33 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   adminSettingsPageContent,
   adminSettingsSections,
 } from "@/data/admin"
 import type { AdminSettingsSectionPreview } from "@/types/app"
 
+type SettingsTab = "general" | "security"
+
 export function AdminSettingsPageView({
   settingsSections = adminSettingsSections,
   adminUserId,
+  twoFactor,
+  initialTab = "general",
 }: {
   settingsSections?: AdminSettingsSectionPreview[]
   adminUserId: string
+  twoFactor: {
+    isEnabled: boolean
+    hasPendingSecret: boolean
+    enabledAtIso: string | null
+  }
+  initialTab?: SettingsTab
 }) {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab)
+
   return (
     <PageShell variant="portal" className="gap-6 pb-10">
       <Card>
@@ -36,7 +55,7 @@ export function AdminSettingsPageView({
           <CardTitle>{adminSettingsPageContent.title}</CardTitle>
           <CardDescription>{adminSettingsPageContent.description}</CardDescription>
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Link href="/admin/announcements" className={buttonVariants({ variant: "outline" })}>
+            <Link href="/admin/communications?tab=broadcasts" className={buttonVariants({ variant: "outline" })}>
               Review notifications
             </Link>
             <Link href="/" className={buttonVariants({ variant: "default" })}>
@@ -55,8 +74,10 @@ export function AdminSettingsPageView({
               <p className="mt-1 text-lg font-semibold text-foreground">Billing and notifications</p>
             </div>
             <div className="metric-chip">
-              <p className="text-sm font-medium text-muted-foreground">Current editing mode</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">Live policy editing</p>
+              <p className="text-sm font-medium text-muted-foreground">Two-factor auth</p>
+              <p className="mt-1 text-lg font-semibold text-foreground">
+                {twoFactor.isEnabled ? "Enabled" : "Off"}
+              </p>
             </div>
             <div className="metric-chip">
               <p className="text-sm font-medium text-muted-foreground">Next integration phase</p>
@@ -66,70 +87,79 @@ export function AdminSettingsPageView({
         </CardContent>
       </Card>
 
-      <AlertBanner
-        tone="info"
-        title="Settings still need product-level clarity"
-        description="As backend integration starts, policy and defaults still need to read like a coherent admin surface instead of an isolated technical panel."
-      />
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          const next = value === "security" ? "security" : "general"
+          setActiveTab(next)
+          router.replace(
+            next === "security" ? "/admin/settings?tab=security" : "/admin/settings",
+            { scroll: false },
+          )
+        }}
+      >
+        <TabsList>
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-        <div className="grid gap-6">
-          {settingsSections.map((section) => (
-            <FormSection
-              key={section.title}
-              title={section.title}
-              description={section.description}
-              className="rounded-[1.75rem]"
-            >
-              <div className="grid gap-3">
-                {section.items.map((item) => (
-                  <AdminSettingEditor key={item.id} item={item} />
-                ))}
-              </div>
-            </FormSection>
-          ))}
-        </div>
+        <TabsContent value="general" className="mt-4 space-y-6">
+          <AlertBanner
+            tone="info"
+            title="Settings still need product-level clarity"
+            description="As backend integration starts, policy and defaults still need to read like a coherent admin surface instead of an isolated technical panel."
+          />
 
-        <div className="grid gap-6">
-          <AdminInvitePanel adminUserId={adminUserId} />
+          <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
+            <div className="grid gap-6">
+              {settingsSections.map((section) => (
+                <FormSection
+                  key={section.title}
+                  title={section.title}
+                  description={section.description}
+                  className="rounded-[1.75rem]"
+                >
+                  <div className="grid gap-3">
+                    {section.items.map((item) => (
+                      <AdminSettingEditor key={item.id} item={item} />
+                    ))}
+                  </div>
+                </FormSection>
+              ))}
+            </div>
 
-          <Card className="gap-3 px-5 py-5">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Cross-product alignment</p>
-              <h2 className="text-xl text-foreground">What should stay consistent</h2>
-            </div>
-            <div className="grid gap-3">
-              <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
-                Billing policies here should match how due dates and reminders are described in the parent portal.
-              </div>
-              <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
-                Communication expectations should align with the public website so admins are not reconciling conflicting copy later.
-              </div>
-              <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
-                Notification logic should stay legible because it affects both family trust and staff workload.
-              </div>
-            </div>
-          </Card>
+            <div className="grid gap-6">
+              <AdminInvitePanel adminUserId={adminUserId} />
 
-          <Card className="gap-3 px-5 py-5">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Next backend pass</p>
-              <h2 className="text-xl text-foreground">What deepens from here</h2>
+              <Card className="gap-3 px-5 py-5">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Cross-product alignment</p>
+                  <h2 className="text-xl text-foreground">What should stay consistent</h2>
+                </div>
+                <div className="grid gap-3">
+                  <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
+                    Billing policies here should match how due dates and reminders are described in the parent portal.
+                  </div>
+                  <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
+                    Communication expectations should align with the public website so admins are not reconciling conflicting copy later.
+                  </div>
+                  <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
+                    Notification logic should stay legible because it affects both family trust and staff workload.
+                  </div>
+                </div>
+              </Card>
             </div>
-            <div className="grid gap-3">
-              <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
-                Settings now save back to the database and write audit history for each admin change.
-              </div>
-              <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
-                Billing integrations and file/document workflows still need a later operational pass.
-              </div>
-              <div className="surface-panel-quiet rounded-[1.2rem] px-4 py-4 text-sm leading-6 text-muted-foreground">
-                Shared policy settings should eventually drive the public site and parent portal instead of staying admin-only.
-              </div>
-            </div>
-          </Card>
-        </div>
-      </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="security" className="mt-4">
+          <AdminSecurityPage
+            isEnabled={twoFactor.isEnabled}
+            hasPendingSecret={twoFactor.hasPendingSecret}
+            enabledAtIso={twoFactor.enabledAtIso}
+          />
+        </TabsContent>
+      </Tabs>
     </PageShell>
   )
 }

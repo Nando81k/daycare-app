@@ -20,7 +20,6 @@ function revalidateMessagingPaths() {
   revalidatePath("/teacher/messages")
   revalidatePath("/parent")
   revalidatePath("/parent/messages")
-  revalidatePath("/admin/messages")
   revalidatePath("/admin/communications")
 }
 

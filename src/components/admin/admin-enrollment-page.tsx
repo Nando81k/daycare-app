@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 import { AdminDataTable } from "@/components/admin/admin-data-table"
@@ -128,10 +129,14 @@ function getWaitlistRows(entries: WaitlistEntryPreview[]): AdminTableRow[] {
 export function AdminEnrollmentPageView({
   enrollmentLeads = adminEnrollmentLeads,
   waitlistEntries = adminWaitlistEntries,
+  initialTab = "leads",
 }: {
   enrollmentLeads?: EnrollmentLeadPreview[]
   waitlistEntries?: WaitlistEntryPreview[]
+  initialTab?: "leads" | "waitlist"
 }) {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<"leads" | "waitlist">(initialTab)
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
 
@@ -194,7 +199,19 @@ export function AdminEnrollmentPageView({
         }
       />
 
-      <Tabs defaultValue="leads">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          const next = value === "waitlist" ? "waitlist" : "leads"
+          setActiveTab(next)
+          router.replace(
+            next === "waitlist"
+              ? "/admin/enrollment?tab=waitlist"
+              : "/admin/enrollment",
+            { scroll: false },
+          )
+        }}
+      >
         <TabsList>
           <TabsTrigger value="leads">Leads ({enrollmentLeads.length})</TabsTrigger>
           <TabsTrigger value="waitlist">Waitlist ({waitlistEntries.length})</TabsTrigger>
