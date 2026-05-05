@@ -143,10 +143,10 @@ a {
     @apply bg-background text-foreground;
   }
 
-  h1,
-  h2,
-  h3,
-  h4 {
+  /* `:where(...)` gives the selector zero specificity so any text-color
+   * utility (text-white, text-foreground, text-brand-yellow) wins without
+   * needing !important. The default heading color is still navy. */
+  :where(h1, h2, h3, h4) {
     font-family: var(--font-heading-stack);
     letter-spacing: -0.025em;
     color: var(--navy);

@@ -4,6 +4,92 @@ import type {
 } from "@/types/app"
 import { prisma } from "@/lib/db"
 
+export type PublicProgram = {
+  id: string
+  slug: string
+  name: string
+  ageRange: string | null
+  description: string | null
+}
+
+export type PublicSchedule = {
+  id: string
+  slug: string
+  name: string
+  daysDescription: string | null
+}
+
+export type PublicProgramRate = {
+  programId: string
+  scheduleId: string
+  rateCents: number
+  billingLabel: string | null
+}
+
+export type PublicProgramsAndPricing = {
+  programs: PublicProgram[]
+  schedules: PublicSchedule[]
+  /** Rates indexed by `${programId}::${scheduleId}` for O(1) matrix lookup. */
+  ratesByPair: Record<string, PublicProgramRate>
+  /** True when the admin has at least one active program configured. */
+  hasPrograms: boolean
+  /** True when at least one active rate exists across all program×schedule pairs. */
+  hasPricing: boolean
+}
+
+/**
+ * Reads the admin-configured program catalog for the public Programs &
+ * Tuition page. Only returns active records — the public site never shows
+ * archived or draft programs/schedules/rates.
+ */
+export async function getPublicProgramsAndPricing(): Promise<PublicProgramsAndPricing> {
+  const [programs, schedules, rates] = await Promise.all([
+    prisma.program.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        ageRange: true,
+        description: true,
+      },
+    }),
+    prisma.schedule.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        daysDescription: true,
+      },
+    }),
+    prisma.programRate.findMany({
+      where: { isActive: true },
+      select: {
+        programId: true,
+        scheduleId: true,
+        rateCents: true,
+        billingLabel: true,
+      },
+    }),
+  ])
+
+  const ratesByPair: Record<string, PublicProgramRate> = {}
+  for (const r of rates) {
+    ratesByPair[`${r.programId}::${r.scheduleId}`] = r
+  }
+
+  return {
+    programs,
+    schedules,
+    ratesByPair,
+    hasPrograms: programs.length > 0,
+    hasPricing: rates.length > 0,
+  }
+}
+
 export type ClassroomAvailability = {
   hasOpenSeats: boolean
   totalCapacity: number

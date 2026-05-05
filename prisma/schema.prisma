@@ -113,6 +113,29 @@ enum StaffStatus {
   OUT
 }
 
+enum StaffDocumentCategory {
+  BACKGROUND_CHECK
+  FIRST_AID
+  GOVERNMENT_ID
+  CERTIFICATION
+  OFFER_LETTER
+  OTHER
+}
+
+enum StaffDocumentStatus {
+  REQUIRED
+  SUBMITTED
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum StaffOnboardingStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETE
+}
+
 model User {
   id                        String                  @id @default(cuid())
   email                     String                  @unique
@@ -438,10 +461,10 @@ model Document {
   signedAt   DateTime?
   signedIp   String?
 
-  family          Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  child           Child?         @relation(fields: [childId], references: [id], onDelete: SetNull)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  child     Child?   @relation(fields: [childId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model EnrollmentLead {
@@ -470,18 +493,77 @@ model EnrollmentLead {
 }
 
 model StaffProfile {
-  id            String      @id @default(cuid())
-  userId        String?     @unique
-  classroomId   String?
-  name          String
-  roleLabel     String
-  certification String
-  status        StaffStatus
-  note          String
-  user          User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  classroom     Classroom?  @relation(fields: [classroomId], references: [id], onDelete: SetNull)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id                    String                   @id @default(cuid())
+  userId                String?                  @unique
+  classroomId           String?
+  name                  String
+  roleLabel             String
+  certification         String
+  status                StaffStatus
+  note                  String
+  /// Onboarding-time fields collected via the staff wizard. All optional;
+  /// admin can pre-fill them at invite time or leave for the recipient.
+  phone                 String?
+  bio                   String?
+  pronouns              String?
+  hireDate              DateTime?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  photoBlobPathname     String?
+  photoBlobUrl          String?
+  /// Opt-in flag for the future public "Meet the Team" surface.
+  isPublicProfile       Boolean                  @default(false)
+  user                  User?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  classroom             Classroom?               @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  documents             StaffDocument[]
+  onboarding            StaffOnboardingProgress?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+}
+
+/// Documents collected during staff onboarding (background check, first-aid
+/// certification, government-issued ID, etc.). Mirrors the blob-asset shape
+/// of the parent-side `Document` model so the same `uploadFile()` helper and
+/// admin review pattern can be reused.
+model StaffDocument {
+  id              String                @id @default(cuid())
+  staffProfileId  String
+  category        StaffDocumentCategory
+  status          StaffDocumentStatus   @default(REQUIRED)
+  fileName        String?
+  blobPathname    String?
+  blobUrl         String?
+  blobDownloadUrl String?
+  contentType     String?
+  sizeBytes       Int?
+  submittedAt     DateTime?
+  approvedAt      DateTime?
+  reviewedByName  String?
+  /// For credentials with a renewal date (e.g. first-aid certifications).
+  expiresOn       DateTime?
+  /// Admin-side rejection reason or note; surfaced back to the recipient
+  /// in the wizard so they know what to re-upload.
+  notes           String?
+  staffProfile    StaffProfile          @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([staffProfileId, status])
+}
+
+/// Single per-staff row tracking onboarding wizard state. `acknowledgments`
+/// is a map of `{ [policyKey]: { signedName, signedAt, signedIp } }` — the
+/// same signature shape the parent typed-signature flow uses.
+model StaffOnboardingProgress {
+  id              String                @id @default(cuid())
+  staffProfileId  String                @unique
+  status          StaffOnboardingStatus @default(NOT_STARTED)
+  currentStep     String                @default("welcome")
+  acknowledgments Json?
+  completedAt     DateTime?
+  staffProfile    StaffProfile          @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
 }
 
 model Announcement {

@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -9,7 +10,7 @@ import { marketingNav } from "@/config/navigation"
 import { cn } from "@/lib/utils"
 
 const HEADER_NAV = marketingNav.filter((item) =>
-  ["/programs", "/about", "/tuition", "/faq"].includes(item.href)
+  ["/programs", "/about", "/gallery", "/faq"].includes(item.href)
 )
 
 const navLinkClasses =
@@ -40,12 +41,23 @@ export function SiteHeader({ currentUserRole = null }: SiteHeaderProps = {}) {
           href="/"
           aria-current={pathname === "/" ? "page" : undefined}
           className="group flex items-center gap-3 transition-colors"
+          aria-label={`${brandConfig.name} home`}
         >
-          <span className="font-heading text-xl tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary md:text-2xl">
-            {brandConfig.shortName}
-          </span>
-          <span className="hidden text-xs uppercase tracking-[0.22em] text-muted-foreground transition-colors duration-200 group-hover:text-accent sm:inline">
-            Daycare
+          <Image
+            src="/branding/ac-logo-icon.png"
+            alt=""
+            width={44}
+            height={44}
+            priority
+            className="size-10 shrink-0 rounded-xl shadow-(--shadow-soft) md:size-11"
+          />
+          <span className="flex flex-col leading-none">
+            <span className="font-heading text-lg tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary md:text-xl">
+              {brandConfig.shortName}
+            </span>
+            <span className="text-[0.65rem] uppercase tracking-[0.22em] text-muted-foreground transition-colors duration-200 group-hover:text-accent">
+              Day Care
+            </span>
           </span>
         </Link>
 

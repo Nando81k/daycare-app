@@ -9,6 +9,12 @@ const uploadPaths = {
   dailyReportPhoto(childSlug: string, fileName: string) {
     return `daily-reports/${childSlug}/${Date.now()}-${slugifyFileName(fileName)}`
   },
+  staffDocument(documentId: string, fileName: string) {
+    return `staff-documents/${documentId}/${slugifyFileName(fileName)}`
+  },
+  staffPhoto(staffProfileId: string, fileName: string) {
+    return `staff-photos/${staffProfileId}/${Date.now()}-${slugifyFileName(fileName)}`
+  },
 }
 
 export function slugifyFileName(fileName: string) {
@@ -29,6 +35,14 @@ export function getDocumentUploadPath(documentId: string, fileName: string) {
 
 export function getDailyReportPhotoUploadPath(childSlug: string, fileName: string) {
   return uploadPaths.dailyReportPhoto(childSlug, fileName)
+}
+
+export function getStaffDocumentUploadPath(documentId: string, fileName: string) {
+  return uploadPaths.staffDocument(documentId, fileName)
+}
+
+export function getStaffPhotoUploadPath(staffProfileId: string, fileName: string) {
+  return uploadPaths.staffPhoto(staffProfileId, fileName)
 }
 
 export async function deleteBlobIfConfigured(pathnameOrUrl?: string | null) {

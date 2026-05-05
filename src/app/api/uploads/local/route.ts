@@ -4,7 +4,12 @@ import path from "node:path"
 import { getCurrentUser } from "@/lib/auth"
 import { documentUploadConstraints, photoUploadConstraints } from "@/lib/blob"
 
-const VALID_PATH_PREFIXES = ["documents/", "daily-reports/"]
+const VALID_PATH_PREFIXES = [
+  "documents/",
+  "daily-reports/",
+  "staff-documents/",
+  "staff-photos/",
+]
 
 export async function POST(request: Request) {
   const user = await getCurrentUser()
@@ -29,10 +34,13 @@ export async function POST(request: Request) {
   }
 
   // ---------- authorisation ----------
-  if (scope === "document" && user.role !== "PARENT" && user.role !== "ADMIN") {
+  // Staff onboarding documents (staff-documents/, staff-photos/) and parent
+  // forms (documents/) all use scope=document or scope=photo. Permit any
+  // signed-in role for these — the server actions enforce ownership.
+  if (scope === "document" && !user.role) {
     return Response.json(
-      { error: "Only parent or admin users can upload documents." },
-      { status: 403 },
+      { error: "Sign in to upload documents." },
+      { status: 401 },
     )
   }
 

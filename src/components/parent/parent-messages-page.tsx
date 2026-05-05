@@ -84,7 +84,7 @@ function ThreadListRow({
         )}
       </div>
       <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{thread.preview}</p>
-      <p className="mt-2 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+      <p className="mt-2 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-brand-blue">
         {thread.lastMessageAt}
       </p>
     </button>
@@ -301,7 +301,7 @@ export function ParentMessagesPageView({
             error={replyState.fieldErrors.body}
           />
           <div className="flex flex-wrap gap-3">
-            <ParentSubmitButton idleLabel="Send reply" pendingLabel="Sending..." />
+            <ParentSubmitButton idleLabel="Send reply" pendingLabel="Sending..." className="rounded-full border-transparent bg-brand-yellow bg-none text-navy shadow-none hover:bg-brand-yellow/90" />
           </div>
         </form>
       </div>
@@ -462,7 +462,7 @@ export function ParentMessagesPageView({
                 </ParentFieldGroup>
 
                 <div className="flex flex-wrap gap-3">
-                  <ParentSubmitButton idleLabel="Send message" pendingLabel="Sending..." />
+                  <ParentSubmitButton idleLabel="Send message" pendingLabel="Sending..." className="rounded-full border-transparent bg-brand-yellow bg-none text-navy shadow-none hover:bg-brand-yellow/90" />
                 </div>
               </form>
             </CardContent>

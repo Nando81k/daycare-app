@@ -21,7 +21,7 @@ function AnnouncementCard({ announcement }: { announcement: ParentAnnouncementPr
       {announcement.body ? (
         <p className="text-sm leading-6 text-muted-foreground/80">{announcement.body}</p>
       ) : null}
-      <p className="text-[0.68rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+      <p className="text-[0.68rem] font-medium uppercase tracking-[0.16em] text-brand-blue">
         {announcement.publishedAt}
       </p>
     </SurfaceCard>

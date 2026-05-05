@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChevronDown, LogOut, Menu } from "lucide-react"
@@ -67,8 +68,8 @@ function NavBadge({
     <span
       aria-label={`${count} item${count === 1 ? " needs" : "s need"} attention`}
       className={cn(
-        "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.65rem] font-semibold tabular-nums",
-        active ? "bg-primary-foreground/15 text-primary-foreground" : "bg-primary/12 text-primary",
+        "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.65rem] font-bold tabular-nums",
+        active ? "bg-brand-yellow text-navy" : "bg-brand-yellow/90 text-navy",
         className,
       )}
     >
@@ -98,9 +99,14 @@ export function ParentTopbar({
           className="flex items-center gap-3"
           aria-label="Family portal home"
         >
-          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-[0.85rem] bg-[linear-gradient(180deg,var(--color-brand-blue),var(--color-navy))] text-[0.7rem] font-bold tracking-[0.16em] text-primary-foreground shadow-[0_12px_30px_-18px_rgba(13,59,120,0.55)]">
-            AC
-          </span>
+          <Image
+            src="/branding/ac-logo-icon.png"
+            alt=""
+            width={40}
+            height={40}
+            priority
+            className="size-9 shrink-0 rounded-[0.85rem] shadow-[0_12px_30px_-18px_rgba(13,59,120,0.55)]"
+          />
           <span className="hidden flex-col leading-none sm:flex">
             <span
               className="font-heading text-[1.1rem]"

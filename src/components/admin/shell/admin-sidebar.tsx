@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ExternalLink, LogOut } from "lucide-react"
@@ -55,9 +56,14 @@ export function AdminSidebar({ badges }: { badges?: AdminSidebarBadges }) {
           href="/admin"
           className="flex items-center gap-3 px-1.5 py-1 group-data-[collapsible=icon]:justify-center"
         >
-          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-[0.85rem] bg-[linear-gradient(180deg,var(--color-brand-blue),var(--color-navy))] text-[0.7rem] font-bold tracking-[0.16em] text-primary-foreground shadow-[0_12px_30px_-18px_rgba(13,59,120,0.55)]">
-            AC
-          </span>
+          <Image
+            src="/branding/ac-logo-icon.png"
+            alt=""
+            width={40}
+            height={40}
+            priority
+            className="size-9 shrink-0 rounded-[0.85rem] shadow-[0_12px_30px_-18px_rgba(13,59,120,0.55)]"
+          />
           <span className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="font-heading text-[0.98rem] text-foreground truncate">
               {brandConfig.name}

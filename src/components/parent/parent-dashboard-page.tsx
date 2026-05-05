@@ -87,7 +87,7 @@ function BalanceCard({
   return (
     <SurfaceCard className="flex h-full flex-col gap-4 p-5">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue">
           Balance
         </p>
         <h2 className="mt-1 text-xl font-semibold text-foreground">
@@ -108,13 +108,16 @@ function BalanceCard({
           </div>
 
           {currentInvoice.status === "due" ? (
-            <Button asChild className="w-full justify-center">
+            <Button
+              asChild
+              className="w-full justify-center rounded-full border-transparent bg-brand-yellow bg-none text-navy shadow-none hover:bg-brand-yellow/90"
+            >
               <Link href={`/parent/billing/pay/${currentInvoice.id}`}>
                 Pay {currentInvoice.amount}
               </Link>
             </Button>
           ) : (
-            <Button asChild variant="outline" className="w-full justify-center">
+            <Button asChild variant="outline" className="w-full justify-center rounded-full">
               <Link href="/parent/billing">View billing</Link>
             </Button>
           )}
@@ -164,7 +167,7 @@ function MessagesCard({
     <SurfaceCard className="flex h-full flex-col gap-4 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue">
             Messages
           </p>
           <h2 className="mt-1 text-xl font-semibold text-foreground">
@@ -235,7 +238,7 @@ function ChildrenRosterCard({
   return (
     <SurfaceCard className="space-y-4 p-5">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue">
           Your family
         </p>
         <h2 className="mt-1 text-xl font-semibold text-foreground">
@@ -312,7 +315,7 @@ function NewsCard({
     return (
       <SurfaceCard className="space-y-4 p-5">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue">
             Enrollment status
           </p>
           <h2 className="mt-1 text-xl font-semibold text-foreground">
@@ -363,7 +366,7 @@ function NewsCard({
     <SurfaceCard className="space-y-4 p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue">
             From the school
           </p>
           <h2 className="mt-1 text-xl font-semibold text-foreground">

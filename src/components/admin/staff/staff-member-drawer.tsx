@@ -13,6 +13,7 @@ import {
   AdminTextField,
   AdminTextareaField,
 } from "@/components/admin/admin-form-fields"
+import { StaffOnboardingPanel } from "@/components/admin/staff/staff-onboarding-panel"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -240,8 +241,7 @@ function EditBody({
     classrooms.find((c) => c.name === staff.classroom)?.id ?? ""
 
   return (
-    <form action={formAction} className="flex h-full min-h-0 flex-col">
-      <input type="hidden" name="staffId" value={staff.id} />
+    <div className="flex h-full min-h-0 flex-col">
       <SheetHeader className="border-b border-border/60 bg-muted/20 px-5 py-4">
         <SheetTitle className="text-lg">{staff.name}</SheetTitle>
         <SheetDescription>
@@ -250,51 +250,64 @@ function EditBody({
       </SheetHeader>
 
       <div className="flex-1 overflow-y-auto px-5 py-5">
-        <AdminFieldGroup className="gap-4">
-          <AdminTextField
-            name="name"
-            label="Full name"
-            defaultValue={staff.name}
-            error={state.fieldErrors.name}
-          />
-          <div className="grid gap-4 md:grid-cols-2">
+        <form
+          action={formAction}
+          id={`staff-edit-${staff.id}`}
+          className="flex flex-col gap-4"
+        >
+          <input type="hidden" name="staffId" value={staff.id} />
+          <AdminFieldGroup className="gap-4">
             <AdminTextField
-              name="roleLabel"
-              label="Role label"
-              defaultValue={staff.role}
-              error={state.fieldErrors.roleLabel}
+              name="name"
+              label="Full name"
+              defaultValue={staff.name}
+              error={state.fieldErrors.name}
             />
-            <AdminSelectField
-              name="classroomId"
-              label="Classroom"
-              defaultValue={matchedClassroomId}
-              options={classroomOptions}
-              error={state.fieldErrors.classroomId}
+            <div className="grid gap-4 md:grid-cols-2">
+              <AdminTextField
+                name="roleLabel"
+                label="Role label"
+                defaultValue={staff.role}
+                error={state.fieldErrors.roleLabel}
+              />
+              <AdminSelectField
+                name="classroomId"
+                label="Classroom"
+                defaultValue={matchedClassroomId}
+                options={classroomOptions}
+                error={state.fieldErrors.classroomId}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <AdminTextField
+                name="certification"
+                label="Certification"
+                defaultValue={staff.certification}
+                error={state.fieldErrors.certification}
+              />
+              <AdminSelectField
+                name="status"
+                label="Schedule status"
+                defaultValue={toStatusValue(staff.status)}
+                options={[...STATUS_OPTIONS]}
+                error={state.fieldErrors.status}
+              />
+            </div>
+            <AdminTextareaField
+              name="note"
+              label="Internal note"
+              defaultValue={staff.note}
+              rows={3}
+              error={state.fieldErrors.note}
             />
+          </AdminFieldGroup>
+        </form>
+
+        {staff.onboarding ? (
+          <div className="mt-7 border-t border-border/60 pt-6">
+            <StaffOnboardingPanel staffProfileId={staff.id} />
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminTextField
-              name="certification"
-              label="Certification"
-              defaultValue={staff.certification}
-              error={state.fieldErrors.certification}
-            />
-            <AdminSelectField
-              name="status"
-              label="Schedule status"
-              defaultValue={toStatusValue(staff.status)}
-              options={[...STATUS_OPTIONS]}
-              error={state.fieldErrors.status}
-            />
-          </div>
-          <AdminTextareaField
-            name="note"
-            label="Internal note"
-            defaultValue={staff.note}
-            rows={3}
-            error={state.fieldErrors.note}
-          />
-        </AdminFieldGroup>
+        ) : null}
       </div>
 
       <FooterBar
@@ -303,8 +316,9 @@ function EditBody({
         idleLabel="Save changes"
         pendingLabel="Saving…"
         onCancel={onDone}
+        formId={`staff-edit-${staff.id}`}
       />
-    </form>
+    </div>
   )
 }
 
@@ -314,12 +328,16 @@ function FooterBar({
   idleLabel,
   pendingLabel,
   onCancel,
+  formId,
 }: {
   state: AdminActionState
   isPending: boolean
   idleLabel: string
   pendingLabel: string
   onCancel: () => void
+  /** When set, the submit button targets that form id. Lets the EditBody
+   * keep its onboarding panel outside the edit form. */
+  formId?: string
 }) {
   return (
     <div className="flex flex-col gap-2 border-t border-border/60 bg-popover/95 px-5 py-3">
@@ -340,7 +358,7 @@ function FooterBar({
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" size="sm" disabled={isPending}>
+        <Button type="submit" size="sm" disabled={isPending} form={formId}>
           {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {isPending ? pendingLabel : idleLabel}
         </Button>

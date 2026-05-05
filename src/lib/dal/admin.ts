@@ -476,6 +476,8 @@ export async function getAdminPortalData(): Promise<{
     prisma.staffProfile.findMany({
       include: {
         classroom: true,
+        onboarding: true,
+        documents: { select: { status: true } },
       },
       orderBy: {
         name: "asc",
@@ -872,15 +874,52 @@ export async function getAdminPortalData(): Promise<{
         "Generated automatically from the family billing queue and shown on the matching parent calendar.",
     }))
 
-  const staff = staffProfiles.map((profile) => ({
-    id: profile.id,
-    name: profile.name,
-    role: profile.roleLabel,
-    classroom: profile.classroom?.name ?? "Cross-room coverage",
-    certification: profile.certification,
-    status: mapStaffStatus(profile.status),
-    note: profile.note,
-  }))
+  const staff = staffProfiles.map((profile) => {
+    let onboarding: StaffProfilePreview["onboarding"] | undefined
+    if (profile.onboarding) {
+      const totalSteps = 4 // profile, documents, policies, classroom
+      const profileDone = Boolean(profile.phone && profile.emergencyContactName)
+      const docsDone =
+        profile.documents.length > 0 &&
+        profile.documents.every(
+          (doc) =>
+            doc.status === "SUBMITTED" ||
+            doc.status === "APPROVED" ||
+            doc.status === "REJECTED",
+        )
+      // Reading the JSON shape inline; full ack inspection happens in the
+      // drawer's loadStaffOnboardingForAdmin action.
+      const acks =
+        profile.onboarding.acknowledgments &&
+        typeof profile.onboarding.acknowledgments === "object" &&
+        !Array.isArray(profile.onboarding.acknowledgments)
+          ? (profile.onboarding.acknowledgments as Record<string, unknown>)
+          : {}
+      const policiesDone =
+        Boolean(acks.handbook) &&
+        Boolean(acks.safeguarding) &&
+        Boolean(acks.code_of_conduct)
+      const classroomDone = profile.onboarding.status === "COMPLETE"
+      const completedSteps = [profileDone, docsDone, policiesDone, classroomDone].filter(
+        Boolean,
+      ).length
+      onboarding = {
+        status: profile.onboarding.status,
+        completedSteps,
+        totalSteps,
+      }
+    }
+    return {
+      id: profile.id,
+      name: profile.name,
+      role: profile.roleLabel,
+      classroom: profile.classroom?.name ?? "Cross-room coverage",
+      certification: profile.certification,
+      status: mapStaffStatus(profile.status),
+      note: profile.note,
+      onboarding,
+    }
+  })
 
   const settingsSections = schoolSettings.reduce<AdminSettingsSectionPreview[]>((sections, row) => {
     const existing = sections.find((section) => section.id === row.sectionKey)

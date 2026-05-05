@@ -20,9 +20,9 @@ import type { PortalNavGroup, SiteNavLink } from "@/types/app"
 
 export const marketingNav: SiteNavLink[] = [
   { label: "Home", href: "/" },
-  { label: "Programs", href: "/programs" },
+  { label: "Programs & Tuition", href: "/programs" },
   { label: "About", href: "/about" },
-  { label: "Tuition", href: "/tuition" },
+  { label: "Gallery", href: "/gallery" },
   { label: "Waitlist", href: "/waitlist" },
   { label: "FAQ", href: "/faq" },
   { label: "Contact", href: "/contact" },
@@ -38,7 +38,7 @@ export const footerNav = [
   {
     title: "Explore",
     links: marketingNav.filter((item) =>
-      ["/programs", "/about", "/tuition", "/faq"].includes(item.href)
+      ["/programs", "/about", "/gallery", "/faq"].includes(item.href)
     ),
   },
   {

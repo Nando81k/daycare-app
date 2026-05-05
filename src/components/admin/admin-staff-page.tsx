@@ -57,10 +57,16 @@ function getRows(
   onRemove: (profile: StaffProfilePreview) => void,
   onResend: (profile: StaffProfilePreview) => void
 ): AdminTableRow[] {
-  return staffProfiles.map((profile) => ({
+  return staffProfiles.map((profile) => {
+    const onboardingBadge = profile.onboarding
+      ? profile.onboarding.status === "COMPLETE"
+        ? " · onboarding ✓"
+        : ` · onboarding ${profile.onboarding.completedSteps}/${profile.onboarding.totalSteps}`
+      : ""
+    return {
     staff: {
       primary: profile.name,
-      secondary: profile.role,
+      secondary: `${profile.role}${onboardingBadge}`,
     },
     classroom: profile.classroom || "Unassigned",
     certification: profile.certification || "—",
@@ -80,7 +86,8 @@ function getRows(
         />
       ),
     },
-  }))
+    }
+  })
 }
 
 function RowActions({

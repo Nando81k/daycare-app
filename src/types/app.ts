@@ -741,6 +741,12 @@ export type StaffProfilePreview = {
   certification: string
   status: "scheduled" | "coverage-needed" | "out"
   note: string
+  /** Onboarding progress summary; absent when staff has no portal account. */
+  onboarding?: {
+    status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETE"
+    completedSteps: number
+    totalSteps: number
+  }
 }
 
 export type DocumentQueuePreview = {

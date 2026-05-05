@@ -53,7 +53,7 @@ function BillingSummaryItem({
 }) {
   return (
     <div className="rounded-[1rem] border border-border/65 bg-background/88 px-4 py-3.5">
-      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-brand-blue">
         {label}
       </p>
       <p className="mt-2 text-base font-semibold text-foreground">{value}</p>
@@ -352,7 +352,7 @@ export function ParentBillingPageView({
                   <PayWithCheckoutButton
                     invoiceId={dueInvoice.id}
                     label={`Pay ${dueInvoice.amount}`}
-                    className="w-full justify-center"
+                    className="w-full justify-center rounded-full border-transparent bg-brand-yellow bg-none text-navy shadow-none hover:bg-brand-yellow/90"
                     checkoutEnabled={checkoutEnabled}
                   />
                 </div>

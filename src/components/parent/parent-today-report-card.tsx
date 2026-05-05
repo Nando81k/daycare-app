@@ -68,7 +68,7 @@ export function ParentTodayReportCard({
           </div>
 
           <div className="rounded-2xl border border-border/55 bg-background/85 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue">
               {report.dateLabel}
             </p>
             <p className="mt-2 line-clamp-3 text-sm leading-6 text-foreground">
@@ -118,7 +118,7 @@ export function ParentTodayReportCard({
 function CardHeader() {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue">
         Today
       </p>
       <h2 className="mt-1 text-xl font-semibold text-foreground">
@@ -131,7 +131,7 @@ function CardHeader() {
 function ReportStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-border/55 bg-background/85 px-2 py-3">
-      <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-brand-blue">
         {label}
       </dt>
       <dd className="mt-1 text-lg font-semibold tabular-nums text-foreground">

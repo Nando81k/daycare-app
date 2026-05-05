@@ -172,7 +172,7 @@ function SummaryMetric({
 }) {
   return (
     <div className="rounded-[1.15rem] border border-border/60 bg-muted/14 px-4 py-4">
-      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-brand-blue">
         {label}
       </p>
       <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{value}</p>

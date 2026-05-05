@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -77,9 +78,14 @@ export function TeacherTopbar() {
           className="flex items-center gap-3"
           aria-label="Teacher portal home"
         >
-          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-[0.85rem] bg-[linear-gradient(180deg,var(--color-brand-blue),var(--color-navy))] text-[0.7rem] font-bold tracking-[0.16em] text-primary-foreground shadow-[0_12px_30px_-18px_rgba(13,59,120,0.55)]">
-            AC
-          </span>
+          <Image
+            src="/branding/ac-logo-icon.png"
+            alt=""
+            width={40}
+            height={40}
+            priority
+            className="size-9 shrink-0 rounded-[0.85rem] shadow-[0_12px_30px_-18px_rgba(13,59,120,0.55)]"
+          />
           <span className="hidden flex-col leading-none sm:flex">
             <span
               className="font-heading text-[1.1rem]"

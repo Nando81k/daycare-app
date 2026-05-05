@@ -225,7 +225,7 @@ export function ParentDocumentsTable({
                         <TableHead
                           key={header.id}
                           className={cn(
-                            "h-11 px-4 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground",
+                            "h-11 px-4 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-brand-blue",
                             align === "end" && "text-right"
                           )}
                         >

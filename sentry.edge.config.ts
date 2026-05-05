@@ -1,21 +1,20 @@
-/**
- * Edge runtime Sentry init. No-op when SENTRY_DSN is unset.
- *
- * Loaded by `instrumentation.ts` when NEXT_RUNTIME === "edge". Configured
- * per the Sentry Next.js SDK skill.
- */
-import * as Sentry from "@sentry/nextjs"
+// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
+// The config you add here will be used whenever one of the edge features is loaded.
+// Note that this config is unrelated to the Vercel Edge Runtime and is also required when running locally.
+// https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
-const dsn = process.env.SENTRY_DSN
+import * as Sentry from "@sentry/nextjs";
 
-if (dsn) {
-  Sentry.init({
-    dsn,
+Sentry.init({
+  dsn: "https://9dae7471a11470f496bab4cdaf1fe59e@o4511332621877248.ingest.us.sentry.io/4511332780146688",
 
-    sendDefaultPii: true,
+  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+  tracesSampleRate: 1,
 
-    tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
+  // Enable logs to be sent to Sentry
+  enableLogs: true,
 
-    enableLogs: true,
-  })
-}
+  // Enable sending user PII (Personally Identifiable Information)
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
+  sendDefaultPii: true,
+});

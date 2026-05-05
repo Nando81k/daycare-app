@@ -54,7 +54,7 @@ function ProfileMetaItem({
 }) {
   return (
     <div className="space-y-1.5">
-      <dt className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <dt className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-brand-blue">
         {label}
       </dt>
       <dd className="text-sm font-semibold text-foreground">{value}</dd>
@@ -222,7 +222,7 @@ export function ParentChildPageView({
               <TabsContent value="overview" className="space-y-5">
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="surface-panel-quiet space-y-1.5 px-4 py-3">
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-brand-blue">
                       Report date
                     </p>
                     <p className="text-sm font-semibold text-foreground">
@@ -230,13 +230,13 @@ export function ParentChildPageView({
                     </p>
                   </div>
                   <div className="surface-panel-quiet space-y-1.5 px-4 py-3">
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-brand-blue">
                       Check-in
                     </p>
                     <p className="text-sm font-semibold text-foreground">{child.attendanceNote}</p>
                   </div>
                   <div className="surface-panel-quiet space-y-1.5 px-4 py-3">
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-brand-blue">
                       Lead teacher
                     </p>
                     <p className="text-sm font-semibold text-foreground">{child.teacher}</p>

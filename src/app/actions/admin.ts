@@ -2667,12 +2667,30 @@ async function sendStaffInviteEmail(params: {
 }) {
   if (!isResendConfigured()) return
   const portalLabel = params.role === "ADMIN" ? "admin" : "teacher"
+  const onboardingNote =
+    "After signing in you'll set up your profile, upload required documents (background check, first-aid certification, government ID), and acknowledge our policies. Plan about 10 minutes."
   await sendTransactionalEmail({
     to: params.to,
     subject: `You've been added to Ambassadors Care (${portalLabel})`,
-    text: `Hi ${params.name},\n\n${params.inviterName} added you as a ${portalLabel} on Ambassadors Care.\n\nUse this secure link to set your password and finish setup:\n${params.inviteUrl}\n\nThis link expires in 72 hours.`,
-    html: `<p>Hi ${params.name},</p><p>${params.inviterName} added you as a <strong>${portalLabel}</strong> on Ambassadors Care.</p><p>Use this secure link to set your password and finish setup:</p><p><a href="${params.inviteUrl}">${params.inviteUrl}</a></p><p>This link expires in 72 hours.</p>`,
+    text: `Hi ${params.name},\n\n${params.inviterName} added you as a ${portalLabel} on Ambassadors Care.\n\nUse this secure link to set your password:\n${params.inviteUrl}\n\n${onboardingNote}\n\nThis link expires in 72 hours.`,
+    html: `<p>Hi ${params.name},</p><p>${params.inviterName} added you as a <strong>${portalLabel}</strong> on Ambassadors Care.</p><p>Use this secure link to set your password:</p><p><a href="${params.inviteUrl}">${params.inviteUrl}</a></p><p>${onboardingNote}</p><p>This link expires in 72 hours.</p>`,
   })
+}
+
+/** Default required documents per role at invite time. */
+const DEFAULT_STAFF_DOCS_BY_ROLE: Record<
+  "ADMIN" | "TEACHER",
+  Array<{ category: "BACKGROUND_CHECK" | "FIRST_AID" | "GOVERNMENT_ID" }>
+> = {
+  TEACHER: [
+    { category: "BACKGROUND_CHECK" },
+    { category: "FIRST_AID" },
+    { category: "GOVERNMENT_ID" },
+  ],
+  ADMIN: [
+    { category: "BACKGROUND_CHECK" },
+    { category: "GOVERNMENT_ID" },
+  ],
 }
 
 export async function createStaffMember(
@@ -2730,6 +2748,24 @@ export async function createStaffMember(
       },
       select: { id: true, name: true, roleLabel: true },
     })
+
+    // When a portal account is created, also seed the onboarding-progress
+    // row plus the default required documents for the role. The wizard
+    // reads these on first login.
+    if (accountKind !== "NONE") {
+      const requiredDocs = DEFAULT_STAFF_DOCS_BY_ROLE[accountKind]
+      await prisma.staffOnboardingProgress.create({
+        data: { staffProfileId: staffProfile.id },
+      })
+      if (requiredDocs.length > 0) {
+        await prisma.staffDocument.createMany({
+          data: requiredDocs.map((doc) => ({
+            staffProfileId: staffProfile.id,
+            category: doc.category,
+          })),
+        })
+      }
+    }
 
     await prisma.auditLog.create({
       data: {
@@ -2984,6 +3020,214 @@ export async function removeStaffMember(
     return getActionState({
       error: "We could not remove this staff member right now.",
     })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Staff onboarding (document review)
+// ---------------------------------------------------------------------------
+
+export type AdminStaffOnboardingDetail = {
+  status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETE"
+  currentStep: string
+  completedAt: Date | null
+  profile: {
+    phone: string | null
+    bio: string | null
+    pronouns: string | null
+    hireDate: Date | null
+    emergencyContactName: string | null
+    emergencyContactPhone: string | null
+    photoBlobUrl: string | null
+  }
+  documents: Array<{
+    id: string
+    category: string
+    status: string
+    fileName: string | null
+    blobDownloadUrl: string | null
+    submittedAt: Date | null
+    approvedAt: Date | null
+    reviewedByName: string | null
+    notes: string | null
+  }>
+  policies: Array<{
+    key: string
+    title: string
+    signedName: string | null
+    signedAt: string | null
+  }>
+}
+
+const ADMIN_POLICY_TITLES: Record<string, string> = {
+  handbook: "Staff handbook",
+  safeguarding: "Child safeguarding & reporting",
+  code_of_conduct: "Code of conduct & confidentiality",
+}
+
+/**
+ * Loads onboarding detail for a single staff record so the admin drawer can
+ * render review controls. The drawer calls this on open.
+ */
+export async function loadStaffOnboardingForAdmin(
+  staffProfileId: string,
+): Promise<AdminStaffOnboardingDetail | null> {
+  await requireRole("ADMIN")
+
+  const staff = await prisma.staffProfile.findUnique({
+    where: { id: staffProfileId },
+    include: {
+      onboarding: true,
+      documents: { orderBy: { createdAt: "asc" } },
+    },
+  })
+
+  if (!staff) return null
+
+  // Lazy-create the onboarding row for legacy staff so the panel always has
+  // something to render.
+  const progress =
+    staff.onboarding ??
+    (await prisma.staffOnboardingProgress.create({
+      data: { staffProfileId: staff.id },
+    }))
+
+  const acks = isJsonObjectAdmin(progress.acknowledgments)
+    ? progress.acknowledgments
+    : {}
+
+  return {
+    status: progress.status,
+    currentStep: progress.currentStep,
+    completedAt: progress.completedAt,
+    profile: {
+      phone: staff.phone,
+      bio: staff.bio,
+      pronouns: staff.pronouns,
+      hireDate: staff.hireDate,
+      emergencyContactName: staff.emergencyContactName,
+      emergencyContactPhone: staff.emergencyContactPhone,
+      photoBlobUrl: staff.photoBlobUrl,
+    },
+    documents: staff.documents.map((doc) => ({
+      id: doc.id,
+      category: doc.category,
+      status: doc.status,
+      fileName: doc.fileName,
+      blobDownloadUrl: doc.blobDownloadUrl,
+      submittedAt: doc.submittedAt,
+      approvedAt: doc.approvedAt,
+      reviewedByName: doc.reviewedByName,
+      notes: doc.notes,
+    })),
+    policies: Object.entries(ADMIN_POLICY_TITLES).map(([key, title]) => {
+      const sig = acks[key]
+      const isSig =
+        sig &&
+        typeof sig === "object" &&
+        "signedName" in (sig as Record<string, unknown>)
+      return {
+        key,
+        title,
+        signedName: isSig ? String((sig as Record<string, unknown>).signedName) : null,
+        signedAt: isSig ? String((sig as Record<string, unknown>).signedAt) : null,
+      }
+    }),
+  }
+}
+
+function isJsonObjectAdmin(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
+
+export async function approveStaffDocument(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const documentId = getStringValue(formData, "documentId")
+    if (!documentId) {
+      return getActionState({ error: "Missing document id." })
+    }
+
+    const document = await prisma.staffDocument.update({
+      where: { id: documentId },
+      data: {
+        status: "APPROVED",
+        approvedAt: new Date(),
+        reviewedByName: admin.name,
+        notes: null,
+      },
+      select: { id: true, staffProfileId: true, category: true },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.staff.document.approve",
+        subjectType: "StaffDocument",
+        subjectId: document.id,
+        details: {
+          staffProfileId: document.staffProfileId,
+          category: document.category,
+        },
+      },
+    })
+
+    revalidatePaths(["/admin/staff", "/onboarding/staff"])
+    return getActionState({ success: true, message: "Document approved." })
+  } catch {
+    return getActionState({ error: "Could not approve this document." })
+  }
+}
+
+export async function rejectStaffDocument(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const documentId = getStringValue(formData, "documentId")
+    const reason = getStringValue(formData, "reason").trim()
+    if (!documentId) {
+      return getActionState({ error: "Missing document id." })
+    }
+    if (reason.length < 4) {
+      return getActionState({
+        error: "Add a short reason so the staff member knows what to fix.",
+        fieldErrors: { reason: "Required, at least 4 characters." },
+      })
+    }
+
+    const document = await prisma.staffDocument.update({
+      where: { id: documentId },
+      data: {
+        status: "REJECTED",
+        notes: reason,
+        reviewedByName: admin.name,
+      },
+      select: { id: true, staffProfileId: true, category: true },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "admin.staff.document.reject",
+        subjectType: "StaffDocument",
+        subjectId: document.id,
+        details: {
+          staffProfileId: document.staffProfileId,
+          category: document.category,
+          reason,
+        },
+      },
+    })
+
+    revalidatePaths(["/admin/staff", "/onboarding/staff"])
+    return getActionState({ success: true, message: "Document rejected and noted." })
+  } catch {
+    return getActionState({ error: "Could not reject this document." })
   }
 }
 

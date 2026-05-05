@@ -33,7 +33,7 @@ function SummaryStat({
 }) {
   return (
     <div className="rounded-[1rem] border border-border/60 bg-muted/16 px-4 py-4">
-      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-brand-blue">
         {label}
       </p>
       <div className="mt-2 flex items-center gap-3">
@@ -151,7 +151,7 @@ export function ParentFormsPageView({
                   <CircleAlertIcon />
                 </span>
                 <div className="min-w-0 flex-1 space-y-2">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-brand-blue">
                     Next step
                   </p>
                   {requiredDocuments.length ? (

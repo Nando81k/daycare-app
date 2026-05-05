@@ -145,6 +145,21 @@ export async function signInToPortal(
     },
   })
 
+  // Staff (TEACHER/ADMIN) with an incomplete onboarding row go through the
+  // wizard before reaching the portal. Parents always go straight in.
+  if (
+    authenticationResult.user.role === "TEACHER" ||
+    authenticationResult.user.role === "ADMIN"
+  ) {
+    const staff = await prisma.staffProfile.findUnique({
+      where: { userId: authenticationResult.user.id },
+      select: { onboarding: { select: { status: true } } },
+    })
+    if (staff && staff.onboarding && staff.onboarding.status !== "COMPLETE") {
+      redirect("/onboarding/staff")
+    }
+  }
+
   redirect(getPortalDestination(authenticationResult.user.role))
 }
 
@@ -466,6 +481,22 @@ export async function acceptPortalInvite(
   })
 
   await createSession(inviteRecord.user.id)
+
+  // For TEACHER / ADMIN invites, divert through the onboarding wizard if the
+  // staff profile's onboarding row isn't yet COMPLETE. PARENT invites always
+  // go straight to the parent portal.
+  if (
+    inviteRecord.user.role === "TEACHER" ||
+    inviteRecord.user.role === "ADMIN"
+  ) {
+    const staff = await prisma.staffProfile.findUnique({
+      where: { userId: inviteRecord.user.id },
+      select: { onboarding: { select: { status: true } } },
+    })
+    if (staff && staff.onboarding?.status !== "COMPLETE") {
+      redirect("/onboarding/staff")
+    }
+  }
 
   redirect(getPortalDestination(inviteRecord.user.role))
 }
