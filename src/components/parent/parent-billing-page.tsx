@@ -3,7 +3,7 @@ import { CalendarDaysIcon, FileDown } from "lucide-react"
 
 import { ParentSavedCardPanel } from "@/components/parent/parent-billing-controls"
 import { ParentPageHeader } from "@/components/parent/parent-page-header"
-import { PayWithCheckoutButton } from "@/components/parent/pay-with-checkout-button"
+import { PayWithPaystackButton } from "@/components/parent/pay-with-paystack-button"
 import {
   getInvoiceBadgeVariant,
   getPaymentBadgeVariant,
@@ -95,10 +95,8 @@ function BillingSection({
 
 function InvoicesTable({
   invoices,
-  checkoutEnabled,
 }: {
   invoices: MinimalInvoicePreview[]
-  checkoutEnabled: boolean
 }) {
   if (invoices.length === 0) {
     return (
@@ -148,12 +146,10 @@ function InvoicesTable({
               </TableCell>
               <TableCell className="px-4 py-3 text-right">
                 {invoice.status === "due" ? (
-                  <PayWithCheckoutButton
+                  <PayWithPaystackButton
                     invoiceId={invoice.id}
                     label="Pay"
-                    variant="outline"
                     size="sm"
-                    checkoutEnabled={checkoutEnabled}
                   />
                 ) : null}
               </TableCell>
@@ -244,13 +240,11 @@ export function ParentBillingPageView({
   paymentHistory,
   paymentMethod,
   settings,
-  checkoutEnabled = true,
 }: {
   invoices: MinimalInvoicePreview[]
   paymentHistory: ParentPaymentPreview[]
   paymentMethod: ParentPaymentMethodPreview
   settings: ParentSettingsPreview
-  checkoutEnabled?: boolean
 }) {
   const dueInvoice = invoices.find((invoice) => invoice.status === "due")
   const upcomingInvoice = invoices.find((invoice) => invoice.status === "draft")
@@ -287,7 +281,7 @@ export function ParentBillingPageView({
           label="Saved card"
           value={paymentMethod.detail}
           supporting={
-            paymentMethod.stripeConfigured
+            paymentMethod.paystackConfigured
               ? "Online payments available"
               : "Online payments unavailable"
           }
@@ -313,8 +307,8 @@ export function ParentBillingPageView({
               )}
             </div>
             <CardDescription className="text-sm leading-6 text-muted-foreground">
-              Pay securely through Stripe Checkout — your saved card and
-              receipts stay in this portal.
+              Pay securely with Paystack — card, bank transfer, USSD, or mobile
+              money. Receipts and saved authorizations stay in this portal.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-5 pt-0 md:p-6 md:pt-0">
@@ -345,15 +339,14 @@ export function ParentBillingPageView({
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-foreground">Pay this invoice</p>
                     <p className="text-sm leading-6 text-muted-foreground">
-                      You&apos;ll be redirected to Stripe Checkout in NGN, then
-                      brought back here.
+                      Pay in NGN with Paystack — card, bank transfer, USSD, or
+                      mobile money. You&apos;ll be redirected and brought back when done.
                     </p>
                   </div>
-                  <PayWithCheckoutButton
+                  <PayWithPaystackButton
                     invoiceId={dueInvoice.id}
                     label={`Pay ${dueInvoice.amount}`}
-                    className="w-full justify-center rounded-full border-transparent bg-brand-yellow bg-none text-navy shadow-none hover:bg-brand-yellow/90"
-                    checkoutEnabled={checkoutEnabled}
+                    className="w-full justify-center"
                   />
                 </div>
               </div>
@@ -409,7 +402,7 @@ export function ParentBillingPageView({
             title="Invoices"
             description="Review current, paid, and upcoming invoices in one place."
           >
-            <InvoicesTable invoices={invoices} checkoutEnabled={checkoutEnabled} />
+            <InvoicesTable invoices={invoices} />
           </BillingSection>
         </TabsContent>
 

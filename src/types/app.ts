@@ -284,7 +284,7 @@ export type ParentPaymentMethodPreview = {
   note: string
   brand?: string
   last4?: string
-  stripeConfigured: boolean
+  paystackConfigured: boolean
 }
 
 export type DailyMealPreview = {

@@ -23,7 +23,7 @@ import type {
 } from "@/types/app"
 import { requireRole } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { isStripeConfigured } from "@/lib/env"
+import { isPaystackConfigured } from "@/lib/env"
 import {
   formatBirthday,
   formatCurrencyFromCents,
@@ -662,12 +662,12 @@ export async function getParentPortalData(): Promise<
       billingProfile?.defaultPaymentMethodLabel ??
       paymentHistory[0]?.method ??
       "No card on file yet",
-    note: isStripeConfigured()
+    note: isPaystackConfigured()
       ? "Card setup is available and manual payments stay visible below."
-      : "Stripe keys are not configured in this environment yet. Billing controls will stay visible, but online collection needs setup before use.",
+      : "Paystack keys are not configured in this environment yet. Online card collection needs setup before use.",
     brand: billingProfile?.defaultPaymentMethodBrand ?? undefined,
     last4: billingProfile?.defaultPaymentMethodLast4 ?? undefined,
-    stripeConfigured: isStripeConfigured(),
+    paystackConfigured: isPaystackConfigured(),
   }
 
   const reminders: ParentReminder[] = []
@@ -771,7 +771,7 @@ export async function getParentBillingData(): Promise<{
     },
   })
 
-  const stripeConfigured = isStripeConfigured()
+  const paystackConfigured = isPaystackConfigured()
 
   if (!profile) {
     return {
@@ -781,10 +781,10 @@ export async function getParentBillingData(): Promise<{
         familyId: "",
         label: "Primary payment method",
         detail: "No card on file yet",
-        note: stripeConfigured
+        note: paystackConfigured
           ? "Card setup is available and manual payments stay visible below."
-          : "Stripe keys are not configured in this environment yet. Billing controls will stay visible, but online collection needs setup before use.",
-        stripeConfigured,
+          : "Paystack keys are not configured in this environment yet. Online card collection needs setup before use.",
+        paystackConfigured,
       },
       settings: {
         accountEmail: user.email,
@@ -822,12 +822,12 @@ export async function getParentBillingData(): Promise<{
       billingProfile?.defaultPaymentMethodLabel ??
       paymentHistory[0]?.method ??
       "No card on file yet",
-    note: stripeConfigured
+    note: paystackConfigured
       ? "Card setup is available and manual payments stay visible below."
-      : "Stripe keys are not configured in this environment yet. Billing controls will stay visible, but online collection needs setup before use.",
+      : "Paystack keys are not configured in this environment yet. Online card collection needs setup before use.",
     brand: billingProfile?.defaultPaymentMethodBrand ?? undefined,
     last4: billingProfile?.defaultPaymentMethodLast4 ?? undefined,
-    stripeConfigured,
+    paystackConfigured,
   }
 
   const settings: ParentSettingsPreview = {

@@ -44,6 +44,9 @@ import {
   upsertProgramSchema,
   upsertScheduleSchema,
   upsertProgramRateSchema,
+  createTuitionPlanSchema,
+  updateTuitionPlanSchema,
+  setTuitionPlanStatusSchema,
 } from "@/lib/validators/admin"
 import { createDailyReportPhotoSchema } from "@/lib/validators/parent"
 import type { AdminActionState } from "@/types/app"
@@ -682,12 +685,12 @@ export async function acceptEnrollmentApplication(
     "/parent",
   ])
 
-  void createdChildId
   return getActionState({
     success: true,
     message: capacityOverride
-      ? `${parsed.data.childFirstName} enrolled in ${classroom.name} (over capacity). Registration fee posted.`
-      : `${parsed.data.childFirstName} enrolled in ${classroom.name}. Registration fee posted.`,
+      ? `${parsed.data.childFirstName} enrolled in ${classroom.name} (over capacity). Registration fee posted — set up the monthly tuition plan from /admin/billing.`
+      : `${parsed.data.childFirstName} enrolled in ${classroom.name}. Registration fee posted — set up the monthly tuition plan from /admin/billing.`,
+    entityId: createdChildId,
   })
 }
 
@@ -1904,17 +1907,28 @@ export async function refundInvoiceAction(
       return getActionState({ error: "Invoice id is required." })
     }
 
-    const { refundInvoice } = await import("@/lib/billing")
-    const result = await refundInvoice(invoiceId, {
-      reason,
-      actorUserId: user.id,
+    // Paystack refunds run through their dashboard or REST API and aren't
+    // wired up here yet. Mark the invoice REFUNDED locally so admin UI
+    // stays accurate; the actual refund must be issued out-of-band.
+    await prisma.invoice.update({
+      where: { id: invoiceId },
+      data: { status: "REFUNDED" },
+    })
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: user.id,
+        action: "billing.invoice.refund.marked",
+        subjectType: "Invoice",
+        subjectId: invoiceId,
+        details: { reason: reason || null, note: "Issue refund in Paystack dashboard." },
+      },
     })
 
     revalidatePaths(["/admin", "/admin/billing", "/parent", "/parent/billing"])
 
     return getActionState({
       success: true,
-      message: `Refund issued (${result.refundId}).`,
+      message: "Marked refunded — issue the actual refund in Paystack dashboard.",
     })
   } catch (error) {
     return getActionState({
@@ -3485,6 +3499,193 @@ export async function removeClassroom(
   } catch {
     return getActionState({
       error: "We could not remove this classroom right now.",
+    })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tuition plans (recurring billing)
+// ---------------------------------------------------------------------------
+
+function getTuitionFormValues(formData: FormData) {
+  return {
+    familyId: getStringValue(formData, "familyId"),
+    childId: getStringValue(formData, "childId"),
+    programRateId: getStringValue(formData, "programRateId"),
+    startDate: getStringValue(formData, "startDate"),
+    endDate: getStringValue(formData, "endDate"),
+    invoiceDay: getStringValue(formData, "invoiceDay"),
+    dueDayOffset: getStringValue(formData, "dueDayOffset"),
+    note: getStringValue(formData, "note"),
+  }
+}
+
+async function assertChildBelongsToFamily(childId: string, familyId: string) {
+  const child = await prisma.child.findUnique({
+    where: { id: childId },
+    select: { familyId: true },
+  })
+  if (!child || child.familyId !== familyId) {
+    throw new Error("That child does not belong to the selected family.")
+  }
+}
+
+export async function createTuitionPlan(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const parsed = createTuitionPlanSchema.safeParse(getTuitionFormValues(formData))
+    if (!parsed.success) {
+      return getActionState({
+        error: "Check the highlighted fields and try again.",
+        fieldErrors: getFieldErrors(parsed.error),
+      })
+    }
+    const { familyId, childId, programRateId, startDate, endDate, invoiceDay, dueDayOffset, note } =
+      parsed.data
+    await assertChildBelongsToFamily(childId, familyId)
+
+    const plan = await prisma.tuitionPlan.create({
+      data: {
+        familyId,
+        childId,
+        programRateId,
+        startDate: new Date(startDate),
+        endDate: endDate ? new Date(endDate) : null,
+        invoiceDay,
+        dueDayOffset,
+        note: note ?? null,
+        status: "ACTIVE",
+      },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "billing.tuition.create",
+        subjectType: "TuitionPlan",
+        subjectId: plan.id,
+        details: { familyId, childId, programRateId, invoiceDay, dueDayOffset },
+      },
+    })
+
+    revalidatePaths(["/admin", "/admin/billing", "/admin/families"])
+    return getActionState({
+      success: true,
+      message: "Tuition plan created. Invoices will generate on the chosen day each month.",
+      entityId: plan.id,
+    })
+  } catch (error) {
+    return getActionState({
+      error: error instanceof Error ? error.message : "Could not create the tuition plan.",
+    })
+  }
+}
+
+export async function updateTuitionPlan(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const parsed = updateTuitionPlanSchema.safeParse({
+      planId: getStringValue(formData, "planId"),
+      ...getTuitionFormValues(formData),
+    })
+    if (!parsed.success) {
+      return getActionState({
+        error: "Check the highlighted fields and try again.",
+        fieldErrors: getFieldErrors(parsed.error),
+      })
+    }
+    const { planId, familyId, childId, programRateId, startDate, endDate, invoiceDay, dueDayOffset, note } =
+      parsed.data
+    await assertChildBelongsToFamily(childId, familyId)
+
+    await prisma.tuitionPlan.update({
+      where: { id: planId },
+      data: {
+        familyId,
+        childId,
+        programRateId,
+        startDate: new Date(startDate),
+        endDate: endDate ? new Date(endDate) : null,
+        invoiceDay,
+        dueDayOffset,
+        note: note ?? null,
+      },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "billing.tuition.update",
+        subjectType: "TuitionPlan",
+        subjectId: planId,
+        details: { familyId, childId, programRateId, invoiceDay, dueDayOffset },
+      },
+    })
+
+    revalidatePaths(["/admin", "/admin/billing", "/admin/families"])
+    return getActionState({ success: true, message: "Tuition plan updated.", entityId: planId })
+  } catch (error) {
+    return getActionState({
+      error: error instanceof Error ? error.message : "Could not update the tuition plan.",
+    })
+  }
+}
+
+export async function setTuitionPlanStatus(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireRole("ADMIN")
+    const parsed = setTuitionPlanStatusSchema.safeParse({
+      planId: getStringValue(formData, "planId"),
+      status: getStringValue(formData, "status"),
+      note: getStringValue(formData, "note"),
+    })
+    if (!parsed.success) {
+      return getActionState({ error: "Pick a valid status." })
+    }
+    const { planId, status, note } = parsed.data
+    await prisma.tuitionPlan.update({
+      where: { id: planId },
+      data: {
+        status,
+        note: note ?? undefined,
+        // ENDED is a soft archive: set endDate so the cron stops emitting if
+        // it wasn't already past.
+        endDate: status === "ENDED" ? new Date() : undefined,
+      },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: "billing.tuition.status",
+        subjectType: "TuitionPlan",
+        subjectId: planId,
+        details: { status, note: note ?? null },
+      },
+    })
+
+    revalidatePaths(["/admin", "/admin/billing", "/admin/families"])
+    return getActionState({
+      success: true,
+      message:
+        status === "ACTIVE"
+          ? "Plan reactivated."
+          : status === "PAUSED"
+            ? "Plan paused — no new invoices until reactivated."
+            : "Plan ended.",
+    })
+  } catch (error) {
+    return getActionState({
+      error: error instanceof Error ? error.message : "Could not change the plan status.",
     })
   }
 }

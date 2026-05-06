@@ -11,6 +11,7 @@ import {
 
 import { ParentPageHeader } from "@/components/parent/parent-page-header"
 import { ParentTodayReportCard } from "@/components/parent/parent-today-report-card"
+import { PayWithPaystackButton } from "@/components/parent/pay-with-paystack-button"
 import { PageShell } from "@/components/shared/page-shell"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { SurfaceCard } from "@/components/shared/surface-card"
@@ -108,14 +109,11 @@ function BalanceCard({
           </div>
 
           {currentInvoice.status === "due" ? (
-            <Button
-              asChild
-              className="w-full justify-center rounded-full border-transparent bg-brand-yellow bg-none text-navy shadow-none hover:bg-brand-yellow/90"
-            >
-              <Link href={`/parent/billing/pay/${currentInvoice.id}`}>
-                Pay {currentInvoice.amount}
-              </Link>
-            </Button>
+            <PayWithPaystackButton
+              invoiceId={currentInvoice.id}
+              label={`Pay ${currentInvoice.amount}`}
+              className="w-full justify-center"
+            />
           ) : (
             <Button asChild variant="outline" className="w-full justify-center rounded-full">
               <Link href="/parent/billing">View billing</Link>

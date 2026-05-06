@@ -1,7 +1,7 @@
 import { AdminReportsPageView } from "@/components/admin/admin-reports-page"
-import { getAdminPortalData } from "@/lib/dal/admin"
+import { getAdminReportsData } from "@/lib/dal/admin-billing"
 
 export default async function AdminReportsPage() {
-  const { metrics, reportBars } = await getAdminPortalData()
-  return <AdminReportsPageView metrics={metrics} reportBars={reportBars} />
+  const reports = await getAdminReportsData()
+  return <AdminReportsPageView reports={reports} />
 }

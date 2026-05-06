@@ -177,7 +177,7 @@ model Session {
 }
 
 model Family {
-  id              String                      @id @default(cuid())
+  id              String                  @id @default(cuid())
   familyName      String
   enrollmentStage String
   parents         ParentProfile[]
@@ -188,11 +188,11 @@ model Family {
   messageThreads  MessageThread[]
   leads           EnrollmentLead[]
   applications    EnrollmentApplication[]
-  subscriptions   StripeSubscriptionMapping[]
+  tuitionPlans    TuitionPlan[]
   billingProfile  FamilyBillingProfile?
   notes           FamilyNote[]
-  createdAt       DateTime                    @default(now())
-  updatedAt       DateTime                    @updatedAt
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
 }
 
 model FamilyNote {
@@ -273,6 +273,7 @@ model Child {
   dailyReports      DailyReport[]
   documents         Document[]
   parentLinks       ParentChild[]
+  tuitionPlans      TuitionPlan[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }
@@ -371,60 +372,71 @@ model Message {
 }
 
 model Invoice {
-  id                      String                     @id @default(cuid())
-  familyId                String
-  label                   String
-  description             String?
-  amountCents             Int
-  dueDate                 DateTime
-  paidAt                  DateTime?
-  status                  InvoiceStatus
-  stripePaymentIntentId   String?                    @unique
-  stripeCheckoutSessionId String?                    @unique
-  /// Forward-compat link to a future Stripe Subscription (set in Phase 5+).
-  subscriptionId          String?
+  id                 String        @id @default(cuid())
+  familyId           String
+  label              String
+  description        String?
+  amountCents        Int
+  dueDate            DateTime
+  paidAt             DateTime?
+  status             InvoiceStatus
+  /// Paystack transaction reference (set when Pay is clicked, before redirect).
+  paystackReference  String?       @unique
+  /// Paystack access code from initialize — used for re-issuing the auth URL.
+  paystackAccessCode String?
   /// Optional reference to the FeeRule that generated this invoice.
-  feeRuleId               String?
-  family                  Family                     @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  feeRule                 FeeRule?                   @relation(fields: [feeRuleId], references: [id], onDelete: SetNull)
-  subscription            StripeSubscriptionMapping? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  payments                Payment[]
-  createdAt               DateTime                   @default(now())
-  updatedAt               DateTime                   @updatedAt
+  feeRuleId          String?
+  /// Link to the recurring TuitionPlan that auto-generated this invoice.
+  tuitionPlanId      String?
+  family             Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  feeRule            FeeRule?      @relation(fields: [feeRuleId], references: [id], onDelete: SetNull)
+  tuitionPlan        TuitionPlan?  @relation(fields: [tuitionPlanId], references: [id], onDelete: SetNull)
+  payments           Payment[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 }
 
 model Payment {
-  id                    String        @id @default(cuid())
-  familyId              String
-  invoiceId             String?
-  label                 String
-  amountCents           Int
-  method                String
-  status                PaymentStatus
-  paidAt                DateTime
-  processedAt           DateTime?
-  stripePaymentIntentId String?       @unique
-  stripePaymentMethodId String?
-  receiptUrl            String?
-  failureReason         String?
-  family                Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  invoice               Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  createdAt             DateTime      @default(now())
+  id                String        @id @default(cuid())
+  familyId          String
+  invoiceId         String?
+  label             String
+  amountCents       Int
+  /// Channel reported by Paystack: card / bank / ussd / mobile_money / transfer.
+  method            String
+  status            PaymentStatus
+  paidAt            DateTime
+  processedAt       DateTime?
+  paystackReference String?       @unique
+  /// Saved authorization code for one-tap re-pay (only when reusable=true).
+  authorizationCode String?
+  /// Card brand / bank label captured at checkout.
+  channelLabel      String?
+  /// Last4 of the card or account, when present.
+  channelLast4      String?
+  receiptUrl        String?
+  failureReason     String?
+  family            Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  invoice           Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  createdAt         DateTime      @default(now())
 }
 
 model FamilyBillingProfile {
-  id                        String  @id @default(cuid())
-  familyId                  String  @unique
-  stripeCustomerId          String? @unique
-  defaultPaymentMethodId    String?
+  id                        String   @id @default(cuid())
+  familyId                  String   @unique
+  /// Paystack customer code (CUS_xxx) — created on first successful charge.
+  paystackCustomerCode      String?  @unique
+  /// Reusable authorization code — lets parents one-tap re-pay future invoices
+  /// without re-entering card details.
+  paystackAuthorizationCode String?
+  /// Branding for the saved card/account so the UI can show "Visa ending 4242".
   defaultPaymentMethodBrand String?
   defaultPaymentMethodLast4 String?
   defaultPaymentMethodLabel String?
-
-  lastPaymentError String?
-  family           Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  lastPaymentError          String?
+  family                    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
 }
 
 model Document {
@@ -681,16 +693,17 @@ model Schedule {
 }
 
 model ProgramRate {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   programId    String
   scheduleId   String
   rateCents    Int
   billingLabel String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  program      Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
-  schedule     Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  program      Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  schedule     Schedule      @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  tuitionPlans TuitionPlan[]
 
   @@unique([programId, scheduleId])
 }
@@ -783,27 +796,45 @@ model FeeRule {
  * ------------------------------------------------------------------
  */
 /**
- * Stripe Subscription mappings (forward-compat seam, Phase 5)
+ * Recurring tuition billing — one row per child × programRate. The cron at
+ * /api/cron/generate-tuition-invoices walks ACTIVE plans daily and emits
+ * Invoice rows on each plan's invoiceDay.
  */
 /**
  * ------------------------------------------------------------------
  */
 
-model StripeSubscriptionMapping {
-  id                   String    @id @default(cuid())
-  familyId             String
-  stripeSubscriptionId String    @unique
-  stripeCustomerId     String?
-  productLabel         String?
-  status               String
-  currentPeriodEnd     DateTime?
-  metadata             Json?
-  family               Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  invoices             Invoice[]
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+model TuitionPlan {
+  id            String            @id @default(cuid())
+  familyId      String
+  childId       String
+  programRateId String
+  /// First date a tuition invoice should be emitted (inclusive).
+  startDate     DateTime
+  /// Optional end (exclusive). Null = open-ended.
+  endDate       DateTime?
+  /// Day of month (1-28) the cron should generate the next invoice.
+  invoiceDay    Int               @default(1)
+  /// Days after invoiceDay that the invoice is due.
+  dueDayOffset  Int               @default(10)
+  status        TuitionPlanStatus @default(ACTIVE)
+  /// Optional admin note explaining the plan or any pause reason.
+  note          String?
+  family        Family            @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  child         Child             @relation(fields: [childId], references: [id], onDelete: Cascade)
+  programRate   ProgramRate       @relation(fields: [programRateId], references: [id], onDelete: Restrict)
+  invoices      Invoice[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
-  @@index([familyId])
+  @@index([familyId, status])
+  @@index([childId])
+}
+
+enum TuitionPlanStatus {
+  ACTIVE
+  PAUSED
+  ENDED
 }
 
 /**

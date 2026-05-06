@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db"
 import {
+  isPaystackConfigured,
   isResendConfigured,
-  isStripeConfigured,
   isTurnstileConfigured,
 } from "@/lib/env"
 import { isPersistentRateLimitConfigured } from "@/lib/rate-limit"
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic"
  *
  * Returns 200 + JSON when Postgres round-trips, 503 + JSON when it doesn't.
  * The `services` block reports which optional integrations are configured
- * (resend, stripe, turnstile, persistent rate-limit, sentry). It only
+ * (resend, paystack, turnstile, persistent rate-limit, sentry). It only
  * exposes the truthy/falsy state — no secrets.
  *
  * Intentionally cheap — a single `SELECT 1` so it can be hit every minute.
@@ -40,7 +40,7 @@ export async function GET() {
       : { status: "down", error: dbError },
     services: {
       resend: isResendConfigured(),
-      stripe: isStripeConfigured(),
+      paystack: isPaystackConfigured(),
       turnstile: isTurnstileConfigured(),
       rateLimit: isPersistentRateLimitConfigured() ? "persistent" : "in-memory",
       sentry: Boolean(process.env.SENTRY_DSN),

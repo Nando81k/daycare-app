@@ -1,7 +1,13 @@
 import { AdminBillingPageView } from "@/components/admin/billing/admin-billing-page"
-import { getAdminBillingData } from "@/lib/dal/admin-billing"
+import {
+  getAdminBillingData,
+  getAdminTuitionPlansData,
+} from "@/lib/dal/admin-billing"
 
 export default async function AdminBillingPage() {
-  const data = await getAdminBillingData()
-  return <AdminBillingPageView data={data} />
+  const [data, tuition] = await Promise.all([
+    getAdminBillingData(),
+    getAdminTuitionPlansData(),
+  ])
+  return <AdminBillingPageView data={data} tuition={tuition} />
 }

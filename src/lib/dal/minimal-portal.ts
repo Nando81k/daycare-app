@@ -15,7 +15,7 @@ import type {
 } from "@/types/app"
 import { requireRole } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { isStripeConfigured } from "@/lib/env"
+import { isPaystackConfigured } from "@/lib/env"
 import { buildDashboardDraftFromLead } from "@/lib/parent-enrollment"
 import { formatCurrencyFromCents, formatFileSize, formatMonthDay } from "@/lib/format"
 
@@ -248,12 +248,12 @@ export async function getSimpleParentPortalData(): Promise<SimpleParentPortalPre
       billingProfile?.defaultPaymentMethodLabel ??
       paymentHistory[0]?.method ??
       "No payment method on file",
-    note: isStripeConfigured()
+    note: isPaystackConfigured()
       ? "You can keep a card on file and pay manually whenever the center posts an invoice."
-      : "Online payment controls need Stripe keys before card collection can go live in this environment.",
+      : "Online payment controls need Paystack keys before card collection can go live in this environment.",
     brand: billingProfile?.defaultPaymentMethodBrand ?? undefined,
     last4: billingProfile?.defaultPaymentMethodLast4 ?? undefined,
-    stripeConfigured: isStripeConfigured(),
+    paystackConfigured: isPaystackConfigured(),
   }
 
   const applications: ParentEnrollmentApplicationPreview[] = profile.family.leads.map((lead) => {

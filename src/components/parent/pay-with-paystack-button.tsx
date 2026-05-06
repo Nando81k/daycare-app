@@ -1,52 +1,38 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import Link from "next/link"
 import { Loader2 } from "lucide-react"
 
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-export type PayWithCheckoutButtonProps = {
+export type PayWithPaystackButtonProps = {
   invoiceId: string
   label?: string
-  variant?: "default" | "outline" | "ghost"
   size?: "default" | "sm" | "lg"
   className?: string
-  /** When false, render a link to the legacy Elements payment page instead. */
-  checkoutEnabled?: boolean
-  /** Path to the Elements fallback when checkoutEnabled is false. */
-  fallbackHref?: string
 }
 
-export function PayWithCheckoutButton({
+/**
+ * Initiates a Paystack hosted-checkout transaction and redirects the browser
+ * to the authorization URL. After the parent pays (or cancels), Paystack
+ * sends them to /parent/billing/paystack-return which verifies and updates
+ * the Invoice.
+ */
+export function PayWithPaystackButton({
   invoiceId,
   label = "Pay invoice",
-  variant = "default",
   size = "default",
   className,
-  checkoutEnabled = true,
-  fallbackHref,
-}: PayWithCheckoutButtonProps) {
+}: PayWithPaystackButtonProps) {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-
-  if (!checkoutEnabled) {
-    return (
-      <Link
-        href={fallbackHref ?? `/parent/billing/pay/${invoiceId}`}
-        className={cn(buttonVariants({ variant, size }), className)}
-      >
-        {label}
-      </Link>
-    )
-  }
 
   function startCheckout() {
     setError(null)
     startTransition(async () => {
       try {
-        const response = await fetch("/api/stripe/checkout", {
+        const response = await fetch("/api/paystack/initialize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ invoiceId }),
@@ -56,12 +42,12 @@ export function PayWithCheckoutButton({
           error?: string
         }
         if (!response.ok || !payload.url) {
-          setError(payload.error ?? "Could not start checkout.")
+          setError(payload.error ?? "Could not start payment.")
           return
         }
         window.location.assign(payload.url)
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not start checkout.")
+        setError(e instanceof Error ? e.message : "Could not start payment.")
       }
     })
   }
@@ -70,9 +56,11 @@ export function PayWithCheckoutButton({
     <div className="flex flex-col items-stretch gap-1.5">
       <Button
         type="button"
-        variant={variant}
         size={size}
-        className={className}
+        className={cn(
+          "rounded-full border-transparent bg-brand-yellow bg-none text-navy shadow-none hover:bg-brand-yellow/90",
+          className,
+        )}
         onClick={startCheckout}
         disabled={isPending}
       >
@@ -85,11 +73,11 @@ export function PayWithCheckoutButton({
           label
         )}
       </Button>
-      {error && (
-        <p role="alert" className="text-xs text-red-700">
+      {error ? (
+        <p role="alert" className="text-xs text-destructive">
           {error}
         </p>
-      )}
+      ) : null}
     </div>
   )
 }

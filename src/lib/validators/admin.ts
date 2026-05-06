@@ -472,3 +472,38 @@ export const updateClassroomSchema = createClassroomSchema.extend({
 export const removeClassroomSchema = z.object({
   classroomId: requiredString,
 })
+
+// ─── Tuition plans ───────────────────────────────────────────────────────
+
+const invoiceDaySchema = z.coerce
+  .number()
+  .int()
+  .min(1, "Invoice day must be 1–28.")
+  .max(28, "Invoice day must be 1–28 to keep monthly cycles consistent.")
+
+const dueDayOffsetSchema = z.coerce
+  .number()
+  .int()
+  .min(0, "Due-day offset cannot be negative.")
+  .max(28, "Due-day offset must be 0–28 days.")
+
+export const createTuitionPlanSchema = z.object({
+  familyId: requiredString,
+  childId: requiredString,
+  programRateId: requiredString,
+  startDate: requiredString.regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a valid start date."),
+  endDate: calendarDateSchema,
+  invoiceDay: invoiceDaySchema,
+  dueDayOffset: dueDayOffsetSchema,
+  note: optionalTrimmedString,
+})
+
+export const updateTuitionPlanSchema = createTuitionPlanSchema.extend({
+  planId: requiredString,
+})
+
+export const setTuitionPlanStatusSchema = z.object({
+  planId: requiredString,
+  status: z.enum(["ACTIVE", "PAUSED", "ENDED"]),
+  note: optionalTrimmedString,
+})

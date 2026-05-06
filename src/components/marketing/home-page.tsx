@@ -141,7 +141,7 @@ function Hero() {
               <Stat label="Where" value="Benin City" accent="text-brand-blue-soft" />
             </dl>
           </div>
-          <div className="lg:col-span-5">
+          <div className="hidden lg:col-span-5 lg:block">
             <Reveal>
               <figure className="relative mx-auto max-w-md">
                 <div className="absolute -inset-8 rounded-[2.5rem] bg-brand-yellow/20 blur-3xl" />

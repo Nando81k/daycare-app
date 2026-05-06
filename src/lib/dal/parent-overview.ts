@@ -4,7 +4,7 @@ import type { InvoiceStatus } from "@prisma/client"
 
 import { requireRole } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { isStripeConfigured } from "@/lib/env"
+import { isPaystackConfigured } from "@/lib/env"
 import {
   formatCurrencyFromCents,
   formatMonthDay,
@@ -87,7 +87,7 @@ export type ParentOverviewData = {
   pendingDocumentCount: number
   recentMessageThreads: DashboardMessageThread[]
   upcomingPaymentReminder: DashboardReminder
-  stripeConfigured: boolean
+  paystackConfigured: boolean
 }
 
 function mapInvoiceStatus(status: InvoiceStatus): {
@@ -324,6 +324,6 @@ export async function getParentOverviewData(): Promise<ParentOverviewData | null
     pendingDocumentCount,
     recentMessageThreads,
     upcomingPaymentReminder,
-    stripeConfigured: isStripeConfigured(),
+    paystackConfigured: isPaystackConfigured(),
   }
 }

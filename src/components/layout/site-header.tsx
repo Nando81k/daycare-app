@@ -1,10 +1,21 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { Menu } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { brandConfig } from "@/config/brand"
 import { marketingNav } from "@/config/navigation"
 import { cn } from "@/lib/utils"
@@ -22,6 +33,7 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ currentUserRole = null }: SiteHeaderProps = {}) {
   const pathname = usePathname()
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const dashboardHref =
     currentUserRole === "ADMIN"
       ? "/admin"
@@ -36,11 +48,11 @@ export function SiteHeader({ currentUserRole = null }: SiteHeaderProps = {}) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
-      <div className="shell-container flex h-16 items-center justify-between gap-6 md:h-20">
+      <div className="shell-container flex h-16 items-center justify-between gap-3 md:h-20 md:gap-6">
         <Link
           href="/"
           aria-current={pathname === "/" ? "page" : undefined}
-          className="group flex items-center gap-3 transition-colors"
+          className="group flex shrink-0 items-center gap-3 transition-colors"
           aria-label={`${brandConfig.name} home`}
         >
           <Image
@@ -61,6 +73,7 @@ export function SiteHeader({ currentUserRole = null }: SiteHeaderProps = {}) {
           </span>
         </Link>
 
+        {/* Desktop nav */}
         <nav className="hidden items-center gap-8 md:flex">
           {HEADER_NAV.map((item) => {
             const active = isActive(item.href)
@@ -77,7 +90,8 @@ export function SiteHeader({ currentUserRole = null }: SiteHeaderProps = {}) {
           })}
         </nav>
 
-        <div className="flex items-center gap-4">
+        {/* Desktop actions */}
+        <div className="hidden items-center gap-4 md:flex">
           {dashboardHref ? (
             <Button
               asChild
@@ -103,6 +117,86 @@ export function SiteHeader({ currentUserRole = null }: SiteHeaderProps = {}) {
             </>
           )}
         </div>
+
+        {/* Mobile hamburger */}
+        <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Open navigation"
+              className="md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[18rem] flex-col gap-0 p-0">
+            <SheetHeader className="border-b border-border/60 px-5 py-4 text-left">
+              <SheetTitle
+                className="font-heading text-lg"
+                style={{ color: "var(--navy)" }}
+              >
+                {brandConfig.shortName}
+              </SheetTitle>
+              <SheetDescription>Browse the public site</SheetDescription>
+            </SheetHeader>
+            <nav
+              aria-label="Site navigation"
+              className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
+            >
+              {[{ label: "Home", href: "/" }, ...HEADER_NAV].map((item) => {
+                const active = isActive(item.href)
+                return (
+                  <SheetClose asChild key={item.href}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : "text-foreground hover:bg-secondary"
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  </SheetClose>
+                )
+              })}
+            </nav>
+            <div className="flex flex-col gap-2 border-t border-border/60 px-3 py-4">
+              {dashboardHref ? (
+                <SheetClose asChild>
+                  <Link
+                    href={dashboardHref}
+                    className="rounded-full bg-brand-yellow px-4 py-2.5 text-center text-sm font-bold uppercase tracking-[0.18em] text-navy"
+                  >
+                    Go to dashboard
+                  </Link>
+                </SheetClose>
+              ) : (
+                <>
+                  <SheetClose asChild>
+                    <Link
+                      href="/contact"
+                      className="rounded-full bg-brand-yellow px-4 py-2.5 text-center text-sm font-bold uppercase tracking-[0.18em] text-navy"
+                    >
+                      Plan a visit
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      href="/login"
+                      className="rounded-full px-4 py-2.5 text-center text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground hover:bg-secondary"
+                    >
+                      Sign in
+                    </Link>
+                  </SheetClose>
+                </>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </header>
   )

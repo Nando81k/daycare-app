@@ -281,7 +281,7 @@ export const parentPaymentMethod: ParentPaymentMethodPreview = {
   label: "Primary payment method",
   detail: "Visa ending in 4242",
   note: "Additional billing tools will be connected in a later phase.",
-  stripeConfigured: false,
+  paystackConfigured: false,
 }
 
 export const parentDocuments: ParentDocumentPreview[] = [

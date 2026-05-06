@@ -1,6 +1,7 @@
 import { AlertTriangle, CreditCard, Receipt, TrendingUp } from "lucide-react"
 
 import { AdminCreateInvoiceForm } from "@/components/admin/billing/admin-create-invoice-form"
+import { TuitionPlansSection } from "@/components/admin/billing/tuition-plans-section"
 import { PageShell } from "@/components/shared/page-shell"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { SurfaceCard } from "@/components/shared/surface-card"
@@ -14,9 +15,18 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { AdminBillingData } from "@/lib/dal/admin-billing"
+import type {
+  AdminBillingData,
+  AdminTuitionPlansData,
+} from "@/lib/dal/admin-billing"
 
-export function AdminBillingPageView({ data }: { data: AdminBillingData }) {
+export function AdminBillingPageView({
+  data,
+  tuition,
+}: {
+  data: AdminBillingData
+  tuition: AdminTuitionPlansData
+}) {
   const { metrics, invoices, failedPayments, families } = data
 
   const outstandingByFamily = families.filter((family) => family.outstandingCents > 0)
@@ -159,6 +169,12 @@ export function AdminBillingPageView({ data }: { data: AdminBillingData }) {
           <FailedPaymentsTable rows={failedPayments} />
         </TabsContent>
       </Tabs>
+
+      <TuitionPlansSection
+        rows={tuition.rows}
+        families={tuition.families}
+        programRates={tuition.programRates}
+      />
     </PageShell>
   )
 }
@@ -233,7 +249,7 @@ function InvoicesTable({
             <TableHead>{showPaidAt ? "Paid" : "Due"}</TableHead>
             <TableHead className="text-right">Amount</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Stripe</TableHead>
+            <TableHead>Paystack ref</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -249,8 +265,8 @@ function InvoicesTable({
                 <StatusBadge variant={row.statusTone}>{row.status}</StatusBadge>
               </TableCell>
               <TableCell className="font-mono text-xs text-muted-foreground">
-                {row.stripePaymentIntentId
-                  ? row.stripePaymentIntentId.slice(0, 14) + "…"
+                {row.paystackReference
+                  ? row.paystackReference.slice(0, 14) + "…"
                   : "—"}
               </TableCell>
             </TableRow>
@@ -273,7 +289,7 @@ function FailedPaymentsTable({
           <EmptyHeader>
             <EmptyTitle>No failed payments</EmptyTitle>
             <EmptyDescription>
-              When a Stripe charge fails, it&apos;ll show here so you can follow up
+              When a Paystack charge fails, it&apos;ll show here so you can follow up
               with the family.
             </EmptyDescription>
           </EmptyHeader>
