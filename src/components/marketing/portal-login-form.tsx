@@ -35,7 +35,9 @@ function SubmitButton({ label }: { label: string }) {
       disabled={pending}
       className="mt-2 h-12 w-full rounded-none bg-primary px-6 text-sm font-medium uppercase tracking-[0.18em] text-primary-foreground hover:bg-primary/90"
     >
-      {pending ? "Signing in…" : (
+      {pending ? (
+        "Signing in…"
+      ) : (
         <>
           {label}
           <ArrowRight className="ml-2 h-4 w-4" />
@@ -48,12 +50,15 @@ function SubmitButton({ label }: { label: string }) {
 export function PortalLoginForm({ portalRole }: { portalRole: "parent" | "admin" }) {
   const [state, formAction] = useActionState(signInToPortal.bind(null, portalRole), initialState)
   const buttonLabel = portalRole === "admin" ? "Enter staff portal" : "Sign in"
+  // After the password step succeeds, the server returns a signed challenge.
+  // From then on only the code is asked for — no email, password, or captcha.
+  const codeStep = Boolean(state.requiresTwoFactor && state.twoFactorChallenge)
 
   return (
     <form action={formAction} className="flex flex-col gap-8">
       {state.error ? (
         <AlertBanner tone="destructive" title="Unable to sign in" description={state.error} />
-      ) : state.requiresTwoFactor ? (
+      ) : codeStep ? (
         <AlertBanner
           tone="info"
           title="Two-factor required"
@@ -62,67 +67,79 @@ export function PortalLoginForm({ portalRole }: { portalRole: "parent" | "admin"
       ) : null}
 
       <EditorialFieldGroup>
-        <EditorialField>
-          <EditorialLabel htmlFor={`${portalRole}-email`}>Email</EditorialLabel>
-          <Input
-            id={`${portalRole}-email`}
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            autoComplete="email"
-            required
-            className={cn(editorialInput)}
-          />
-        </EditorialField>
+        {codeStep ? (
+          <>
+            <input type="hidden" name="twoFactorChallenge" value={state.twoFactorChallenge} />
+            <EditorialField>
+              <EditorialLabel htmlFor={`${portalRole}-totp`}>
+                Six-digit authenticator code
+              </EditorialLabel>
+              <Input
+                key={state.error ?? "code"}
+                id={`${portalRole}-totp`}
+                name="totpCode"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                pattern="\d{6}"
+                required
+                autoFocus
+                className={cn(editorialInput, "tracking-[0.4em]")}
+              />
+            </EditorialField>
+            <SubmitButton label="Verify code" />
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="text-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Use a different account
+            </button>
+          </>
+        ) : (
+          <>
+            <EditorialField>
+              <EditorialLabel htmlFor={`${portalRole}-email`}>Email</EditorialLabel>
+              <Input
+                id={`${portalRole}-email`}
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
+                className={cn(editorialInput)}
+              />
+            </EditorialField>
 
-        <EditorialField>
-          <EditorialLabel
-            htmlFor={`${portalRole}-password`}
-            hint={
-              <Link
-                href="/reset-password"
-                className="uppercase tracking-[0.18em] underline-offset-4 hover:text-foreground hover:underline"
+            <EditorialField>
+              <EditorialLabel
+                htmlFor={`${portalRole}-password`}
+                hint={
+                  <Link
+                    href="/reset-password"
+                    className="uppercase tracking-[0.18em] underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    Forgot?
+                  </Link>
+                }
               >
-                Forgot?
-              </Link>
-            }
-          >
-            Password
-          </EditorialLabel>
-          <Input
-            id={`${portalRole}-password`}
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            className={cn(editorialInput)}
-          />
-        </EditorialField>
+                Password
+              </EditorialLabel>
+              <Input
+                id={`${portalRole}-password`}
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className={cn(editorialInput)}
+              />
+            </EditorialField>
 
-        {state.requiresTwoFactor ? (
-          <EditorialField>
-            <EditorialLabel htmlFor={`${portalRole}-totp`}>
-              Six-digit authenticator code
-            </EditorialLabel>
-            <Input
-              id={`${portalRole}-totp`}
-              name="totpCode"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              pattern="\d{6}"
-              required
-              autoFocus
-              className={cn(editorialInput, "tracking-[0.4em]")}
-            />
-          </EditorialField>
-        ) : null}
+            <TurnstileWidget sitekey={publicAppEnv.turnstileSiteKey} />
 
-        <TurnstileWidget sitekey={publicAppEnv.turnstileSiteKey} />
-
-        <SubmitButton
-          label={state.requiresTwoFactor ? "Verify code" : buttonLabel}
-        />
+            <SubmitButton label={buttonLabel} />
+          </>
+        )}
       </EditorialFieldGroup>
     </form>
   )

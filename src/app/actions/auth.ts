@@ -20,6 +20,10 @@ import { consumeRateLimit } from "@/lib/rate-limit"
 import { sendTransactionalEmail } from "@/lib/email"
 import { hashPassword } from "@/lib/password"
 import { verifyTotpCode } from "@/lib/totp"
+import {
+  createTwoFactorChallenge,
+  readTwoFactorChallenge,
+} from "@/lib/two-factor-challenge"
 import { verifyTurnstileToken } from "@/lib/turnstile"
 import {
   acceptInviteSchema,
@@ -33,6 +37,8 @@ import {
 export type LoginActionState = {
   error: string | null
   requiresTwoFactor?: boolean
+  /** Signed token proving the password step passed; sent back with the code. */
+  twoFactorChallenge?: string
 }
 
 export type AuthMutationActionState = MutationActionState
@@ -55,6 +61,15 @@ export async function signInToPortal(
   _previousState: LoginActionState,
   formData: FormData
 ): Promise<LoginActionState> {
+  const twoFactorChallenge = String(formData.get("twoFactorChallenge") ?? "")
+  if (twoFactorChallenge) {
+    return completeTwoFactorSignIn(
+      role,
+      twoFactorChallenge,
+      String(formData.get("totpCode") ?? "").trim()
+    )
+  }
+
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -65,8 +80,6 @@ export async function signInToPortal(
       error: parsed.error.issues[0]?.message ?? "Enter a valid email and password.",
     }
   }
-
-  const totpCode = String(formData.get("totpCode") ?? "").trim()
 
   // Captcha gate — no-op when Turnstile is not configured (dev), enforced in prod.
   const captcha = await verifyTurnstileToken(
@@ -107,20 +120,74 @@ export async function signInToPortal(
 
   const authedUser = authenticationResult.user
   if (authedUser.twoFactorEnabledAt && authedUser.twoFactorSecret) {
-    if (!totpCode) {
-      return {
-        error: null,
-        requiresTwoFactor: true,
-      }
-    }
-
-    if (!verifyTotpCode(totpCode, authedUser.twoFactorSecret)) {
-      return {
-        error: "That two-factor code is invalid or expired. Try again.",
-        requiresTwoFactor: true,
-      }
+    // Password is correct; ask only for the code next. The form drops the
+    // email/password fields and sends this signed challenge instead.
+    return {
+      error: null,
+      requiresTwoFactor: true,
+      twoFactorChallenge: createTwoFactorChallenge(authedUser.id, role),
     }
   }
+
+  return finishSignIn(role, authedUser)
+}
+
+async function completeTwoFactorSignIn(
+  role: "parent" | "admin",
+  challenge: string,
+  totpCode: string
+): Promise<LoginActionState> {
+  const verified = readTwoFactorChallenge(challenge, role)
+  if (!verified) {
+    return {
+      error: "Your sign-in step expired. Enter your email and password again.",
+    }
+  }
+
+  // 5 code attempts per user per 15 minutes — a six-digit code must not be guessable.
+  const limit = await consumeRateLimit(
+    { scope: `login-2fa:${role}`, limit: 5, windowSec: 60 * 15 },
+    verified.userId
+  )
+  if (!limit.ok) {
+    return {
+      error: `Too many code attempts. Try again in ${limit.retryAfterSec} seconds.`,
+      requiresTwoFactor: true,
+      twoFactorChallenge: challenge,
+    }
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: verified.userId },
+    select: { id: true, role: true, twoFactorSecret: true, twoFactorEnabledAt: true },
+  })
+  const allowedRoles = ([] as UserRole[]).concat(getPortalRole(role))
+  if (!user || !allowedRoles.includes(user.role as UserRole)) {
+    return {
+      error: "Your sign-in step expired. Enter your email and password again.",
+    }
+  }
+
+  if (
+    user.twoFactorEnabledAt &&
+    user.twoFactorSecret &&
+    !verifyTotpCode(totpCode, user.twoFactorSecret)
+  ) {
+    return {
+      error: "That code is invalid or expired. Enter the current code from your app.",
+      requiresTwoFactor: true,
+      twoFactorChallenge: challenge,
+    }
+  }
+
+  return finishSignIn(role, user)
+}
+
+async function finishSignIn(
+  role: "parent" | "admin",
+  user: { id: string; role: UserRole }
+): Promise<LoginActionState> {
+  const authenticationResult = { user }
 
   await prisma.user.update({
     where: {
