@@ -51,16 +51,31 @@ class InMemoryStore implements RateLimitStore {
 }
 
 class RedisStore implements RateLimitStore {
+  // If Upstash is unreachable (deleted/archived database, DNS failure, bad
+  // token), fall back to per-instance memory instead of crashing the request.
+  // Rate limiting is a guard rail; it must never take down sign-in.
+  private readonly fallback: RateLimitStore = new InMemoryStore()
+
   constructor(private readonly redis: Redis) {}
 
   async get(key: string) {
-    const stored = await this.redis.get<Bucket>(`rl:${key}`)
-    return stored ?? undefined
+    try {
+      const stored = await this.redis.get<Bucket>(`rl:${key}`)
+      return stored ?? undefined
+    } catch (error) {
+      console.error("[rate-limit] Redis get failed; using in-memory fallback", error)
+      return this.fallback.get(key)
+    }
   }
 
   async set(key: string, value: Bucket, ttlSec: number) {
-    // ex = seconds. Reset on every write so an idle key naturally expires.
-    await this.redis.set(`rl:${key}`, value, { ex: Math.max(1, ttlSec) })
+    try {
+      // ex = seconds. Reset on every write so an idle key naturally expires.
+      await this.redis.set(`rl:${key}`, value, { ex: Math.max(1, ttlSec) })
+    } catch (error) {
+      console.error("[rate-limit] Redis set failed; using in-memory fallback", error)
+      await this.fallback.set(key, value, ttlSec)
+    }
   }
 }
 
